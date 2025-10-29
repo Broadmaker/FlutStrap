@@ -1,6 +1,54 @@
+/// Flutstrap Badge
+///
+/// A small label and counting component with Bootstrap-inspired styling.
+///
+/// {@macro flutstrap_badge.usage}
+/// {@macro flutstrap_badge.accessibility}
+///
+/// {@template flutstrap_badge.usage}
+/// ## Usage Examples
+///
+/// ```dart
+/// // Basic badge
+/// FlutstrapBadge(
+///   text: 'New',
+///   variant: FSBadgeVariant.primary,
+/// )
+///
+/// // Count badge with max limit
+/// FlutstrapBadge.count(
+///   count: 150,
+///   maxCount: 99,
+///   variant: FSBadgeVariant.danger,
+/// )
+///
+/// // Dot indicator
+/// FlutstrapBadge.dot(
+///   variant: FSBadgeVariant.success,
+/// )
+///
+/// // Badge positioned on another widget
+/// FlutstrapBadgePositioned(
+///   child: Icon(Icons.notifications),
+///   badge: FlutstrapBadge.count(count: 5),
+///   alignment: Alignment.topRight,
+/// )
+/// ```
+/// {@endtemplate}
+///
+/// {@template flutstrap_badge.accessibility}
+/// ## Accessibility
+///
+/// - Uses `Semantics` widget for screen readers
+/// - Provides proper semantic labels for different badge types
+/// - Follows WCAG contrast guidelines for text and background colors
+/// {@endtemplate}
+///
+/// {@category Components}
+/// {@category Badges}
+
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-//import '../../core/spacing.dart';
 
 /// Flutstrap Badge Variants
 ///
@@ -28,6 +76,7 @@ enum FSBadgeSize {
 /// Flutstrap Badge
 ///
 /// A small label and counting component with Bootstrap-inspired styling.
+@immutable
 class FlutstrapBadge extends StatelessWidget {
   final String text;
   final int? count;
@@ -39,10 +88,11 @@ class FlutstrapBadge extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? backgroundColor;
   final Color? textColor;
-  final int? maxCount; // Changed from double to int
+  final int? maxCount;
 
+  /// Main constructor for FlutstrapBadge
   const FlutstrapBadge({
-    Key? key,
+    super.key,
     required this.text,
     this.count,
     this.variant = FSBadgeVariant.primary,
@@ -56,11 +106,11 @@ class FlutstrapBadge extends StatelessWidget {
     this.maxCount,
   })  : assert(count == null || count >= 0, 'Count must be non-negative'),
         assert(maxCount == null || maxCount > 0, 'Max count must be positive'),
-        super(key: key);
+        super();
 
   /// Creates a badge with just a count (no text)
   const FlutstrapBadge.count({
-    Key? key,
+    super.key,
     required this.count,
     this.variant = FSBadgeVariant.primary,
     this.size = FSBadgeSize.md,
@@ -72,11 +122,11 @@ class FlutstrapBadge extends StatelessWidget {
     this.maxCount = 99,
   })  : text = '',
         child = null,
-        super(key: key);
+        super();
 
   /// Creates a dot badge (small circle indicator)
   const FlutstrapBadge.dot({
-    Key? key,
+    super.key,
     this.variant = FSBadgeVariant.danger,
     this.size = FSBadgeSize.sm,
     this.onTap,
@@ -88,13 +138,25 @@ class FlutstrapBadge extends StatelessWidget {
         child = null,
         textColor = null,
         maxCount = null,
-        super(key: key);
+        super();
+
+  // STYLE CACHING FOR PERFORMANCE
+  static final _styleCache = <_StyleCacheKey, _BadgeStyle>{};
 
   @override
   Widget build(BuildContext context) {
     final theme = FSTheme.of(context);
-    final badgeStyle = _BadgeStyle(theme, variant, size);
+    final badgeStyle = _getBadgeStyle(theme);
 
+    return Semantics(
+      container: true,
+      label: _getSemanticLabel(),
+      button: onTap != null,
+      child: _buildBadge(badgeStyle),
+    );
+  }
+
+  Widget _buildBadge(_BadgeStyle badgeStyle) {
     final displayText = _getDisplayText();
     final showCount = count != null && !dot;
     final showText = text.isNotEmpty && !dot;
@@ -120,8 +182,8 @@ class FlutstrapBadge extends StatelessWidget {
         children: [
           child!,
           Positioned(
-            top: -4,
-            right: -4,
+            top: -_BadgeConstants.positionOffset,
+            right: -_BadgeConstants.positionOffset,
             child: badgeContent,
           ),
         ],
@@ -158,16 +220,16 @@ class FlutstrapBadge extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              text, // Show the original text
+              text,
               style: badgeStyle.textStyle.copyWith(
                 color: textColor ?? badgeStyle.textColor,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: _BadgeConstants.countSpacing),
             Text(
-              displayText, // Show the count
+              '($displayText)',
               style: badgeStyle.textStyle.copyWith(
                 color: textColor ?? badgeStyle.textColor,
                 fontWeight: FontWeight.w600,
@@ -204,28 +266,83 @@ class FlutstrapBadge extends StatelessWidget {
     if (dot) return '';
 
     if (count != null) {
-      if (maxCount != null && count! > maxCount!) {
-        return '$maxCount+'; // Fixed: using maxCount directly
-      }
-      return count!.toString();
+      return _formatCount(count!);
     }
 
     return text;
   }
+
+  String _formatCount(int count) {
+    if (maxCount != null && count > maxCount!) {
+      return '$maxCount+';
+    }
+    return count.toString();
+  }
+
+  String _getSemanticLabel() {
+    if (dot) return 'Indicator';
+
+    final hasCount = count != null;
+    final hasText = text.isNotEmpty;
+
+    if (hasCount && hasText) {
+      return '$text count: $count';
+    }
+    if (hasCount) return 'Count: $count';
+    return text;
+  }
+
+  _BadgeStyle _getBadgeStyle(FSThemeData theme) {
+    final cacheKey = _StyleCacheKey(variant, size, theme.brightness);
+    return _styleCache.putIfAbsent(
+        cacheKey, () => _BadgeStyle(theme, variant, size));
+  }
+
+  // CONVENIENCE METHODS
+  FlutstrapBadge copyWith({
+    Key? key,
+    String? text,
+    int? count,
+    FSBadgeVariant? variant,
+    FSBadgeSize? size,
+    bool? pill,
+    bool? dot,
+    Widget? child,
+    VoidCallback? onTap,
+    Color? backgroundColor,
+    Color? textColor,
+    int? maxCount,
+  }) {
+    return FlutstrapBadge(
+      key: key ?? this.key,
+      text: text ?? this.text,
+      count: count ?? this.count,
+      variant: variant ?? this.variant,
+      size: size ?? this.size,
+      pill: pill ?? this.pill,
+      dot: dot ?? this.dot,
+      child: child ?? this.child,
+      onTap: onTap ?? this.onTap,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      textColor: textColor ?? this.textColor,
+      maxCount: maxCount ?? this.maxCount,
+    );
+  }
 }
 
 /// Badge that can be positioned relative to another widget
+@immutable
 class FlutstrapBadgePositioned extends StatelessWidget {
   final Widget child;
   final FlutstrapBadge badge;
   final Alignment alignment;
 
   const FlutstrapBadgePositioned({
-    Key? key,
+    super.key,
     required this.child,
     required this.badge,
     this.alignment = Alignment.topRight,
-  }) : super(key: key);
+  }) : super();
 
   @override
   Widget build(BuildContext context) {
@@ -234,10 +351,10 @@ class FlutstrapBadgePositioned extends StatelessWidget {
       children: [
         child,
         Positioned(
-          top: alignment.y > 0 ? null : -4,
-          bottom: alignment.y < 0 ? null : -4,
-          left: alignment.x > 0 ? null : -4,
-          right: alignment.x < 0 ? null : -4,
+          top: alignment.y > 0 ? null : -_BadgeConstants.positionOffset,
+          bottom: alignment.y < 0 ? null : -_BadgeConstants.positionOffset,
+          left: alignment.x > 0 ? null : -_BadgeConstants.positionOffset,
+          right: alignment.x < 0 ? null : -_BadgeConstants.positionOffset,
           child: badge,
         ),
       ],
@@ -260,11 +377,11 @@ class _BadgeStyle {
   double get dotSize {
     switch (size) {
       case FSBadgeSize.sm:
-        return 6.0;
+        return _BadgeConstants.dotSizeSmall;
       case FSBadgeSize.md:
-        return 8.0;
+        return _BadgeConstants.dotSizeMedium;
       case FSBadgeSize.lg:
-        return 10.0;
+        return _BadgeConstants.dotSizeLarge;
     }
   }
 
@@ -344,4 +461,34 @@ class _BadgeStyle {
     }
     return null;
   }
+}
+
+// STYLE CACHE KEY FOR EFFICIENT CACHING
+class _StyleCacheKey {
+  final FSBadgeVariant variant;
+  final FSBadgeSize size;
+  final Brightness brightness;
+
+  const _StyleCacheKey(this.variant, this.size, this.brightness);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _StyleCacheKey &&
+          runtimeType == other.runtimeType &&
+          variant == other.variant &&
+          size == other.size &&
+          brightness == other.brightness;
+
+  @override
+  int get hashCode => Object.hash(variant, size, brightness);
+}
+
+// CONSTANTS FOR BETTER MAINTAINABILITY
+class _BadgeConstants {
+  static const double positionOffset = 4.0;
+  static const double countSpacing = 4.0;
+  static const double dotSizeSmall = 6.0;
+  static const double dotSizeMedium = 8.0;
+  static const double dotSizeLarge = 10.0;
 }

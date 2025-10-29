@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'animation_screen.dart';
 import 'buttons_screen.dart';
 import 'cards_screen.dart';
+import 'code_viewer_demo.dart';
 import 'dropdowns_screen.dart';
 import 'forms_screen.dart';
 import 'layout_screen.dart';
@@ -76,6 +77,20 @@ class HomeScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                             builder: (context) => const TypographyScreen()),
+                      );
+                    },
+                  ),
+                  // Add this to your home_screen.dart ListView temporarily:
+                  _buildComponentCard(
+                    context,
+                    'Code Viewer Demo',
+                    'Test the code viewer component',
+                    Icons.code,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const CodeViewerDemoScreen()),
                       );
                     },
                   ),

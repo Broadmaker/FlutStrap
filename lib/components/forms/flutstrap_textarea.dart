@@ -1,14 +1,61 @@
+/// Flutstrap TextArea
+///
+/// A multi-line text input field with various styles, validation,
+/// and Bootstrap-inspired variants.
+///
+/// ## Usage Examples
+///
+/// ```dart
+/// // Basic textarea
+/// FlutstrapTextArea(
+///   label: 'Description',
+///   placeholder: 'Enter your description...',
+///   rows: 4,
+/// )
+///
+/// // Textarea with character counter
+/// FlutstrapTextArea(
+///   label: 'Bio',
+///   maxLength: 500,
+///   showCharacterCounter: true,
+///   rows: 3,
+/// )
+///
+/// // Auto-resizing textarea
+/// FlutstrapTextArea(
+///   label: 'Notes',
+///   autoResize: true,
+///   placeholder: 'Start typing...',
+/// )
+///
+/// // Using state methods
+/// final textareaKey = GlobalKey<FlutstrapTextAreaState>();
+/// FlutstrapTextArea(
+///   key: textareaKey,
+///   label: 'Controlled textarea',
+/// )
+///
+/// // Later...
+/// textareaKey.currentState?.clear();
+/// textareaKey.currentState?.focus();
+/// ```
+///
+/// {@category Components}
+/// {@category Forms}
+
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/spacing.dart';
 
-// TextArea Size Variants
+/// TextArea Size Variants
 enum FSTextAreaSize {
   sm,
   md,
   lg,
 }
 
-// TextArea Variants (colors)
+/// TextArea Variants (colors)
 enum FSTextAreaVariant {
   primary,
   secondary,
@@ -16,8 +63,6 @@ enum FSTextAreaVariant {
   danger,
   warning,
   info,
-  light,
-  dark,
 }
 
 class FlutstrapTextArea extends StatefulWidget {
@@ -45,9 +90,11 @@ class FlutstrapTextArea extends StatefulWidget {
   final TextInputAction? textInputAction;
   final EdgeInsetsGeometry? padding;
   final bool showLabel;
+  final String? semanticLabel;
+  final Duration resizeDelay;
 
   const FlutstrapTextArea({
-    Key? key,
+    super.key,
     this.controller,
     this.initialValue,
     this.label,
@@ -72,15 +119,128 @@ class FlutstrapTextArea extends StatefulWidget {
     this.textInputAction,
     this.padding,
     this.showLabel = true,
-  }) : super(key: key);
+    this.semanticLabel,
+    this.resizeDelay = const Duration(milliseconds: 100),
+  });
 
   @override
   State<FlutstrapTextArea> createState() => _FlutstrapTextAreaState();
+
+  // ✅ CONSISTENT COPYWITH PATTERN
+  FlutstrapTextArea copyWith({
+    Key? key,
+    TextEditingController? controller,
+    String? initialValue,
+    String? label,
+    String? placeholder,
+    String? helperText,
+    bool? disabled,
+    bool? readonly,
+    bool? required,
+    bool? showValidation,
+    bool? isValid,
+    String? validationMessage,
+    int? maxLength,
+    bool? showCharacterCounter,
+    int? rows,
+    bool? autoResize,
+    FSTextAreaSize? size,
+    FSTextAreaVariant? variant,
+    ValueChanged<String>? onChanged,
+    ValueChanged<String>? onSubmitted,
+    VoidCallback? onEditingComplete,
+    FocusNode? focusNode,
+    TextInputAction? textInputAction,
+    EdgeInsetsGeometry? padding,
+    bool? showLabel,
+    String? semanticLabel,
+    Duration? resizeDelay,
+  }) {
+    return FlutstrapTextArea(
+      key: key ?? this.key,
+      controller: controller ?? this.controller,
+      initialValue: initialValue ?? this.initialValue,
+      label: label ?? this.label,
+      placeholder: placeholder ?? this.placeholder,
+      helperText: helperText ?? this.helperText,
+      disabled: disabled ?? this.disabled,
+      readonly: readonly ?? this.readonly,
+      required: required ?? this.required,
+      showValidation: showValidation ?? this.showValidation,
+      isValid: isValid ?? this.isValid,
+      validationMessage: validationMessage ?? this.validationMessage,
+      maxLength: maxLength ?? this.maxLength,
+      showCharacterCounter: showCharacterCounter ?? this.showCharacterCounter,
+      rows: rows ?? this.rows,
+      autoResize: autoResize ?? this.autoResize,
+      size: size ?? this.size,
+      variant: variant ?? this.variant,
+      onChanged: onChanged ?? this.onChanged,
+      onSubmitted: onSubmitted ?? this.onSubmitted,
+      onEditingComplete: onEditingComplete ?? this.onEditingComplete,
+      focusNode: focusNode ?? this.focusNode,
+      textInputAction: textInputAction ?? this.textInputAction,
+      padding: padding ?? this.padding,
+      showLabel: showLabel ?? this.showLabel,
+      semanticLabel: semanticLabel ?? this.semanticLabel,
+      resizeDelay: resizeDelay ?? this.resizeDelay,
+    );
+  }
+
+  // ✅ CONVENIENCE METHODS
+  FlutstrapTextArea primary() => copyWith(variant: FSTextAreaVariant.primary);
+  FlutstrapTextArea secondary() =>
+      copyWith(variant: FSTextAreaVariant.secondary);
+  FlutstrapTextArea success() => copyWith(variant: FSTextAreaVariant.success);
+  FlutstrapTextArea danger() => copyWith(variant: FSTextAreaVariant.danger);
+  FlutstrapTextArea warning() => copyWith(variant: FSTextAreaVariant.warning);
+  FlutstrapTextArea info() => copyWith(variant: FSTextAreaVariant.info);
+
+  FlutstrapTextArea small() => copyWith(size: FSTextAreaSize.sm);
+  FlutstrapTextArea medium() => copyWith(size: FSTextAreaSize.md);
+  FlutstrapTextArea large() => copyWith(size: FSTextAreaSize.lg);
+
+  FlutstrapTextArea asDisabled() => copyWith(disabled: true);
+  FlutstrapTextArea asEnabled() => copyWith(disabled: false);
+  FlutstrapTextArea withLabel(String label) => copyWith(label: label);
+  FlutstrapTextArea withHint(String hint) => copyWith(placeholder: hint);
+  FlutstrapTextArea withHelper(String helper) => copyWith(helperText: helper);
+  FlutstrapTextArea withValidation(String message) => copyWith(
+        validationMessage: message,
+        showValidation: true,
+        isValid: false,
+      );
 }
 
 class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
+  Timer? _resizeTimer;
+
+  // ✅ SIMPLIFIED STATE MANAGEMENT
+  bool get _isInvalid => widget.showValidation && !widget.isValid;
+  bool get _hasFocus => _focusNode.hasFocus;
+
+  Color get _variantColor {
+    final theme = FSTheme.of(context);
+    if (_isInvalid) return theme.colors.danger;
+
+    final colors = theme.colors;
+    switch (widget.variant) {
+      case FSTextAreaVariant.primary:
+        return colors.primary;
+      case FSTextAreaVariant.secondary:
+        return colors.secondary;
+      case FSTextAreaVariant.success:
+        return colors.success;
+      case FSTextAreaVariant.danger:
+        return colors.danger;
+      case FSTextAreaVariant.warning:
+        return colors.warning;
+      case FSTextAreaVariant.info:
+        return colors.info;
+    }
+  }
 
   @override
   void initState() {
@@ -92,47 +252,46 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
       _controller.text = widget.initialValue!;
     }
 
-    // Listen to controller changes to update character counter and auto-resize
+    // ✅ SINGLE CONTROLLER LISTENER FOR ALL FUNCTIONALITY
     _controller.addListener(_handleControllerChange);
-
-    if (widget.autoResize) {
-      _controller.addListener(_autoResize);
-    }
   }
 
   @override
   void didUpdateWidget(FlutstrapTextArea oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.autoResize != oldWidget.autoResize) {
-      if (widget.autoResize) {
-        _controller.addListener(_autoResize);
-      } else {
-        _controller.removeListener(_autoResize);
+    // ✅ OPTIMIZED CONTROLLER UPDATE
+    if (widget.controller != oldWidget.controller) {
+      _controller.removeListener(_handleControllerChange);
+      _controller.dispose();
+      _controller = widget.controller ?? TextEditingController();
+      if (widget.initialValue != null) {
+        _controller.text = widget.initialValue!;
       }
+      _controller.addListener(_handleControllerChange);
     }
   }
 
   void _handleControllerChange() {
-    if (mounted) {
-      setState(() {
-        // This will trigger a rebuild and update both character counter and auto-resize
+    // ✅ DEBOUNCED AUTO-RESIZE FOR PERFORMANCE
+    if (widget.autoResize) {
+      _resizeTimer?.cancel();
+      _resizeTimer = Timer(widget.resizeDelay, () {
+        if (mounted) setState(() {});
       });
     }
-  }
 
-  void _autoResize() {
-    if (mounted) {
+    // ✅ ONLY UPDATE COUNTER WHEN NEEDED
+    if (widget.showCharacterCounter && widget.maxLength != null && mounted) {
       setState(() {});
     }
   }
 
   @override
   void dispose() {
+    _resizeTimer?.cancel();
     _controller.removeListener(_handleControllerChange);
-    if (widget.autoResize) {
-      _controller.removeListener(_autoResize);
-    }
+    // ✅ PROPER DISPOSAL - only dispose if we created it
     if (widget.controller == null) {
       _controller.dispose();
     }
@@ -145,27 +304,31 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
   @override
   Widget build(BuildContext context) {
     final theme = FSTheme.of(context);
-    final colors = theme.colors;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Label
-        if (widget.showLabel && widget.label != null) _buildLabel(theme),
+    return Semantics(
+      label: widget.semanticLabel ?? widget.label,
+      value: _controller.text,
+      enabled: !widget.disabled && !widget.readonly,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Label
+          if (widget.showLabel && widget.label != null) _buildLabel(theme),
 
-        // TextArea
-        _buildTextArea(theme),
+          // TextArea
+          _buildTextArea(theme),
 
-        // Helper Text & Character Counter
-        _buildBottomRow(theme),
+          // Helper Text & Character Counter
+          _buildBottomRow(theme),
 
-        // Validation Message
-        if (widget.showValidation &&
-            !widget.isValid &&
-            widget.validationMessage != null)
-          _buildValidationMessage(theme),
-      ],
+          // Validation Message
+          if (widget.showValidation &&
+              _isInvalid &&
+              widget.validationMessage != null)
+            _buildValidationMessage(theme),
+        ],
+      ),
     );
   }
 
@@ -177,10 +340,10 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
         children: [
           Text(
             widget.label!,
-            style: theme.typography.labelMedium?.copyWith(
+            style: theme.typography.labelMedium.copyWith(
               color: widget.disabled
-                  ? _getGrayColor(theme, 600)
-                  : _getGrayColor(theme, 800),
+                  ? theme.colors.onSurface.withOpacity(0.38)
+                  : theme.colors.onSurface,
             ),
           ),
           if (widget.required)
@@ -188,7 +351,7 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
               padding: const EdgeInsets.only(left: 4.0),
               child: Text(
                 '*',
-                style: theme.typography.labelMedium?.copyWith(
+                style: theme.typography.labelMedium.copyWith(
                   color: theme.colors.danger,
                 ),
               ),
@@ -199,14 +362,13 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
   }
 
   Widget _buildTextArea(FSThemeData theme) {
-    final isInvalid = widget.showValidation && !widget.isValid;
-    final variantColor = _getVariantColor(theme, isInvalid);
+    final colors = theme.colors;
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6.0), // Using fixed border radius
+        borderRadius: BorderRadius.circular(8.0),
         border: Border.all(
-          color: _getBorderColor(theme, variantColor, isInvalid),
+          color: _getBorderColor(theme),
           width: 1.5,
         ),
       ),
@@ -226,17 +388,10 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
           isCollapsed: true,
           counterText: '', // We handle counter separately
           filled: widget.disabled,
-          fillColor: widget.disabled ? _getGrayColor(theme, 200) : null,
+          fillColor: widget.disabled ? colors.outline.withOpacity(0.1) : null,
         ),
         style: _getTextStyle(theme),
-        onChanged: (value) {
-          // This will be called when user types, but we also listen to controller changes
-          // for programmatic text changes
-          if (widget.autoResize) {
-            setState(() {});
-          }
-          widget.onChanged?.call(value);
-        },
+        onChanged: widget.onChanged,
         onSubmitted: widget.onSubmitted,
         onEditingComplete: widget.onEditingComplete,
       ),
@@ -259,8 +414,8 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
             Expanded(
               child: Text(
                 widget.helperText!,
-                style: theme.typography.bodySmall?.copyWith(
-                  color: _getGrayColor(theme, 600),
+                style: theme.typography.bodySmall.copyWith(
+                  color: theme.colors.onSurface.withOpacity(0.6),
                 ),
               ),
             ),
@@ -269,7 +424,7 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
           if (hasCounter)
             Text(
               '${_controller.text.length}/${widget.maxLength}',
-              style: theme.typography.bodySmall?.copyWith(
+              style: theme.typography.bodySmall.copyWith(
                 color: _getCounterColor(theme),
               ),
             ),
@@ -283,39 +438,17 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
       padding: const EdgeInsets.only(top: 4.0),
       child: Text(
         widget.validationMessage!,
-        style: theme.typography.bodySmall?.copyWith(
+        style: theme.typography.bodySmall.copyWith(
           color: theme.colors.danger,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 
-  Color _getVariantColor(FSThemeData theme, bool isInvalid) {
-    if (isInvalid) return theme.colors.danger;
-
-    switch (widget.variant) {
-      case FSTextAreaVariant.primary:
-        return theme.colors.primary;
-      case FSTextAreaVariant.secondary:
-        return theme.colors.secondary;
-      case FSTextAreaVariant.success:
-        return theme.colors.success;
-      case FSTextAreaVariant.danger:
-        return theme.colors.danger;
-      case FSTextAreaVariant.warning:
-        return theme.colors.warning;
-      case FSTextAreaVariant.info:
-        return theme.colors.info;
-      case FSTextAreaVariant.light:
-        return theme.colors.light;
-      case FSTextAreaVariant.dark:
-        return theme.colors.dark;
-    }
-  }
-
-  Color _getBorderColor(FSThemeData theme, Color variantColor, bool isInvalid) {
-    if (isInvalid) return theme.colors.danger;
-    if (_focusNode.hasFocus) return variantColor;
+  Color _getBorderColor(FSThemeData theme) {
+    if (_isInvalid) return theme.colors.danger;
+    if (_hasFocus) return _variantColor;
     return theme.colors.outline;
   }
 
@@ -328,63 +461,107 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
     } else if (currentLength > maxLength * 0.9) {
       return theme.colors.warning;
     } else {
-      return _getGrayColor(theme, 600);
+      return theme.colors.onSurface.withOpacity(0.6);
     }
   }
 
   EdgeInsets _getPadding() {
-    if (widget.padding != null)
+    if (widget.padding != null) {
+      // ✅ CONVERT EdgeInsetsGeometry to EdgeInsets
       return widget.padding!.resolve(TextDirection.ltr);
+    }
 
     switch (widget.size) {
       case FSTextAreaSize.sm:
-        return const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+        return const EdgeInsets.symmetric(
+          horizontal: FSSpacing.sm,
+          vertical: FSSpacing.xs,
+        );
       case FSTextAreaSize.md:
-        return const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+        return const EdgeInsets.symmetric(
+          horizontal: FSSpacing.md,
+          vertical: FSSpacing.sm,
+        );
       case FSTextAreaSize.lg:
-        return const EdgeInsets.symmetric(horizontal: 20, vertical: 16);
+        return const EdgeInsets.symmetric(
+          horizontal: FSSpacing.lg,
+          vertical: FSSpacing.md,
+        );
     }
   }
 
-  TextStyle? _getTextStyle(FSThemeData theme) {
-    final baseStyle = theme.typography.bodyMedium;
+  TextStyle _getTextStyle(FSThemeData theme) {
+    final baseStyle = theme.typography.bodyMedium.copyWith(
+      color: widget.disabled ? theme.colors.onSurface.withOpacity(0.38) : null,
+    );
 
     switch (widget.size) {
       case FSTextAreaSize.sm:
-        return baseStyle?.copyWith(fontSize: 14);
+        return baseStyle.copyWith(fontSize: 14);
       case FSTextAreaSize.md:
-        return baseStyle?.copyWith(fontSize: 16);
+        return baseStyle.copyWith(fontSize: 16);
       case FSTextAreaSize.lg:
-        return baseStyle?.copyWith(fontSize: 18);
+        return baseStyle.copyWith(fontSize: 18);
     }
   }
 
-  // Helper method to get gray colors since they're not in FSColorScheme
-  Color _getGrayColor(FSThemeData theme, int shade) {
-    final isDark = theme.brightness == Brightness.dark;
+  // ✅ PUBLIC METHODS FOR PROGRAMMATIC CONTROL
+  void clear() {
+    _controller.clear();
+    if (mounted) setState(() {});
+    widget.onChanged?.call('');
+  }
 
-    // Bootstrap-like gray shades
-    switch (shade) {
-      case 100:
-        return isDark ? const Color(0xFF2D333B) : const Color(0xFFF8F9FA);
-      case 200:
-        return isDark ? const Color(0xFF3D444D) : const Color(0xFFE9ECEF);
-      case 300:
-        return isDark ? const Color(0xFF545962) : const Color(0xFFDEE2E6);
-      case 400:
-        return isDark ? const Color(0xFF6C757D) : const Color(0xFFCED4DA);
-      case 500:
-        return isDark ? const Color(0xFF868E96) : const Color(0xFFADB5BD);
-      case 600:
-        return isDark ? const Color(0xFFADB5BD) : const Color(0xFF6C757D);
-      case 700:
-        return isDark ? const Color(0xFFCED4DA) : const Color(0xFF495057);
-      case 800:
-        return isDark ? const Color(0xFFE9ECEF) : const Color(0xFF343A40);
-      case 900:
-        return isDark ? const Color(0xFFF8F9FA) : const Color(0xFF212529);
-      default:
-        return isDark ? const Color(0xFF6C757D) : const Color(0xFF6C757D);
+  void setError(String error) {
+    if (mounted) {
+      setState(() {
+        // Error state is managed through widget properties
+      });
     }
   }
+
+  void clearError() {
+    if (mounted) {
+      setState(() {
+        // Error state is managed through widget properties
+      });
+    }
+  }
+
+  void focus() {
+    if (widget.focusNode != null) {
+      widget.focusNode!.requestFocus();
+    } else {
+      _focusNode.requestFocus();
+    }
+  }
+
+  void unfocus() {
+    if (widget.focusNode != null) {
+      widget.focusNode!.unfocus();
+    } else {
+      _focusNode.unfocus();
+    }
+  }
+
+  // ✅ VALUE MANAGEMENT
+  String get value => _controller.text;
+
+  set value(String newValue) {
+    _controller.text = newValue;
+    if (mounted) setState(() {});
+    widget.onChanged?.call(newValue);
+  }
+
+  // ✅ VALIDATION STATUS
+  bool get isValid => !_isInvalid;
+  bool get hasError => _isInvalid;
+  String? get error => widget.validationMessage;
+
+  // ✅ CHARACTER COUNTER INFO
+  int get characterCount => _controller.text.length;
+  int? get maxCharacters => widget.maxLength;
+  double get characterUsage => widget.maxLength != null
+      ? _controller.text.length / widget.maxLength!
+      : 0.0;
 }

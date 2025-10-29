@@ -1,7 +1,36 @@
 /// Flutstrap Theming System
 ///
-/// Provides a comprehensive theming system with light/dark mode support,
-/// color schemes, typography, and component-specific themes.
+/// {@category Theming}
+/// {@category Foundation}
+///
+/// Provides a comprehensive theming system with:
+/// - 🎨 Color schemes (light/dark, seed-based)
+/// - 📝 Typography scale (Material 3 compliant)
+/// - 📏 Consistent spacing system
+/// - 🎬 Animation configurations
+/// - 📱 Responsive breakpoints
+///
+/// ## Usage
+///
+/// ```dart
+/// // Basic usage with default theme
+/// FSTheme(
+///   data: FSThemeData.light(),
+///   child: MyApp(),
+/// )
+///
+/// // Custom seed color
+/// FSTheme(
+///   data: FSThemeData.dark(seedColor: Colors.blue),
+///   child: MyApp(),
+/// )
+/// ```
+///
+/// ## Theming Principles
+/// - **Consistency**: Uniform design tokens across components
+/// - **Accessibility**: WCAG compliant color contrasts
+/// - **Flexibility**: Easy customization and extension
+/// - **Performance**: Efficient theme propagation and caching
 
 import 'package:flutter/material.dart';
 import 'breakpoints.dart';
@@ -9,8 +38,25 @@ import 'spacing.dart';
 
 /// Flutstrap Color Scheme
 ///
-/// Defines the color palette for the Flutstrap theme system
+/// Defines the color palette for the Flutstrap theme system with
+/// Bootstrap-inspired semantics and Material 3 compatibility.
 class FSColorScheme {
+  // ✅ CONST COLOR DEFINITIONS FOR BETTER PERFORMANCE
+  static const Color _lightSuccess = Color(0xFF198754);
+  static const Color _darkSuccess = Color(0xFF20C997);
+  static const Color _lightDanger = Color(0xFFDC3545);
+  static const Color _darkDanger = Color(0xFFE74C3C);
+  static const Color _lightWarning = Color(0xFFFFC107);
+  static const Color _darkWarning = Color(0xFFFFD43B);
+  static const Color _lightInfo = Color(0xFF0DCAF0);
+  static const Color _darkInfo = Color(0xFF339AF0);
+  static const Color _lightBackground = Color(0xFFF8F9FA);
+  static const Color _darkBackground = Color(0xFF121212);
+  static const Color _lightSurface = Color(0xFFF8F9FA);
+  static const Color _darkSurface = Color(0xFF1E1E1E);
+  static const Color _lightOutline = Color(0xFFDEE2E6);
+  static const Color _darkOutline = Color(0xFF495057);
+
   final Color primary;
   final Color secondary;
   final Color success;
@@ -30,6 +76,9 @@ class FSColorScheme {
   final Color onSurface;
   final Color shadow;
   final Color outline;
+
+  // ✅ ADD SEMANTIC ALIASES FOR BETTER UX
+  Color get error => danger;
 
   const FSColorScheme({
     required this.primary,
@@ -53,29 +102,36 @@ class FSColorScheme {
     required this.outline,
   });
 
-  /// Create a color scheme from seed color
+  /// Create a color scheme from seed color using perceptually uniform HSV blending
   factory FSColorScheme.fromSeed({
     required Color seedColor,
     Brightness brightness = Brightness.light,
   }) {
     final isLight = brightness == Brightness.light;
 
+    // ✅ USE HSV FOR PERCEPTUALLY UNIFORM COLOR GENERATION
+    final hsvColor = HSVColor.fromColor(seedColor);
+    final secondary = HSVColor.fromAHSV(
+      1.0,
+      hsvColor.hue,
+      hsvColor.saturation * 0.8,
+      isLight ? 0.7 : 0.3,
+    ).toColor();
+
     return FSColorScheme(
       primary: seedColor,
-      secondary: isLight
-          ? Color.alphaBlend(seedColor.withOpacity(0.7), Colors.white)
-          : Color.alphaBlend(seedColor.withOpacity(0.7), Colors.black),
-      success: isLight ? const Color(0xFF198754) : const Color(0xFF20C997),
-      danger: isLight ? const Color(0xFFDC3545) : const Color(0xFFE74C3C),
-      warning: isLight ? const Color(0xFFFFC107) : const Color(0xFFFFD43B),
-      info: isLight ? const Color(0xFF0DCAF0) : const Color(0xFF339AF0),
+      secondary: secondary,
+      success: isLight ? _lightSuccess : _darkSuccess,
+      danger: isLight ? _lightDanger : _darkDanger,
+      warning: isLight ? _lightWarning : _darkWarning,
+      info: isLight ? _lightInfo : _darkInfo,
       light: isLight ? const Color(0xFFF8F9FA) : const Color(0xFF2D333B),
       dark: isLight ? const Color(0xFF212529) : const Color(0xFFE9ECEF),
       white: Colors.white,
       black: Colors.black,
       transparent: Colors.transparent,
-      background: isLight ? Colors.white : const Color(0xFF121212),
-      surface: isLight ? const Color(0xFFF8F9FA) : const Color(0xFF1E1E1E),
+      background: isLight ? Colors.white : _darkBackground,
+      surface: isLight ? _lightSurface : _darkSurface,
       onPrimary: isLight ? Colors.white : Colors.black,
       onSecondary: isLight ? Colors.white : Colors.black,
       onBackground: isLight ? Colors.black : Colors.white,
@@ -83,7 +139,40 @@ class FSColorScheme {
       shadow: isLight
           ? Colors.black.withOpacity(0.1)
           : Colors.black.withOpacity(0.3),
-      outline: isLight ? const Color(0xFFDEE2E6) : const Color(0xFF495057),
+      outline: isLight ? _lightOutline : _darkOutline,
+    );
+  }
+
+  /// Create a Material 3 compliant color scheme
+  factory FSColorScheme.material3({
+    required Color seedColor,
+    Brightness brightness = Brightness.light,
+  }) {
+    final materialScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: brightness,
+    );
+
+    return FSColorScheme(
+      primary: materialScheme.primary,
+      secondary: materialScheme.secondary,
+      success: materialScheme.tertiary,
+      danger: materialScheme.error,
+      warning: const Color(0xFFFFC107),
+      info: materialScheme.primaryContainer,
+      light: materialScheme.surfaceVariant,
+      dark: materialScheme.inverseSurface,
+      white: materialScheme.surface,
+      black: materialScheme.onSurface,
+      transparent: Colors.transparent,
+      background: materialScheme.background,
+      surface: materialScheme.surface,
+      onPrimary: materialScheme.onPrimary,
+      onSecondary: materialScheme.onSecondary,
+      onBackground: materialScheme.onBackground,
+      onSurface: materialScheme.onSurface,
+      shadow: materialScheme.shadow,
+      outline: materialScheme.outline,
     );
   }
 
@@ -131,9 +220,30 @@ class FSColorScheme {
       outline: outline ?? this.outline,
     );
   }
+
+  // ✅ EQUALITY AND HASHCODE FOR PROPER THEME COMPARISON
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSColorScheme &&
+          runtimeType == other.runtimeType &&
+          primary == other.primary &&
+          secondary == other.secondary &&
+          background == other.background &&
+          onBackground == other.onBackground;
+
+  @override
+  int get hashCode => Object.hash(primary, secondary, background, onBackground);
+
+  @override
+  String toString() =>
+      'FSColorScheme(primary: $primary, brightness: ${onBackground.computeLuminance() > 0.5 ? 'light' : 'dark'})';
 }
 
 /// Flutstrap Typography System
+///
+/// Provides a comprehensive typography scale following Material 3 guidelines
+/// with Bootstrap-inspired semantic naming.
 class FSTypography {
   final TextStyle displayLarge;
   final TextStyle displayMedium;
@@ -151,8 +261,7 @@ class FSTypography {
   final TextStyle labelMedium;
   final TextStyle labelSmall;
 
-  // Remove 'const' from constructor
-  FSTypography({
+  const FSTypography({
     required this.displayLarge,
     required this.displayMedium,
     required this.displaySmall,
@@ -170,94 +279,99 @@ class FSTypography {
     required this.labelSmall,
   });
 
-  /// Create typography from base text style
+  /// Create typography from base text style with font fallbacks
   factory FSTypography.fromBaseTextStyle(TextStyle base) {
+    // ✅ USE FONT FALLBACK CHAIN FOR BETTER COMPATIBILITY
+    final effectiveStyle = base.copyWith(
+      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
+    );
+
     return FSTypography(
-      displayLarge: base.copyWith(
+      displayLarge: effectiveStyle.copyWith(
         fontSize: 57,
         fontWeight: FontWeight.w400,
         height: 1.12,
         letterSpacing: -0.25,
       ),
-      displayMedium: base.copyWith(
+      displayMedium: effectiveStyle.copyWith(
         fontSize: 45,
         fontWeight: FontWeight.w400,
         height: 1.16,
         letterSpacing: 0,
       ),
-      displaySmall: base.copyWith(
+      displaySmall: effectiveStyle.copyWith(
         fontSize: 36,
         fontWeight: FontWeight.w400,
         height: 1.22,
         letterSpacing: 0,
       ),
-      headlineLarge: base.copyWith(
+      headlineLarge: effectiveStyle.copyWith(
         fontSize: 32,
         fontWeight: FontWeight.w400,
         height: 1.25,
         letterSpacing: 0,
       ),
-      headlineMedium: base.copyWith(
+      headlineMedium: effectiveStyle.copyWith(
         fontSize: 28,
         fontWeight: FontWeight.w400,
         height: 1.29,
         letterSpacing: 0,
       ),
-      headlineSmall: base.copyWith(
+      headlineSmall: effectiveStyle.copyWith(
         fontSize: 24,
         fontWeight: FontWeight.w400,
         height: 1.33,
         letterSpacing: 0,
       ),
-      titleLarge: base.copyWith(
+      titleLarge: effectiveStyle.copyWith(
         fontSize: 22,
         fontWeight: FontWeight.w500,
         height: 1.27,
         letterSpacing: 0,
       ),
-      titleMedium: base.copyWith(
+      titleMedium: effectiveStyle.copyWith(
         fontSize: 16,
         fontWeight: FontWeight.w500,
         height: 1.5,
         letterSpacing: 0.15,
       ),
-      titleSmall: base.copyWith(
+      titleSmall: effectiveStyle.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.43,
         letterSpacing: 0.1,
       ),
-      bodyLarge: base.copyWith(
+      bodyLarge: effectiveStyle.copyWith(
         fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.5,
         letterSpacing: 0.5,
       ),
-      bodyMedium: base.copyWith(
+      bodyMedium: effectiveStyle.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         height: 1.43,
         letterSpacing: 0.25,
       ),
-      bodySmall: base.copyWith(
+      bodySmall: effectiveStyle.copyWith(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         height: 1.33,
         letterSpacing: 0.4,
       ),
-      labelLarge: base.copyWith(
+      labelLarge: effectiveStyle.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.43,
         letterSpacing: 0.1,
       ),
-      labelMedium: base.copyWith(
+      labelMedium: effectiveStyle.copyWith(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         height: 1.33,
         letterSpacing: 0.5,
       ),
-      labelSmall: base.copyWith(
+      labelSmall: effectiveStyle.copyWith(
         fontSize: 11,
         fontWeight: FontWeight.w500,
         height: 1.45,
@@ -302,9 +416,27 @@ class FSTypography {
       labelSmall: labelSmall ?? this.labelSmall,
     );
   }
+
+  // ✅ EQUALITY AND HASHCODE
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSTypography &&
+          runtimeType == other.runtimeType &&
+          bodyMedium == other.bodyMedium &&
+          bodyLarge == other.bodyLarge;
+
+  @override
+  int get hashCode => Object.hash(bodyMedium, bodyLarge);
+
+  @override
+  String toString() => 'FSTypography()';
 }
 
 /// Flutstrap Animation Configuration
+///
+/// Defines standardized animation durations and curves for consistent
+/// motion throughout the application.
 class FSAnimation {
   final Duration duration;
   final Curve curve;
@@ -323,9 +455,26 @@ class FSAnimation {
       curve: curve ?? this.curve,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSAnimation &&
+          runtimeType == other.runtimeType &&
+          duration == other.duration &&
+          curve == other.curve;
+
+  @override
+  int get hashCode => Object.hash(duration, curve);
+
+  @override
+  String toString() => 'FSAnimation(duration: $duration, curve: $curve)';
 }
 
 /// Main Flutstrap Theme Data
+///
+/// Aggregates all theme aspects (colors, typography, spacing, animations, breakpoints)
+/// into a single cohesive theme object.
 class FSThemeData {
   final FSColorScheme colors;
   final FSTypography typography;
@@ -334,7 +483,7 @@ class FSThemeData {
   final FSCustomBreakpoints breakpoints;
   final Brightness brightness;
 
-  const FSThemeData({
+  const FSThemeData._internal({
     required this.colors,
     required this.typography,
     required this.spacing,
@@ -343,8 +492,70 @@ class FSThemeData {
     required this.brightness,
   });
 
-  /// Create light theme
+  // ✅ ENHANCED CACHING STRATEGY
+  static final FSThemeData _defaultLight = _createLightTheme();
+  static final FSThemeData _defaultDark = _createDarkTheme();
+  static final Map<String, FSThemeData> _themeCache = {};
+  static const int _maxCacheSize = 10;
+
+  /// Creates or retrieves a cached theme instance
+  static FSThemeData _createCachedTheme({
+    required Color seedColor,
+    required bool isLight,
+  }) {
+    final cacheKey = '${seedColor.value}_${isLight ? 'light' : 'dark'}';
+
+    return _themeCache.putIfAbsent(cacheKey, () {
+      // ✅ MAINTAIN CACHE SIZE
+      if (_themeCache.length > _maxCacheSize) {
+        _themeCache.remove(_themeCache.keys.first);
+      }
+
+      return isLight
+          ? _createLightTheme(seedColor: seedColor)
+          : _createDarkTheme(seedColor: seedColor);
+    });
+  }
+
+  /// Create light theme with optional seed color
   factory FSThemeData.light({Color? seedColor}) {
+    if (seedColor == null) return _defaultLight;
+    return _createCachedTheme(seedColor: seedColor, isLight: true);
+  }
+
+  /// Create dark theme with optional seed color
+  factory FSThemeData.dark({Color? seedColor}) {
+    if (seedColor == null) return _defaultDark;
+    return _createCachedTheme(seedColor: seedColor, isLight: false);
+  }
+
+  /// Create a Material 3 compliant theme
+  factory FSThemeData.material3({
+    required Color seedColor,
+    Brightness brightness = Brightness.light,
+  }) {
+    final colors = FSColorScheme.material3(
+      seedColor: seedColor,
+      brightness: brightness,
+    );
+
+    final baseTextStyle = TextStyle(
+      color: colors.onBackground,
+      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
+    );
+
+    return FSThemeData._internal(
+      colors: colors,
+      typography: FSTypography.fromBaseTextStyle(baseTextStyle),
+      spacing: const FSSpacing(),
+      animation: const FSAnimation(),
+      breakpoints: const FSCustomBreakpoints(),
+      brightness: brightness,
+    );
+  }
+
+  // ✅ PRIVATE HELPER METHODS FOR THEME CREATION
+  static FSThemeData _createLightTheme({Color? seedColor}) {
     final colors = FSColorScheme.fromSeed(
       seedColor: seedColor ?? const Color(0xFF0D6EFD),
       brightness: Brightness.light,
@@ -352,22 +563,20 @@ class FSThemeData {
 
     final baseTextStyle = TextStyle(
       color: colors.onBackground,
-      fontFamily: 'Inter',
-      package: 'flutstrap',
+      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
     );
 
-    return FSThemeData(
+    return FSThemeData._internal(
       colors: colors,
       typography: FSTypography.fromBaseTextStyle(baseTextStyle),
-      spacing: FSSpacing(), // Remove const
+      spacing: const FSSpacing(),
       animation: const FSAnimation(),
       breakpoints: const FSCustomBreakpoints(),
       brightness: Brightness.light,
     );
   }
 
-  /// Create dark theme
-  factory FSThemeData.dark({Color? seedColor}) {
+  static FSThemeData _createDarkTheme({Color? seedColor}) {
     final colors = FSColorScheme.fromSeed(
       seedColor: seedColor ?? const Color(0xFF0D6EFD),
       brightness: Brightness.dark,
@@ -375,14 +584,13 @@ class FSThemeData {
 
     final baseTextStyle = TextStyle(
       color: colors.onBackground,
-      fontFamily: 'Inter',
-      package: 'flutstrap',
+      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
     );
 
-    return FSThemeData(
+    return FSThemeData._internal(
       colors: colors,
       typography: FSTypography.fromBaseTextStyle(baseTextStyle),
-      spacing: FSSpacing(), // Remove const
+      spacing: const FSSpacing(),
       animation: const FSAnimation(),
       breakpoints: const FSCustomBreakpoints(),
       brightness: Brightness.dark,
@@ -398,7 +606,7 @@ class FSThemeData {
     FSCustomBreakpoints? breakpoints,
     Brightness? brightness,
   }) {
-    return FSThemeData(
+    return FSThemeData._internal(
       colors: colors ?? this.colors,
       typography: typography ?? this.typography,
       spacing: spacing ?? this.spacing,
@@ -407,27 +615,52 @@ class FSThemeData {
       brightness: brightness ?? this.brightness,
     );
   }
+
+  // ✅ EQUALITY AND HASHCODE FOR EFFICIENT REBUILDS
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSThemeData &&
+          runtimeType == other.runtimeType &&
+          colors == other.colors &&
+          typography == other.typography &&
+          brightness == other.brightness;
+
+  @override
+  int get hashCode => Object.hash(colors, typography, brightness);
+
+  @override
+  String toString() => 'FSThemeData(brightness: $brightness)';
 }
 
 /// Flutstrap Theme Inherited Widget
+///
+/// Provides theme data to the widget tree and handles efficient theme updates.
 class FSTheme extends InheritedWidget {
   final FSThemeData data;
 
   const FSTheme({
-    Key? key,
+    super.key,
     required this.data,
-    required Widget child,
-  }) : super(key: key, child: child);
+    required super.child,
+  });
 
-  /// Get the current theme from context
+  /// Get the current theme from context with helpful error messaging
   static FSThemeData of(BuildContext context) {
     final theme = context.dependOnInheritedWidgetOfExactType<FSTheme>();
-    if (theme != null) {
-      return theme.data;
-    }
 
-    // Fallback to default light theme
-    return FSThemeData.light();
+    assert(theme != null, '''
+No FSTheme found in context. 
+Wrap your app with FSTheme to use Flutstrap components.
+
+Example:
+FSTheme(
+  data: FSThemeData.light(),
+  child: MaterialApp(...),
+)
+''');
+
+    return theme?.data ?? FSThemeData.light();
   }
 
   @override
@@ -436,7 +669,10 @@ class FSTheme extends InheritedWidget {
   }
 }
 
-/// Theme extension methods for easy access
+/// Theme extension methods for easy access throughout the widget tree
+///
+/// {@category Extensions}
+/// {@category Theming}
 extension FSThemeExtensions on BuildContext {
   /// Get the current Flutstrap theme
   FSThemeData get fsTheme => FSTheme.of(this);
@@ -447,7 +683,7 @@ extension FSThemeExtensions on BuildContext {
   /// Get the current typography
   FSTypography get fsTypography => fsTheme.typography;
 
-  /// Get the current spacing
+  /// Get the current spacing system
   FSSpacing get fsSpacing => fsTheme.spacing;
 
   /// Get the current animation configuration
@@ -461,4 +697,11 @@ extension FSThemeExtensions on BuildContext {
 
   /// Check if current theme is light mode
   bool get isLightMode => fsTheme.brightness == Brightness.light;
+
+  /// Quick access to commonly used colors with semantic aliases
+  Color get primaryColor => fsColors.primary;
+  Color get errorColor => fsColors.danger;
+  Color get successColor => fsColors.success;
+  Color get warningColor => fsColors.warning;
+  Color get infoColor => fsColors.info;
 }

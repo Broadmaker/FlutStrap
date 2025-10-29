@@ -1,6 +1,63 @@
+/// Flutstrap Dropdown
+///
+/// A high-performance, customizable dropdown menu with Bootstrap-inspired styling,
+/// search functionality, and comprehensive accessibility support.
+///
+/// {@macro flutstrap_dropdown.usage}
+/// {@macro flutstrap_dropdown.accessibility}
+///
+/// {@template flutstrap_dropdown.usage}
+/// ## Usage Examples
+///
+/// ```dart
+/// // Basic dropdown with string values
+/// FlutstrapDropdown<String>(
+///   items: [
+///     FSDropdownItem(value: '1', label: 'Option 1'),
+///     FSDropdownItem(value: '2', label: 'Option 2'),
+///   ],
+///   value: selectedValue,
+///   onChanged: (value) => setState(() => selectedValue = value),
+/// )
+///
+/// // Dropdown with custom objects
+/// FlutstrapDropdown<User>(
+///   items: users.map((user) => FSDropdownItem(
+///     value: user,
+///     label: user.name,
+///     leading: CircleAvatar(backgroundImage: NetworkImage(user.avatar)),
+///   )).toList(),
+///   value: selectedUser,
+///   onChanged: (user) => setState(() => selectedUser = user),
+///   showSearch: true,
+/// )
+///
+/// // Disabled dropdown with helper text
+/// FlutstrapDropdown<String>(
+///   items: items,
+///   value: selectedValue,
+///   onChanged: null, // Disables the dropdown
+///   helperText: 'This field is currently disabled',
+///   variant: FSDropdownVariant.light,
+/// )
+/// ```
+/// {@endtemplate}
+///
+/// {@template flutstrap_dropdown.accessibility}
+/// ## Accessibility
+///
+/// - Full screen reader support with proper semantic labels
+/// - Keyboard navigation support (Tab, Enter, Escape)
+/// - Focus management for search and menu items
+/// - Proper ARIA attributes for expanded state
+/// {@endtemplate}
+///
+/// {@category Components}
+/// {@category Forms}
+
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../core/spacing.dart';
 
 /// Flutstrap Dropdown Variants
 ///
@@ -28,8 +85,9 @@ enum FSDropdownSize {
 /// Dropdown Item Data
 ///
 /// Represents an item in the dropdown menu
+@immutable
 class FSDropdownItem<T> {
-  final T value;
+  final T? value;
   final String label;
   final Widget? leading;
   final Widget? trailing;
@@ -42,11 +100,22 @@ class FSDropdownItem<T> {
     this.trailing,
     this.enabled = true,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSDropdownItem &&
+          runtimeType == other.runtimeType &&
+          value == other.value;
+
+  @override
+  int get hashCode => value.hashCode;
 }
 
 /// Flutstrap Dropdown
 ///
 /// A customizable dropdown menu with Bootstrap-inspired styling.
+@immutable
 class FlutstrapDropdown<T> extends StatefulWidget {
   final List<FSDropdownItem<T>> items;
   final T? value;
@@ -66,9 +135,10 @@ class FlutstrapDropdown<T> extends StatefulWidget {
   final InputDecoration? decoration;
   final double menuMaxHeight;
   final BorderRadiusGeometry? borderRadius;
+  final Duration searchDebounceDelay;
 
   const FlutstrapDropdown({
-    Key? key,
+    super.key,
     required this.items,
     this.value,
     this.onChanged,
@@ -85,9 +155,10 @@ class FlutstrapDropdown<T> extends StatefulWidget {
     this.showSearch = false,
     this.searchHint,
     this.decoration,
-    this.menuMaxHeight = 200,
+    this.menuMaxHeight = _DropdownConstants.defaultMenuMaxHeight,
     this.borderRadius,
-  }) : super(key: key);
+    this.searchDebounceDelay = _DropdownConstants.searchDebounceDelay,
+  });
 
   @override
   State<FlutstrapDropdown<T>> createState() => _FlutstrapDropdownState<T>();
@@ -101,6 +172,7 @@ class _FlutstrapDropdownState<T> extends State<FlutstrapDropdown<T>> {
   List<FSDropdownItem<T>> _filteredItems = [];
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
@@ -116,6 +188,7 @@ class _FlutstrapDropdownState<T> extends State<FlutstrapDropdown<T>> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.items != widget.items) {
       _filteredItems = widget.items;
+      _searchController.clear();
     }
   }
 
@@ -129,58 +202,55 @@ class _FlutstrapDropdownState<T> extends State<FlutstrapDropdown<T>> {
 
   void _onSearchFocusChange() {
     // Don't close dropdown when search field loses focus
-    // Let the main focus node handle closing
   }
 
   void _onSearchChanged() {
-    setState(() {
-      if (_searchController.text.isEmpty) {
-        _filteredItems = widget.items;
-      } else {
-        _filteredItems = widget.items.where((item) {
-          return item.label.toLowerCase().contains(
-                _searchController.text.toLowerCase(),
-              );
-        }).toList();
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(widget.searchDebounceDelay, () {
+      if (mounted) {
+        setState(() {
+          _filteredItems = _performSearch(_searchController.text);
+        });
       }
     });
   }
 
-  void _openDropdown() {
-    if (!widget.enabled) return;
+  List<FSDropdownItem<T>> _performSearch(String query) {
+    if (query.isEmpty) return widget.items;
 
-    final renderBox = context.findRenderObject() as RenderBox;
+    return widget.items.where((item) {
+      return item.label.toLowerCase().contains(query.toLowerCase());
+    }).toList();
+  }
+
+  void _openDropdown() {
+    if (!widget.enabled || _isOpen) return;
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
     final size = renderBox.size;
     final offset = renderBox.localToGlobal(Offset.zero);
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        left: offset.dx,
-        top: offset.dy + size.height + 4,
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, size.height + 4),
-          child: _DropdownMenu<T>(
-            items: _filteredItems,
-            onItemSelected: _onItemSelected,
-            onClose: _closeDropdown,
-            maxHeight: widget.menuMaxHeight,
-            showSearch: widget.showSearch,
-            searchController: _searchController,
-            searchFocusNode: _searchFocusNode,
-            searchHint: widget.searchHint,
-            variant: widget.variant,
-          ),
-        ),
+      builder: (context) => _DropdownOverlay<T>(
+        position: offset,
+        size: size,
+        layerLink: _layerLink,
+        items: _filteredItems,
+        onItemSelected: _onItemSelected,
+        onClose: _closeDropdown,
+        maxHeight: widget.menuMaxHeight,
+        showSearch: widget.showSearch,
+        searchController: _searchController,
+        searchFocusNode: _searchFocusNode,
+        searchHint: widget.searchHint,
+        variant: widget.variant,
       ),
     );
 
     Overlay.of(context).insert(_overlayEntry!);
-    setState(() {
-      _isOpen = true;
-    });
+    setState(() => _isOpen = true);
 
     // Auto-focus search field if search is enabled
     if (widget.showSearch) {
@@ -191,14 +261,19 @@ class _FlutstrapDropdownState<T> extends State<FlutstrapDropdown<T>> {
   }
 
   void _closeDropdown() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
+    _searchDebounceTimer?.cancel();
     _searchController.clear();
     _filteredItems = widget.items;
     _searchFocusNode.unfocus();
-    setState(() {
-      _isOpen = false;
-    });
+
+    if (_overlayEntry != null) {
+      _overlayEntry!.remove();
+      _overlayEntry = null;
+    }
+
+    if (mounted) {
+      setState(() => _isOpen = false);
+    }
   }
 
   void _onItemSelected(FSDropdownItem<T> item) {
@@ -220,12 +295,13 @@ class _FlutstrapDropdownState<T> extends State<FlutstrapDropdown<T>> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _focusNode.removeListener(_onFocusChange);
     _searchFocusNode.removeListener(_onSearchFocusChange);
     _focusNode.dispose();
     _searchFocusNode.dispose();
     _searchController.dispose();
-    _overlayEntry?.remove();
+    _closeDropdown(); // ✅ CRITICAL: Ensure overlay is removed
     super.dispose();
   }
 
@@ -234,102 +310,99 @@ class _FlutstrapDropdownState<T> extends State<FlutstrapDropdown<T>> {
     final theme = FSTheme.of(context);
     final dropdownStyle = _DropdownStyle(theme, widget.variant, widget.size);
 
-    // FIXED: Safe way to find selected item without type casting null
-    FSDropdownItem<T> selectedItem;
-    try {
-      selectedItem = widget.items.firstWhere(
-        (item) => item.value == widget.value,
-      );
-    } catch (e) {
-      selectedItem = FSDropdownItem<T>(
-        value: _getDefaultValue(), // Use a safe default value method
-        label: widget.placeholder ?? 'Select an option',
-        enabled: false,
-      );
-    }
+    final selectedItem = _getSelectedItem();
 
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: GestureDetector(
-        onTap: _toggleDropdown,
-        child: Focus(
-          focusNode: _focusNode,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: widget.borderRadius ?? dropdownStyle.borderRadius,
-              border: Border.all(
-                color: _isOpen
-                    ? dropdownStyle.focusBorderColor
-                    : dropdownStyle.borderColor,
-                width: _isOpen ? 2.0 : 1.0,
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      label: widget.labelText ?? 'Dropdown',
+      value: selectedItem.label,
+      expanded: _isOpen,
+      child: CompositedTransformTarget(
+        link: _layerLink,
+        child: GestureDetector(
+          onTap: widget.enabled ? _toggleDropdown : null,
+          child: Focus(
+            focusNode: _focusNode,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: widget.borderRadius ?? dropdownStyle.borderRadius,
+                border: Border.all(
+                  color: _isOpen
+                      ? dropdownStyle.focusBorderColor
+                      : dropdownStyle.borderColor,
+                  width: _isOpen
+                      ? _DropdownConstants.focusBorderWidth
+                      : _DropdownConstants.borderWidth,
+                ),
+                color: widget.enabled
+                    ? dropdownStyle.backgroundColor
+                    : dropdownStyle.disabledBackgroundColor,
               ),
-              color: widget.enabled
-                  ? dropdownStyle.backgroundColor
-                  : dropdownStyle.disabledBackgroundColor,
-            ),
-            child: IntrinsicHeight(
-              child: Row(
-                children: [
-                  if (widget.prefixIcon != null)
-                    Padding(
-                      padding: dropdownStyle.prefixPadding,
-                      child: IconTheme.merge(
-                        data: IconThemeData(
-                          color: dropdownStyle.iconColor,
-                          size: dropdownStyle.iconSize,
-                        ),
-                        child: widget.prefixIcon!,
-                      ),
-                    ),
-                  Expanded(
-                    child: Padding(
-                      padding: dropdownStyle.contentPadding,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (widget.labelText != null)
-                            Text(
-                              widget.labelText!,
-                              style: dropdownStyle.labelStyle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          Text(
-                            selectedItem.label,
-                            style: widget.enabled
-                                ? dropdownStyle.textStyle
-                                : dropdownStyle.disabledTextStyle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+              child: IntrinsicHeight(
+                child: Row(
+                  children: [
+                    if (widget.prefixIcon != null)
+                      Padding(
+                        padding: dropdownStyle.prefixPadding,
+                        child: IconTheme.merge(
+                          data: IconThemeData(
+                            color: dropdownStyle.iconColor,
+                            size: dropdownStyle.iconSize,
                           ),
-                          if (widget.helperText != null && !_isOpen)
+                          child: widget.prefixIcon!,
+                        ),
+                      ),
+                    Expanded(
+                      child: Padding(
+                        padding: dropdownStyle.contentPadding,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (widget.labelText != null)
+                              Text(
+                                widget.labelText!,
+                                style: dropdownStyle.labelStyle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             Text(
-                              widget.helperText!,
-                              style: dropdownStyle.helperStyle,
+                              selectedItem.label,
+                              style: widget.enabled
+                                  ? dropdownStyle.textStyle
+                                  : dropdownStyle.disabledTextStyle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                          if (widget.errorText != null && !_isOpen)
-                            Text(
-                              widget.errorText!,
-                              style: dropdownStyle.errorStyle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
+                            if (widget.helperText != null && !_isOpen)
+                              Text(
+                                widget.helperText!,
+                                style: dropdownStyle.helperStyle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            if (widget.errorText != null && !_isOpen)
+                              Text(
+                                widget.errorText!,
+                                style: dropdownStyle.errorStyle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: dropdownStyle.suffixPadding,
-                    child: Icon(
-                      _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                      color: dropdownStyle.iconColor,
-                      size: dropdownStyle.iconSize,
+                    Padding(
+                      padding: dropdownStyle.suffixPadding,
+                      child: Icon(
+                        _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                        color: dropdownStyle.iconColor,
+                        size: dropdownStyle.iconSize,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -338,29 +411,90 @@ class _FlutstrapDropdownState<T> extends State<FlutstrapDropdown<T>> {
     );
   }
 
-  // FIXED: Safe method to get default value based on type
-  T _getDefaultValue() {
-    // For String type, return empty string
-    if (T == String) {
-      return '' as T;
+  FSDropdownItem<T> _getSelectedItem() {
+    if (widget.value != null) {
+      try {
+        return widget.items.firstWhere(
+          (item) => item.value == widget.value,
+        );
+      } catch (e) {
+        // Value not found in items
+      }
     }
-    // For num types, return zero
-    else if (T == int || T == double || T == num) {
-      return 0 as T;
-    }
-    // For bool, return false
-    else if (T == bool) {
-      return false as T;
-    }
-    // For other types, we can't safely create a default, so we return null
-    // This is safe because we're only using it for the placeholder item
-    else {
-      return null as T;
-    }
+
+    return FSDropdownItem<T>(
+      value: null, // ✅ SAFE: No unsafe cast
+      label: widget.placeholder ?? 'Select an option',
+      enabled: false,
+    );
   }
 }
 
-/// Dropdown Menu Overlay
+/// Dropdown Overlay Component
+@immutable
+class _DropdownOverlay<T> extends StatelessWidget {
+  final Offset position;
+  final Size size;
+  final LayerLink layerLink;
+  final List<FSDropdownItem<T>> items;
+  final ValueChanged<FSDropdownItem<T>> onItemSelected;
+  final VoidCallback onClose;
+  final double maxHeight;
+  final bool showSearch;
+  final TextEditingController searchController;
+  final FocusNode searchFocusNode;
+  final String? searchHint;
+  final FSDropdownVariant variant;
+
+  const _DropdownOverlay({
+    required this.position,
+    required this.size,
+    required this.layerLink,
+    required this.items,
+    required this.onItemSelected,
+    required this.onClose,
+    required this.maxHeight,
+    required this.showSearch,
+    required this.searchController,
+    required this.searchFocusNode,
+    required this.searchHint,
+    required this.variant,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = FSTheme.of(context);
+    final dropdownStyle = _DropdownStyle(theme, variant, FSDropdownSize.md);
+
+    return Positioned(
+      left: position.dx,
+      top: position.dy + size.height + _DropdownConstants.menuOffset,
+      width: size.width,
+      child: CompositedTransformFollower(
+        link: layerLink,
+        showWhenUnlinked: false,
+        offset: Offset(0, size.height + _DropdownConstants.menuOffset),
+        child: Material(
+          type: MaterialType.transparency,
+          child: _DropdownMenu<T>(
+            items: items,
+            onItemSelected: onItemSelected,
+            onClose: onClose,
+            maxHeight: maxHeight,
+            showSearch: showSearch,
+            searchController: searchController,
+            searchFocusNode: searchFocusNode,
+            searchHint: searchHint,
+            variant: variant,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Dropdown Menu Content
+@immutable
 class _DropdownMenu<T> extends StatefulWidget {
   final List<FSDropdownItem<T>> items;
   final ValueChanged<FSDropdownItem<T>> onItemSelected;
@@ -395,7 +529,7 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
     // Auto-focus search field when it appears
     if (widget.showSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (widget.searchFocusNode.hasFocus == false) {
+        if (!widget.searchFocusNode.hasFocus) {
           widget.searchFocusNode.requestFocus();
         }
       });
@@ -409,7 +543,7 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
         _DropdownStyle(theme, widget.variant, FSDropdownSize.md);
 
     return Material(
-      elevation: 8,
+      elevation: _DropdownConstants.menuElevation,
       borderRadius: dropdownStyle.menuBorderRadius,
       child: Container(
         constraints: BoxConstraints(maxHeight: widget.maxHeight),
@@ -418,7 +552,7 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
           borderRadius: dropdownStyle.menuBorderRadius,
           border: Border.all(
             color: dropdownStyle.menuBorderColor,
-            width: 1,
+            width: _DropdownConstants.borderWidth,
           ),
         ),
         child: Column(
@@ -446,36 +580,44 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
               ),
             Flexible(
               child: widget.items.isEmpty
-                  ? Padding(
-                      padding: dropdownStyle.menuItemPadding,
-                      child: Text(
-                        'No options available',
-                        style: dropdownStyle.disabledMenuItemTextStyle,
-                      ),
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      itemCount: widget.items.length,
-                      itemBuilder: (context, index) {
-                        final item = widget.items[index];
-                        return _DropdownMenuItem<T>(
-                          item: item,
-                          onSelected: widget.onItemSelected,
-                          onClose: widget.onClose,
-                          variant: widget.variant,
-                        );
-                      },
-                    ),
+                  ? _buildEmptyState(dropdownStyle)
+                  : _buildItemsList(dropdownStyle),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildEmptyState(_DropdownStyle dropdownStyle) {
+    return Padding(
+      padding: dropdownStyle.menuItemPadding,
+      child: Text(
+        'No options available',
+        style: dropdownStyle.disabledMenuItemTextStyle,
+      ),
+    );
+  }
+
+  Widget _buildItemsList(_DropdownStyle dropdownStyle) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
+      padding: EdgeInsets.zero,
+      itemCount: widget.items.length,
+      itemBuilder: (context, index) => _DropdownMenuItem<T>(
+        key: ValueKey(widget.items[index].value),
+        item: widget.items[index],
+        onSelected: widget.onItemSelected,
+        onClose: widget.onClose,
+        variant: widget.variant,
+      ),
+    );
+  }
 }
 
 /// Individual Dropdown Menu Item
+@immutable
 class _DropdownMenuItem<T> extends StatelessWidget {
   final FSDropdownItem<T> item;
   final ValueChanged<FSDropdownItem<T>> onSelected;
@@ -483,6 +625,7 @@ class _DropdownMenuItem<T> extends StatelessWidget {
   final FSDropdownVariant variant;
 
   const _DropdownMenuItem({
+    super.key,
     required this.item,
     required this.onSelected,
     required this.onClose,
@@ -565,69 +708,71 @@ class _DropdownStyle {
     }
   }
 
-  BorderRadiusGeometry get borderRadius => BorderRadius.circular(8);
-  BorderRadiusGeometry get menuBorderRadius => BorderRadius.circular(8);
+  BorderRadiusGeometry get borderRadius =>
+      BorderRadius.circular(_DropdownConstants.defaultBorderRadius);
+  BorderRadiusGeometry get menuBorderRadius =>
+      BorderRadius.circular(_DropdownConstants.defaultBorderRadius);
 
   EdgeInsetsGeometry get contentPadding {
     switch (size) {
       case FSDropdownSize.sm:
-        return EdgeInsets.symmetric(horizontal: 12, vertical: 6);
+        return const EdgeInsets.symmetric(horizontal: 12, vertical: 6);
       case FSDropdownSize.md:
-        return EdgeInsets.symmetric(horizontal: 16, vertical: 8);
+        return const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
       case FSDropdownSize.lg:
-        return EdgeInsets.symmetric(horizontal: 20, vertical: 12);
+        return const EdgeInsets.symmetric(horizontal: 20, vertical: 12);
     }
   }
 
   EdgeInsetsGeometry get prefixPadding {
     switch (size) {
       case FSDropdownSize.sm:
-        return EdgeInsets.only(left: 12);
+        return const EdgeInsets.only(left: 12);
       case FSDropdownSize.md:
-        return EdgeInsets.only(left: 16);
+        return const EdgeInsets.only(left: 16);
       case FSDropdownSize.lg:
-        return EdgeInsets.only(left: 20);
+        return const EdgeInsets.only(left: 20);
     }
   }
 
   EdgeInsetsGeometry get suffixPadding {
     switch (size) {
       case FSDropdownSize.sm:
-        return EdgeInsets.only(right: 8);
+        return const EdgeInsets.only(right: 8);
       case FSDropdownSize.md:
-        return EdgeInsets.only(right: 12);
+        return const EdgeInsets.only(right: 12);
       case FSDropdownSize.lg:
-        return EdgeInsets.only(right: 16);
+        return const EdgeInsets.only(right: 16);
     }
   }
 
   EdgeInsetsGeometry get menuItemPadding {
     switch (size) {
       case FSDropdownSize.sm:
-        return EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+        return const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
       case FSDropdownSize.md:
-        return EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+        return const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
       case FSDropdownSize.lg:
-        return EdgeInsets.symmetric(horizontal: 20, vertical: 16);
+        return const EdgeInsets.symmetric(horizontal: 20, vertical: 16);
     }
   }
 
-  TextStyle get textStyle => theme.typography.bodyMedium!;
-  TextStyle get disabledTextStyle => theme.typography.bodyMedium!.copyWith(
+  TextStyle get textStyle => theme.typography.bodyMedium;
+  TextStyle get disabledTextStyle => theme.typography.bodyMedium.copyWith(
         color: theme.colors.onBackground.withOpacity(0.5),
       );
-  TextStyle get labelStyle => theme.typography.bodySmall!.copyWith(
+  TextStyle get labelStyle => theme.typography.bodySmall.copyWith(
         color: theme.colors.onBackground.withOpacity(0.7),
       );
-  TextStyle get helperStyle => theme.typography.bodySmall!.copyWith(
+  TextStyle get helperStyle => theme.typography.bodySmall.copyWith(
         color: theme.colors.onBackground.withOpacity(0.6),
       );
-  TextStyle get errorStyle => theme.typography.bodySmall!.copyWith(
+  TextStyle get errorStyle => theme.typography.bodySmall.copyWith(
         color: theme.colors.danger,
       );
-  TextStyle get menuItemTextStyle => theme.typography.bodyMedium!;
+  TextStyle get menuItemTextStyle => theme.typography.bodyMedium;
   TextStyle get disabledMenuItemTextStyle =>
-      theme.typography.bodyMedium!.copyWith(
+      theme.typography.bodyMedium.copyWith(
         color: theme.colors.onBackground.withOpacity(0.5),
       );
 
@@ -674,4 +819,16 @@ class _DropdownStyle {
         return colors.onBackground;
     }
   }
+}
+
+// CONSTANTS FOR BETTER MAINTAINABILITY
+class _DropdownConstants {
+  static const double menuElevation = 8.0;
+  static const double menuOffset = 4.0;
+  static const double borderWidth = 1.0;
+  static const double focusBorderWidth = 2.0;
+  static const double defaultMenuMaxHeight = 200.0;
+  static const double defaultBorderRadius = 8.0;
+  static const Duration searchDebounceDelay = Duration(milliseconds: 300);
+  static const Duration overlayAnimationDuration = Duration(milliseconds: 200);
 }

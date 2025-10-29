@@ -31,7 +31,7 @@ class FSSpacing {
   /// Triple extra large spacing - 64.0
   static const double xxxl = 64.0;
 
-  // Add a const constructor
+  // ✅ ADD CONST CONSTRUCTOR
   const FSSpacing();
 
   /// Get spacing value by scale index

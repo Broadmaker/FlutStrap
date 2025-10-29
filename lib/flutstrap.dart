@@ -27,6 +27,8 @@
 /// }
 /// ```
 
+library flutstrap;
+
 // Core foundation
 export 'core/index.dart';
 
@@ -39,8 +41,8 @@ export 'layout/index.dart';
 // Animations
 export 'animations/index.dart';
 
-// Extensions
-//export 'extensions/index.dart';
-
 // UI Components
 export 'components/index.dart';
+
+// Extensions
+// export 'extensions/index.dart';

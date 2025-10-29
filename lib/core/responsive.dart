@@ -2,9 +2,83 @@
 ///
 /// Provides responsive design utilities that work with Flutstrap's breakpoint system
 /// to create adaptive layouts that respond to different screen sizes.
+///
+/// ## Usage Examples
+///
+/// ```dart
+/// // Responsive value selection
+/// final padding = FSResponsive.of(MediaQuery.of(context).size.width).value<double>(
+///   xs: 16.0,    // Mobile
+///   sm: 20.0,    // Small tablet
+///   md: 24.0,    // Tablet
+///   lg: 32.0,    // Desktop
+///   fallback: 24.0,
+/// );
+///
+/// // Conditional rendering
+/// FSResponsive.layoutBuilder(
+///   context,
+///   builder: (responsive) {
+///     return responsive.show(
+///       child: FloatingActionButton(onPressed: () {}),
+///       showOnXs: false, // Hide FAB on mobile
+///       showOnSm: false, // Hide FAB on small tablets
+///     );
+///   },
+/// )
+///
+/// // Responsive widget building
+/// responsive.builder(
+///   builder: (breakpoint) {
+///     switch (breakpoint) {
+///       case FSBreakpoint.xs:
+///         return MobileLayout();
+///       case FSBreakpoint.sm:
+///       case FSBreakpoint.md:
+///         return TabletLayout();
+///       default:
+///         return DesktopLayout();
+///     }
+///   },
+/// )
+///
+/// // Using responsive value container
+/// static const responsivePadding = FSResponsiveValue<double>(
+///   xs: 16.0,
+///   sm: 20.0,
+///   md: 24.0,
+///   lg: 32.0,
+///   xl: 40.0,
+///   xxl: 48.0,
+/// );
+///
+/// final padding = responsivePadding.value(responsive.breakpoint);
+/// ```
+///
+/// {@category Core}
+/// {@category Responsive}
 
 import 'package:flutter/material.dart';
 import 'breakpoints.dart';
+
+/// Cache key for breakpoint caching
+class _BreakpointCacheKey {
+  final double screenWidth;
+  final FSCustomBreakpoints breakpoints;
+
+  const _BreakpointCacheKey(this.screenWidth, this.breakpoints);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _BreakpointCacheKey &&
+          runtimeType == other.runtimeType &&
+          screenWidth == other.screenWidth &&
+          breakpoints == other.breakpoints;
+
+  @override
+  int get hashCode => Object.hash(screenWidth, breakpoints);
+}
 
 /// Responsive utility class that provides methods for responsive design
 class FSResponsive {
@@ -16,7 +90,11 @@ class FSResponsive {
     this.breakpoints = const FSCustomBreakpoints(),
   });
 
-  /// Factory constructor that uses MediaQuery data from BuildContext
+  // ✅ BREAKPOINT CACHING FOR PERFORMANCE
+  static final _breakpointCache = <_BreakpointCacheKey, FSBreakpoint>{};
+  static const _maxCacheSize = 100;
+
+  /// Factory constructor that creates responsive instance from screen width
   factory FSResponsive.of(double width, {FSCustomBreakpoints? breakpoints}) {
     return FSResponsive(
       screenWidth: width,
@@ -24,31 +102,54 @@ class FSResponsive {
     );
   }
 
-  /// Get the current breakpoint based on screen width
-  FSBreakpoint get breakpoint => breakpoints.getBreakpoint(screenWidth);
+  /// Factory constructor from BuildContext using MediaQuery
+  factory FSResponsive.fromContext(BuildContext context,
+      {FSCustomBreakpoints? breakpoints}) {
+    final mediaQuery = MediaQuery.of(context);
+    return FSResponsive(
+      screenWidth: mediaQuery.size.width,
+      breakpoints: breakpoints ?? const FSCustomBreakpoints(),
+    );
+  }
 
+  /// Get the current breakpoint based on screen width with caching
+  FSBreakpoint get breakpoint {
+    final cacheKey = _BreakpointCacheKey(screenWidth, breakpoints);
+
+    return _breakpointCache.putIfAbsent(cacheKey, () {
+      // ✅ MAINTAIN CACHE SIZE
+      if (_breakpointCache.length > _maxCacheSize) {
+        _breakpointCache.remove(_breakpointCache.keys.first);
+      }
+      return breakpoints.getBreakpoint(screenWidth);
+    });
+  }
+
+  // ✅ EFFICIENT BREAKPOINT CHECKS USING ENUM INDEX
   /// Check if current screen size is exactly a specific breakpoint
   bool isBreakpoint(FSBreakpoint breakpoint) => this.breakpoint == breakpoint;
 
   /// Check if current screen size is larger than a specific breakpoint
   bool isLargerThan(FSBreakpoint breakpoint) =>
-      this.breakpoint.isLargerThan(breakpoint);
+      this.breakpoint.index > breakpoint.index;
 
   /// Check if current screen size is smaller than a specific breakpoint
   bool isSmallerThan(FSBreakpoint breakpoint) =>
-      this.breakpoint.isSmallerThan(breakpoint);
+      this.breakpoint.index < breakpoint.index;
 
   /// Check if current screen size is equal to or larger than a specific breakpoint
   bool isEqualOrLargerThan(FSBreakpoint breakpoint) =>
-      this.breakpoint.isEqualOrLargerThan(breakpoint);
+      this.breakpoint.index >= breakpoint.index;
 
   /// Check if current screen size is equal to or smaller than a specific breakpoint
   bool isEqualOrSmallerThan(FSBreakpoint breakpoint) =>
-      this.breakpoint.isEqualOrSmallerThan(breakpoint);
+      this.breakpoint.index <= breakpoint.index;
 
-  /// Responsive value selector
+  // ✅ OPTIMIZED VALUE RESOLUTION WITH MOBILE-FIRST PRIORITY
+  /// Responsive value selector with efficient fallback logic
   ///
-  /// Returns a value based on the current breakpoint with fallback support
+  /// Uses mobile-first approach: falls back to smaller breakpoints first,
+  /// then larger breakpoints if no value is found.
   T value<T>({
     T? xs,
     T? sm,
@@ -58,25 +159,43 @@ class FSResponsive {
     T? xxl,
     required T fallback,
   }) {
+    final values = [xs, sm, md, lg, xl, xxl];
+
     switch (breakpoint) {
       case FSBreakpoint.xs:
-        return xs ?? sm ?? md ?? lg ?? xl ?? xxl ?? fallback;
+        return _findFirstNonNull(values, 0, fallback);
       case FSBreakpoint.sm:
-        return sm ?? xs ?? md ?? lg ?? xl ?? xxl ?? fallback;
+        return _findFirstNonNull(values, 1, fallback);
       case FSBreakpoint.md:
-        return md ?? sm ?? lg ?? xs ?? xl ?? xxl ?? fallback;
+        return _findFirstNonNull(values, 2, fallback);
       case FSBreakpoint.lg:
-        return lg ?? md ?? xl ?? sm ?? xxl ?? xs ?? fallback;
+        return _findFirstNonNull(values, 3, fallback);
       case FSBreakpoint.xl:
-        return xl ?? lg ?? xxl ?? md ?? sm ?? xs ?? fallback;
+        return _findFirstNonNull(values, 4, fallback);
       case FSBreakpoint.xxl:
-        return xxl ?? xl ?? lg ?? md ?? sm ?? xs ?? fallback;
+        return _findFirstNonNull(values, 5, fallback);
     }
   }
 
+  /// Efficiently find first non-null value in prioritized order (mobile-first)
+  T _findFirstNonNull<T>(List<T?> values, int startIndex, T fallback) {
+    // ✅ CHECK CURRENT AND SMALLER BREAKPOINTS FIRST (MOBILE-FIRST)
+    for (var i = startIndex; i >= 0; i--) {
+      if (values[i] != null) return values[i] as T;
+    }
+    // ✅ THEN CHECK LARGER BREAKPOINTS
+    for (var i = startIndex + 1; i < values.length; i++) {
+      if (values[i] != null) return values[i] as T;
+    }
+    return fallback;
+  }
+
+  // ✅ ENHANCED WIDGET METHODS WITH ERROR HANDLING
+
   /// Conditional rendering based on breakpoint
   ///
-  /// Shows [child] only when the condition is met based on breakpoint
+  /// Shows [child] only when the condition is met based on breakpoint.
+  /// Returns [fallback] widget when condition is not met.
   Widget show({
     required Widget child,
     bool showOnXs = true,
@@ -101,6 +220,9 @@ class FSResponsive {
   }
 
   /// Hide widget based on breakpoint (inverse of show)
+  ///
+  /// Hides [child] when the condition is met based on breakpoint.
+  /// Returns [fallback] widget when condition is met.
   Widget hide({
     required Widget child,
     bool hideOnXs = false,
@@ -123,6 +245,63 @@ class FSResponsive {
     );
   }
 
+  /// Responsive widget builder for conditional rendering
+  ///
+  /// Builds different widgets based on the current breakpoint.
+  /// Provides error handling for builder exceptions.
+  Widget builder({
+    required Widget Function(FSBreakpoint breakpoint) builder,
+    Widget? fallback,
+  }) {
+    try {
+      return builder(breakpoint);
+    } catch (e) {
+      assert(false, 'Error in responsive builder: $e');
+      return fallback ?? const SizedBox.shrink();
+    }
+  }
+
+  /// Create a responsive layout builder widget
+  ///
+  /// Wraps the builder in a LayoutBuilder for automatic responsive updates
+  /// when screen size changes.
+  static Widget layoutBuilder(
+    BuildContext context, {
+    required Widget Function(FSResponsive responsive) builder,
+    FSCustomBreakpoints? breakpoints,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final responsive = FSResponsive.of(
+          constraints.maxWidth,
+          breakpoints: breakpoints,
+        );
+        return builder(responsive);
+      },
+    );
+  }
+
+  /// Create a responsive value builder widget
+  ///
+  /// Builds widgets based on responsive values without manual breakpoint handling.
+  static Widget valueBuilder<T>({
+    required BuildContext context,
+    required T Function(FSResponsive responsive) valueSelector,
+    required Widget Function(T value) builder,
+    FSCustomBreakpoints? breakpoints,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final responsive = FSResponsive.of(
+          constraints.maxWidth,
+          breakpoints: breakpoints,
+        );
+        final value = valueSelector(responsive);
+        return builder(value);
+      },
+    );
+  }
+
   /// Create a copy with updated screen width
   FSResponsive copyWith({
     double? screenWidth,
@@ -133,9 +312,27 @@ class FSResponsive {
       breakpoints: breakpoints ?? this.breakpoints,
     );
   }
+
+  // ✅ EQUALITY AND HASHCODE FOR BETTER PERFORMANCE
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSResponsive &&
+          runtimeType == other.runtimeType &&
+          screenWidth == other.screenWidth &&
+          breakpoints == other.breakpoints;
+
+  @override
+  int get hashCode => Object.hash(screenWidth, breakpoints);
+
+  @override
+  String toString() =>
+      'FSResponsive(screenWidth: $screenWidth, breakpoint: $breakpoint)';
 }
 
 /// Responsive value container that automatically updates with screen size
+///
+/// Provides a type-safe way to define responsive values for all breakpoints.
 class FSResponsiveValue<T> {
   final T xs;
   final T sm;
@@ -180,6 +377,11 @@ class FSResponsiveValue<T> {
     }
   }
 
+  /// Get value using FSResponsive instance
+  T valueFromResponsive(FSResponsive responsive) {
+    return value(responsive.breakpoint);
+  }
+
   /// Map responsive values to different type
   FSResponsiveValue<R> map<R>(R Function(T value) mapper) {
     return FSResponsiveValue<R>(
@@ -191,6 +393,41 @@ class FSResponsiveValue<T> {
       xxl: mapper(xxl),
     );
   }
+
+  /// Create a new responsive value by combining with another
+  FSResponsiveValue<R> combine<R, U>(
+    FSResponsiveValue<U> other,
+    R Function(T, U) combiner,
+  ) {
+    return FSResponsiveValue<R>(
+      xs: combiner(xs, other.xs),
+      sm: combiner(sm, other.sm),
+      md: combiner(md, other.md),
+      lg: combiner(lg, other.lg),
+      xl: combiner(xl, other.xl),
+      xxl: combiner(xxl, other.xxl),
+    );
+  }
+
+  // ✅ EQUALITY AND HASHCODE
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSResponsiveValue &&
+          runtimeType == other.runtimeType &&
+          xs == other.xs &&
+          sm == other.sm &&
+          md == other.md &&
+          lg == other.lg &&
+          xl == other.xl &&
+          xxl == other.xxl;
+
+  @override
+  int get hashCode => Object.hash(xs, sm, md, lg, xl, xxl);
+
+  @override
+  String toString() =>
+      'FSResponsiveValue(xs: $xs, sm: $sm, md: $md, lg: $lg, xl: $xl, xxl: $xxl)';
 }
 
 /// Extension methods for easier responsive design
@@ -206,6 +443,24 @@ extension FSResponsiveExtensions on FSBreakpoint {
       this == FSBreakpoint.lg ||
       this == FSBreakpoint.xl ||
       this == FSBreakpoint.xxl;
+
+  /// Get the minimum width for this breakpoint
+  double get minWidth {
+    switch (this) {
+      case FSBreakpoint.xs:
+        return 0;
+      case FSBreakpoint.sm:
+        return FSBreakpoints.sm;
+      case FSBreakpoint.md:
+        return FSBreakpoints.md;
+      case FSBreakpoint.lg:
+        return FSBreakpoints.lg;
+      case FSBreakpoint.xl:
+        return FSBreakpoints.xl;
+      case FSBreakpoint.xxl:
+        return FSBreakpoints.xl; // ✅ FIXED: xxl uses xl value
+    }
+  }
 
   /// Get the next larger breakpoint
   FSBreakpoint get next {
@@ -241,4 +496,43 @@ extension FSResponsiveExtensions on FSBreakpoint {
         return FSBreakpoint.xl;
     }
   }
+
+  /// Get human-readable name for the breakpoint
+  String get name {
+    switch (this) {
+      case FSBreakpoint.xs:
+        return 'XS';
+      case FSBreakpoint.sm:
+        return 'SM';
+      case FSBreakpoint.md:
+        return 'MD';
+      case FSBreakpoint.lg:
+        return 'LG';
+      case FSBreakpoint.xl:
+        return 'XL';
+      case FSBreakpoint.xxl:
+        return 'XXL';
+    }
+  }
+}
+
+/// Extension methods for BuildContext for easier responsive access
+extension FSResponsiveContextExtensions on BuildContext {
+  /// Get responsive utilities for current screen size
+  FSResponsive get responsive {
+    final mediaQuery = MediaQuery.of(this);
+    return FSResponsive.of(mediaQuery.size.width);
+  }
+
+  /// Get current breakpoint
+  FSBreakpoint get breakpoint => responsive.breakpoint;
+
+  /// Check if current screen is mobile size
+  bool get isMobile => breakpoint.isMobile;
+
+  /// Check if current screen is tablet size
+  bool get isTablet => breakpoint.isTablet;
+
+  /// Check if current screen is desktop size
+  bool get isDesktop => breakpoint.isDesktop;
 }

@@ -1,6 +1,47 @@
+/// Flutstrap Modal
+///
+/// A customizable modal dialog with Bootstrap-inspired styling,
+/// multiple variants, sizes, and built-in service methods for
+/// common modal patterns.
+///
+/// ## Usage Examples
+///
+/// ```dart
+/// // Basic modal
+/// FlutstrapModal(
+///   title: Text('Modal Title'),
+///   content: Text('Modal content goes here...'),
+///   actions: [
+///     TextButton(
+///       onPressed: () => Navigator.pop(context),
+///       child: Text('Cancel'),
+///     ),
+///     FilledButton(
+///       onPressed: () => Navigator.pop(context),
+///       child: Text('Save'),
+///     ),
+///   ],
+/// )
+///
+/// // Using modal service
+/// FlutstrapModalService.showConfirmModal(
+///   context: context,
+///   title: 'Confirm Action',
+///   content: 'Are you sure you want to proceed?',
+///   confirmText: 'Yes, proceed',
+///   cancelText: 'Cancel',
+/// ).then((confirmed) {
+///   if (confirmed) {
+///     // Handle confirmation
+///   }
+/// });
+/// ```
+///
+/// {@category Components}
+/// {@category Overlays}
+
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../core/spacing.dart';
 
 /// Flutstrap Modal Variants
 ///
@@ -44,7 +85,7 @@ class FlutstrapModal extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
 
   const FlutstrapModal({
-    Key? key,
+    super.key,
     this.title,
     this.content,
     this.actions,
@@ -57,35 +98,42 @@ class FlutstrapModal extends StatelessWidget {
     this.elevation,
     this.borderRadius,
     this.padding,
-  }) : super(key: key);
+  }) : assert(content != null || title != null,
+            'Modal must have either title or content');
 
   @override
   Widget build(BuildContext context) {
     final theme = FSTheme.of(context);
     final modalStyle = _ModalStyle(theme, variant, size);
 
-    return Dialog(
-      backgroundColor: backgroundColor ?? modalStyle.backgroundColor,
-      elevation: elevation ?? modalStyle.elevation,
-      shape: RoundedRectangleBorder(
-        borderRadius: borderRadius ?? modalStyle.borderRadius,
-      ),
-      insetPadding: modalStyle.insetPadding as EdgeInsets, // Fixed: Added cast
-      child: Container(
-        constraints: modalStyle.constraints,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header
-            if (title != null || showCloseButton)
-              _buildHeader(context, modalStyle),
-            // Content
-            if (content != null) _buildContent(modalStyle),
-            // Actions
-            if (actions != null && actions!.isNotEmpty)
-              _buildActions(modalStyle),
-          ],
+    return Semantics(
+      label: 'Dialog',
+      hint: 'Double tap to dismiss', // Optional: Add helpful hint
+      child: Dialog(
+        backgroundColor: backgroundColor ?? modalStyle.backgroundColor,
+        elevation: elevation ?? modalStyle.elevation,
+        shape: RoundedRectangleBorder(
+          borderRadius: borderRadius ?? modalStyle.borderRadius,
+        ),
+        insetPadding: _resolveEdgeInsets(modalStyle.insetPadding),
+        child: Container(
+          constraints: modalStyle.constraints,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              if (title != null || showCloseButton)
+                _buildHeader(context, modalStyle),
+
+              // Content
+              if (content != null) _buildContent(modalStyle),
+
+              // Actions
+              if (actions != null && actions!.isNotEmpty)
+                _buildActions(modalStyle),
+            ],
+          ),
         ),
       ),
     );
@@ -93,7 +141,7 @@ class FlutstrapModal extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context, _ModalStyle modalStyle) {
     return Container(
-      padding: modalStyle.headerPadding as EdgeInsets, // Fixed: Added cast
+      padding: _resolveEdgeInsets(modalStyle.headerPadding),
       decoration: BoxDecoration(
         color: modalStyle.headerBackgroundColor,
         borderRadius: modalStyle.headerBorderRadius,
@@ -109,8 +157,11 @@ class FlutstrapModal extends StatelessWidget {
           ),
           if (showCloseButton)
             IconButton(
-              icon:
-                  Icon(Icons.close, size: 20, color: modalStyle.closeIconColor),
+              icon: Icon(
+                Icons.close,
+                size: 20,
+                color: modalStyle.closeIconColor,
+              ),
               onPressed: () {
                 if (dismissible) {
                   Navigator.of(context).pop();
@@ -119,6 +170,7 @@ class FlutstrapModal extends StatelessWidget {
               },
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: 'Close',
             ),
         ],
       ),
@@ -128,8 +180,7 @@ class FlutstrapModal extends StatelessWidget {
   Widget _buildContent(_ModalStyle modalStyle) {
     return Flexible(
       child: Container(
-        padding: (padding ?? modalStyle.contentPadding)
-            as EdgeInsets, // Fixed: Added cast
+        padding: _resolveEdgeInsets(padding ?? modalStyle.contentPadding),
         child: DefaultTextStyle(
           style: modalStyle.contentStyle,
           child: content!,
@@ -140,23 +191,76 @@ class FlutstrapModal extends StatelessWidget {
 
   Widget _buildActions(_ModalStyle modalStyle) {
     return Container(
-      padding: modalStyle.actionsPadding as EdgeInsets, // Fixed: Added cast
+      padding: _resolveEdgeInsets(modalStyle.actionsPadding),
       decoration: BoxDecoration(
         color: modalStyle.actionsBackgroundColor,
         borderRadius: modalStyle.actionsBorderRadius,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
-        children: actions!
-            .map((action) => Padding(
-                  padding:
-                      const EdgeInsets.only(left: 8.0), // Fixed: Using constant
-                  child: action,
-                ))
-            .toList(),
+        children: _buildActionChildren(),
       ),
     );
   }
+
+  List<Widget> _buildActionChildren() {
+    if (actions == null || actions!.isEmpty) return [];
+
+    return List.generate(
+      actions!.length,
+      (index) => Padding(
+        padding: EdgeInsets.only(left: index > 0 ? 8.0 : 0.0),
+        child: actions![index],
+      ),
+    );
+  }
+
+  // ✅ SAFE: Resolve EdgeInsetsGeometry to EdgeInsets
+  EdgeInsets _resolveEdgeInsets(EdgeInsetsGeometry geometry) {
+    return geometry.resolve(TextDirection.ltr);
+  }
+
+  // ✅ CONSISTENT: Add copyWith method
+  FlutstrapModal copyWith({
+    Key? key,
+    Widget? title,
+    Widget? content,
+    List<Widget>? actions,
+    bool? dismissible,
+    bool? showCloseButton,
+    VoidCallback? onDismiss,
+    FSModalVariant? variant,
+    FSModalSize? size,
+    Color? backgroundColor,
+    double? elevation,
+    BorderRadiusGeometry? borderRadius,
+    EdgeInsetsGeometry? padding,
+  }) {
+    return FlutstrapModal(
+      key: key ?? this.key,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      actions: actions ?? this.actions,
+      dismissible: dismissible ?? this.dismissible,
+      showCloseButton: showCloseButton ?? this.showCloseButton,
+      onDismiss: onDismiss ?? this.onDismiss,
+      variant: variant ?? this.variant,
+      size: size ?? this.size,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      elevation: elevation ?? this.elevation,
+      borderRadius: borderRadius ?? this.borderRadius,
+      padding: padding ?? this.padding,
+    );
+  }
+
+  // ✅ CONVENIENCE: Builder methods
+  FlutstrapModal primary() => copyWith(variant: FSModalVariant.primary);
+  FlutstrapModal success() => copyWith(variant: FSModalVariant.success);
+  FlutstrapModal danger() => copyWith(variant: FSModalVariant.danger);
+  FlutstrapModal small() => copyWith(size: FSModalSize.sm);
+  FlutstrapModal large() => copyWith(size: FSModalSize.lg);
+  FlutstrapModal withTitle(Widget title) => copyWith(title: title);
+  FlutstrapModal withContent(Widget content) => copyWith(content: content);
 }
 
 /// Internal style configuration for modals
@@ -167,29 +271,31 @@ class _ModalStyle {
 
   _ModalStyle(this.theme, this.variant, this.size);
 
+  // ✅ OPTIMIZED: Memoize expensive calculations
+  late final Color _headerColor = _getHeaderColor();
+  late final Color _titleColor = _getTitleColor();
+
   Color get backgroundColor => theme.colors.background;
-  Color get headerBackgroundColor => _getHeaderColor();
-  Color get actionsBackgroundColor =>
-      theme.colors.surface.withOpacity(0.1); // Fixed: Replaced surfaceVariant
-  Color get closeIconColor =>
-      theme.colors.onBackground.withOpacity(0.6); // Fixed: Replaced onSurface
+  Color get headerBackgroundColor => _headerColor;
+  Color get actionsBackgroundColor => theme.colors.surface.withOpacity(0.05);
+  Color get closeIconColor => theme.colors.onBackground.withOpacity(0.6);
 
   double get elevation => 24.0;
 
   BorderRadiusGeometry get borderRadius => BorderRadius.circular(12.0);
-  BorderRadiusGeometry get headerBorderRadius => BorderRadius.only(
+  BorderRadiusGeometry get headerBorderRadius => const BorderRadius.only(
         topLeft: Radius.circular(12.0),
         topRight: Radius.circular(12.0),
       );
-  BorderRadiusGeometry get actionsBorderRadius => BorderRadius.only(
+  BorderRadiusGeometry get actionsBorderRadius => const BorderRadius.only(
         bottomLeft: Radius.circular(12.0),
         bottomRight: Radius.circular(12.0),
       );
 
-  EdgeInsetsGeometry get insetPadding => EdgeInsets.all(FSSpacing.lg);
+  EdgeInsetsGeometry get insetPadding => const EdgeInsets.all(24.0);
   EdgeInsetsGeometry get headerPadding => EdgeInsets.symmetric(
         horizontal: _getContentPadding(),
-        vertical: FSSpacing.md,
+        vertical: 16.0,
       );
   EdgeInsetsGeometry get contentPadding => EdgeInsets.all(_getContentPadding());
   EdgeInsetsGeometry get actionsPadding => EdgeInsets.all(_getContentPadding());
@@ -207,21 +313,21 @@ class _ModalStyle {
     }
   }
 
-  TextStyle get titleStyle => theme.typography.headlineSmall!.copyWith(
-        color: _getTitleColor(),
+  TextStyle get titleStyle => theme.typography.headlineSmall.copyWith(
+        color: _titleColor,
         fontWeight: FontWeight.w600,
       );
 
-  TextStyle get contentStyle => theme.typography.bodyMedium!;
+  TextStyle get contentStyle => theme.typography.bodyMedium;
 
   double _getContentPadding() {
     switch (size) {
       case FSModalSize.sm:
-        return FSSpacing.md;
+        return 16.0;
       case FSModalSize.md:
       case FSModalSize.lg:
       case FSModalSize.xl:
-        return FSSpacing.lg;
+        return 24.0;
     }
   }
 
@@ -241,16 +347,16 @@ class _ModalStyle {
       case FSModalVariant.info:
         return colors.info;
       case FSModalVariant.light:
-        return colors.surface; // Fixed: Replaced surfaceVariant
+        return colors.surface;
       case FSModalVariant.dark:
-        return colors.onBackground; // Fixed: Replaced onSurface
+        return colors.onBackground;
     }
   }
 
   Color _getTitleColor() {
     switch (variant) {
       case FSModalVariant.light:
-        return theme.colors.onBackground; // Fixed: Replaced onSurface
+        return theme.colors.onBackground;
       case FSModalVariant.dark:
         return theme.colors.background;
       default:
@@ -277,13 +383,7 @@ class FlutstrapModalService {
       builder: (context) => FlutstrapModal(
         title: Text(title),
         content: Text(content),
-        actions: actions ??
-            [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ],
+        actions: actions ?? _getDefaultActions(context),
         variant: variant,
         size: size,
         dismissible: dismissible,
@@ -415,6 +515,16 @@ class FlutstrapModalService {
       ),
     );
   }
+
+  // ✅ HELPER: Default actions for modal
+  static List<Widget> _getDefaultActions(BuildContext context) {
+    return [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Close'),
+      ),
+    ];
+  }
 }
 
 /// A button that triggers a modal when pressed
@@ -428,7 +538,7 @@ class FlutstrapModalTrigger extends StatelessWidget {
   final bool dismissible;
 
   const FlutstrapModalTrigger({
-    Key? key,
+    super.key,
     required this.child,
     this.modalTitle,
     this.modalContent,
@@ -436,7 +546,7 @@ class FlutstrapModalTrigger extends StatelessWidget {
     this.modalVariant = FSModalVariant.primary,
     this.modalSize = FSModalSize.md,
     this.dismissible = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

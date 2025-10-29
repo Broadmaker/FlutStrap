@@ -1,16 +1,76 @@
 /// Flutstrap Card
 ///
-/// A flexible card component with header, body, and footer sections
-/// inspired by Bootstrap's card system.
+/// A high-performance, flexible card component with comprehensive theming,
+/// multiple variants, and optimized rendering patterns.
+///
+/// {@macro flutstrap_card.usage}
+/// {@macro flutstrap_card.accessibility}
+///
+/// {@template flutstrap_card.usage}
+/// ## Usage Examples
+///
+/// ```dart
+/// // Basic card with text content
+/// FlutstrapCard(
+///   headerText: 'Card Title',
+///   bodyText: 'Card content goes here...',
+///   footerText: 'Footer text',
+/// )
+///
+/// // Interactive card with tap action
+/// FlutstrapCard.interactive(
+///   title: 'Clickable Card',
+///   content: 'Tap me for action',
+///   onTap: () => print('Card tapped'),
+///   trailing: Icon(Icons.chevron_right),
+/// )
+///
+/// // Image card with custom layout
+/// FlutstrapCard.image(
+///   image: Image.network('https://example.com/image.jpg'),
+///   title: 'Beautiful Image',
+///   content: 'This card features an image header',
+///   actions: [
+///     FlutstrapButton(
+///       onPressed: () {},
+///       child: Text('Action'),
+///     ),
+///   ],
+/// )
+/// ```
+/// {@endtemplate}
+///
+/// {@template flutstrap_card.accessibility}
+/// ## Accessibility
+///
+/// - Uses `Semantics` widget for screen readers
+/// - Provides proper semantic labels for card content
+/// - Supports interactive states with proper cursor feedback
+/// - Follows WCAG contrast guidelines
+/// {@endtemplate}
+///
+/// {@category Components}
+/// {@category Layout}
 
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/spacing.dart';
 
+/// Flutstrap Card Variants
+///
+/// Defines the visual style variants for cards
+enum FSCardVariant {
+  elevated,
+  outlined,
+  filled,
+  surface,
+}
+
 /// Flutstrap Card Component
 ///
 /// A container for displaying content and actions in a card format
-/// with optional header, footer, and various styling options.
+/// with comprehensive theming, flexible layouts, and performance optimizations.
+@immutable
 class FlutstrapCard extends StatelessWidget {
   final Widget? header;
   final String? headerText;
@@ -25,10 +85,14 @@ class FlutstrapCard extends StatelessWidget {
   final double borderRadius;
   final double borderWidth;
   final List<BoxShadow>? shadow;
-  final bool outlined;
+  final bool showDividers;
+  final FSCardVariant variant;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool interactive;
 
   const FlutstrapCard({
-    Key? key,
+    super.key,
     this.header,
     this.headerText,
     this.body,
@@ -39,37 +103,121 @@ class FlutstrapCard extends StatelessWidget {
     this.backgroundColor,
     this.borderColor,
     this.elevation,
-    this.borderRadius = 8.0,
-    this.borderWidth = 1.0,
+    this.borderRadius = _CardConstants.defaultBorderRadius,
+    this.borderWidth = _CardConstants.defaultBorderWidth,
     this.shadow,
-    this.outlined = false,
+    this.showDividers = true,
+    this.variant = FSCardVariant.elevated,
+    this.onTap,
+    this.onLongPress,
+    this.interactive = false,
   })  : assert(header == null || headerText == null,
             'Cannot provide both header and headerText'),
         assert(body == null || bodyText == null,
             'Cannot provide both body and bodyText'),
         assert(footer == null || footerText == null,
-            'Cannot provide both footer and footerText'),
-        super(key: key);
+            'Cannot provide both footer and footerText');
+
+  /// Create a card using theme configuration
+  factory FlutstrapCard.themed({
+    Key? key,
+    required BuildContext context,
+    Widget? header,
+    String? headerText,
+    Widget? body,
+    String? bodyText,
+    Widget? footer,
+    String? footerText,
+    EdgeInsetsGeometry? padding,
+    Color? backgroundColor,
+    Color? borderColor,
+    double? elevation,
+    double? borderRadius,
+    double? borderWidth,
+    List<BoxShadow>? shadow,
+    bool? showDividers,
+    FSCardVariant? variant,
+    VoidCallback? onTap,
+    VoidCallback? onLongPress,
+    bool? interactive,
+  }) {
+    final theme = FSTheme.of(context);
+    final computedStyles = _CardComputedStyles(theme, variant);
+
+    return FlutstrapCard(
+      key: key,
+      header: header,
+      headerText: headerText,
+      body: body,
+      bodyText: bodyText,
+      footer: footer,
+      footerText: footerText,
+      padding: padding ?? EdgeInsets.all(FSSpacing.md),
+      backgroundColor: backgroundColor ?? computedStyles.backgroundColor,
+      borderColor: borderColor ?? theme.colors.outline,
+      elevation: elevation ?? computedStyles.elevation,
+      borderRadius: borderRadius ?? _CardConstants.defaultBorderRadius,
+      borderWidth: borderWidth ?? _CardConstants.defaultBorderWidth,
+      shadow: shadow,
+      showDividers: showDividers ?? true,
+      variant: variant ?? FSCardVariant.elevated,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      interactive: interactive ?? false,
+    );
+  }
+
+  // STYLE CACHING FOR PERFORMANCE
+  static final _styleCache = <_CardStyleCacheKey, _CardComputedStyles>{};
 
   @override
   Widget build(BuildContext context) {
     final theme = FSTheme.of(context);
-    final colors = theme.colors;
+    final computedStyles = _getComputedStyles(theme);
+
+    return Semantics(
+      container: true,
+      button: interactive || onTap != null,
+      label: _getSemanticLabel(),
+      child: _buildCard(theme, computedStyles),
+    );
+  }
+
+  Widget _buildCard(FSThemeData theme, _CardComputedStyles computedStyles) {
+    final effectiveBackgroundColor =
+        backgroundColor ?? computedStyles.backgroundColor;
+    final effectiveElevation = elevation ?? computedStyles.elevation;
+    final effectiveBorderColor = borderColor ?? theme.colors.outline;
+
+    Widget cardContent = _buildCardContent(theme);
+
+    // Wrap with gesture detector if interactive
+    if (interactive || onTap != null || onLongPress != null) {
+      cardContent = MouseRegion(
+        cursor:
+            interactive ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        child: GestureDetector(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: cardContent,
+        ),
+      );
+    }
 
     return Card(
-      color: backgroundColor ?? colors.surface,
-      elevation: elevation ?? (outlined ? 0 : 2),
+      color: effectiveBackgroundColor,
+      elevation: effectiveElevation,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(borderRadius),
-        side: outlined
+        side: variant == FSCardVariant.outlined
             ? BorderSide(
-                color: borderColor ?? colors.outline,
+                color: effectiveBorderColor,
                 width: borderWidth,
               )
             : BorderSide.none,
       ),
-      shadowColor: colors.shadow,
-      child: _buildCardContent(theme),
+      shadowColor: theme.colors.shadow,
+      child: cardContent,
     );
   }
 
@@ -78,6 +226,10 @@ class FlutstrapCard extends StatelessWidget {
     final hasBody = body != null || bodyText != null;
     final hasFooter = footer != null || footerText != null;
 
+    if (!hasHeader && !hasBody && !hasFooter) {
+      return const SizedBox.shrink();
+    }
+
     final contentPadding = padding ?? EdgeInsets.all(FSSpacing.md);
 
     return Column(
@@ -85,9 +237,9 @@ class FlutstrapCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (hasHeader) _buildHeader(theme, contentPadding),
-        if (hasHeader && hasBody) _buildDivider(theme),
+        if (hasHeader && hasBody && showDividers) _buildDivider(theme),
         if (hasBody) _buildBody(theme, contentPadding),
-        if (hasBody && hasFooter) _buildDivider(theme),
+        if (hasBody && hasFooter && showDividers) _buildDivider(theme),
         if (hasFooter) _buildFooter(theme, contentPadding),
       ],
     );
@@ -99,6 +251,7 @@ class FlutstrapCard extends StatelessWidget {
       child: DefaultTextStyle(
         style: theme.typography.titleLarge.copyWith(
           fontWeight: FontWeight.w600,
+          color: theme.colors.onBackground,
         ),
         child: header ?? Text(headerText!),
       ),
@@ -109,7 +262,9 @@ class FlutstrapCard extends StatelessWidget {
     return Padding(
       padding: padding,
       child: DefaultTextStyle(
-        style: theme.typography.bodyMedium,
+        style: theme.typography.bodyMedium.copyWith(
+          color: theme.colors.onBackground.withOpacity(0.87),
+        ),
         child: body ?? Text(bodyText!),
       ),
     );
@@ -120,7 +275,7 @@ class FlutstrapCard extends StatelessWidget {
       padding: padding,
       child: DefaultTextStyle(
         style: theme.typography.bodySmall.copyWith(
-          color: theme.colors.onSurface.withOpacity(0.7),
+          color: theme.colors.onBackground.withOpacity(0.6),
         ),
         child: footer ?? Text(footerText!),
       ),
@@ -131,134 +286,98 @@ class FlutstrapCard extends StatelessWidget {
     return Divider(
       height: 1,
       thickness: 1,
-      color: theme.colors.outline.withOpacity(0.1),
+      color: theme.colors.outline.withOpacity(_CardConstants.dividerOpacity),
     );
   }
 
-  // Builder methods for common card patterns
-  FlutstrapCard withHeader(String headerText) {
+  String _getSemanticLabel() {
+    final labels = <String>[];
+    if (headerText != null) labels.add('Header: $headerText');
+    if (bodyText != null) labels.add('Content: $bodyText');
+    if (footerText != null) labels.add('Footer: $footerText');
+    return labels.join(', ');
+  }
+
+  _CardComputedStyles _getComputedStyles(FSThemeData theme) {
+    final cacheKey = _CardStyleCacheKey(variant, theme.brightness);
+    return _styleCache.putIfAbsent(
+        cacheKey, () => _CardComputedStyles(theme, variant));
+  }
+
+  // CONVENIENCE: Builder methods using copyWith
+  FlutstrapCard copyWith({
+    Key? key,
+    Widget? header,
+    String? headerText,
+    Widget? body,
+    String? bodyText,
+    Widget? footer,
+    String? footerText,
+    EdgeInsetsGeometry? padding,
+    Color? backgroundColor,
+    Color? borderColor,
+    double? elevation,
+    double? borderRadius,
+    double? borderWidth,
+    List<BoxShadow>? shadow,
+    bool? showDividers,
+    FSCardVariant? variant,
+    VoidCallback? onTap,
+    VoidCallback? onLongPress,
+    bool? interactive,
+  }) {
     return FlutstrapCard(
-      headerText: headerText,
-      body: body,
-      bodyText: bodyText,
-      footer: footer,
-      footerText: footerText,
-      padding: padding,
-      backgroundColor: backgroundColor,
-      borderColor: borderColor,
-      elevation: elevation,
-      borderRadius: borderRadius,
-      borderWidth: borderWidth,
-      shadow: shadow,
-      outlined: outlined,
+      key: key ?? this.key,
+      header: header ?? this.header,
+      headerText: headerText ?? this.headerText,
+      body: body ?? this.body,
+      bodyText: bodyText ?? this.bodyText,
+      footer: footer ?? this.footer,
+      footerText: footerText ?? this.footerText,
+      padding: padding ?? this.padding,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      borderColor: borderColor ?? this.borderColor,
+      elevation: elevation ?? this.elevation,
+      borderRadius: borderRadius ?? this.borderRadius,
+      borderWidth: borderWidth ?? this.borderWidth,
+      shadow: shadow ?? this.shadow,
+      showDividers: showDividers ?? this.showDividers,
+      variant: variant ?? this.variant,
+      onTap: onTap ?? this.onTap,
+      onLongPress: onLongPress ?? this.onLongPress,
+      interactive: interactive ?? this.interactive,
     );
   }
 
-  FlutstrapCard withBody(String bodyText) {
-    return FlutstrapCard(
-      header: header,
-      headerText: headerText,
-      bodyText: bodyText,
-      footer: footer,
-      footerText: footerText,
-      padding: padding,
-      backgroundColor: backgroundColor,
-      borderColor: borderColor,
-      elevation: elevation,
-      borderRadius: borderRadius,
-      borderWidth: borderWidth,
-      shadow: shadow,
-      outlined: outlined,
-    );
-  }
+  // CONVENIENCE: Builder methods using copyWith
+  FlutstrapCard withHeader(String headerText) =>
+      copyWith(headerText: headerText);
+  FlutstrapCard withBody(String bodyText) => copyWith(bodyText: bodyText);
+  FlutstrapCard withFooter(String footerText) =>
+      copyWith(footerText: footerText);
+  FlutstrapCard withPadding(EdgeInsetsGeometry customPadding) =>
+      copyWith(padding: customPadding);
+  FlutstrapCard withBackground(Color color) => copyWith(backgroundColor: color);
+  FlutstrapCard asOutlined() => copyWith(variant: FSCardVariant.outlined);
+  FlutstrapCard asFilled() => copyWith(variant: FSCardVariant.filled);
+  FlutstrapCard asElevated() => copyWith(variant: FSCardVariant.elevated);
+  FlutstrapCard withoutDividers() => copyWith(showDividers: false);
+  FlutstrapCard asInteractive() => copyWith(interactive: true);
 
-  FlutstrapCard withFooter(String footerText) {
-    return FlutstrapCard(
-      header: header,
-      headerText: headerText,
-      body: body,
-      bodyText: bodyText,
-      footerText: footerText,
-      padding: padding,
-      backgroundColor: backgroundColor,
-      borderColor: borderColor,
-      elevation: elevation,
-      borderRadius: borderRadius,
-      borderWidth: borderWidth,
-      shadow: shadow,
-      outlined: outlined,
-    );
-  }
-
-  FlutstrapCard outlinedCard() {
-    return FlutstrapCard(
-      header: header,
-      headerText: headerText,
-      body: body,
-      bodyText: bodyText,
-      footer: footer,
-      footerText: footerText,
-      padding: padding,
-      backgroundColor: backgroundColor,
-      borderColor: borderColor,
-      elevation: elevation,
-      borderRadius: borderRadius,
-      borderWidth: borderWidth,
-      shadow: shadow,
-      outlined: true,
-    );
-  }
-
-  FlutstrapCard withPadding(EdgeInsetsGeometry customPadding) {
-    return FlutstrapCard(
-      header: header,
-      headerText: headerText,
-      body: body,
-      bodyText: bodyText,
-      footer: footer,
-      footerText: footerText,
-      padding: customPadding,
-      backgroundColor: backgroundColor,
-      borderColor: borderColor,
-      elevation: elevation,
-      borderRadius: borderRadius,
-      borderWidth: borderWidth,
-      shadow: shadow,
-      outlined: outlined,
-    );
-  }
-
-  FlutstrapCard withBackground(Color color) {
-    return FlutstrapCard(
-      header: header,
-      headerText: headerText,
-      body: body,
-      bodyText: bodyText,
-      footer: footer,
-      footerText: footerText,
-      padding: padding,
-      backgroundColor: color,
-      borderColor: borderColor,
-      elevation: elevation,
-      borderRadius: borderRadius,
-      borderWidth: borderWidth,
-      shadow: shadow,
-      outlined: outlined,
-    );
-  }
-
-  // Factory constructors for common card patterns
+  // FACTORY: Common card patterns
   factory FlutstrapCard.simple({
     required String title,
     required String content,
     String? footer,
     EdgeInsetsGeometry? padding,
+    FSCardVariant variant = FSCardVariant.elevated,
   }) {
     return FlutstrapCard(
       headerText: title,
       bodyText: content,
       footerText: footer,
       padding: padding,
+      variant: variant,
     );
   }
 
@@ -268,13 +387,15 @@ class FlutstrapCard extends StatelessWidget {
     String? content,
     List<Widget>? actions,
     EdgeInsetsGeometry? padding,
+    FSCardVariant variant = FSCardVariant.elevated,
   }) {
     return FlutstrapCard(
       header: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(_CardConstants.defaultBorderRadius)),
             child: image,
           ),
           if (title != null) ...[
@@ -297,11 +418,13 @@ class FlutstrapCard extends StatelessWidget {
           ? Padding(
               padding: EdgeInsets.all(FSSpacing.md),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: actions,
               ),
             )
           : null,
       padding: padding,
+      variant: variant,
     );
   }
 
@@ -310,18 +433,105 @@ class FlutstrapCard extends StatelessWidget {
     required String content,
     required List<Widget> actions,
     EdgeInsetsGeometry? padding,
+    FSCardVariant variant = FSCardVariant.elevated,
   }) {
     return FlutstrapCard(
       headerText: title,
       bodyText: content,
       footer: Padding(
-        padding: EdgeInsets.all(padding?.horizontal ?? FSSpacing.md),
+        padding: EdgeInsets.all(FSSpacing.md),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: actions,
         ),
       ),
       padding: padding,
+      variant: variant,
     );
   }
+
+  factory FlutstrapCard.interactive({
+    required String title,
+    required String content,
+    required VoidCallback onTap,
+    Widget? trailing,
+    EdgeInsetsGeometry? padding,
+    FSCardVariant variant = FSCardVariant.elevated,
+  }) {
+    return FlutstrapCard(
+      headerText: title,
+      bodyText: content,
+      footer: trailing != null
+          ? Padding(
+              padding: EdgeInsets.all(FSSpacing.md),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [trailing],
+              ),
+            )
+          : null,
+      padding: padding,
+      variant: variant,
+      onTap: onTap,
+      interactive: true,
+    );
+  }
+}
+
+// COMPUTED STYLES FOR BETTER PERFORMANCE
+class _CardComputedStyles {
+  final FSThemeData theme;
+  final FSCardVariant? variant;
+
+  _CardComputedStyles(this.theme, this.variant);
+
+  Color get backgroundColor {
+    switch (variant) {
+      case FSCardVariant.filled:
+        return theme.colors.surface.withOpacity(_CardConstants.filledOpacity);
+      case FSCardVariant.surface:
+        return theme.colors.surface;
+      case FSCardVariant.outlined:
+      case FSCardVariant.elevated:
+      default:
+        return theme.colors.background;
+    }
+  }
+
+  double get elevation {
+    switch (variant) {
+      case FSCardVariant.elevated:
+        return _CardConstants.elevatedCardElevation;
+      default:
+        return 0.0;
+    }
+  }
+}
+
+// STYLE CACHE KEY FOR EFFICIENT CACHING
+class _CardStyleCacheKey {
+  final FSCardVariant? variant;
+  final Brightness brightness;
+
+  const _CardStyleCacheKey(this.variant, this.brightness);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _CardStyleCacheKey &&
+          runtimeType == other.runtimeType &&
+          variant == other.variant &&
+          brightness == other.brightness;
+
+  @override
+  int get hashCode => Object.hash(variant, brightness);
+}
+
+// CONSTANTS FOR BETTER MAINTAINABILITY
+class _CardConstants {
+  static const double defaultBorderRadius = 8.0;
+  static const double defaultBorderWidth = 1.0;
+  static const double elevatedCardElevation = 2.0;
+  static const double filledOpacity = 0.1;
+  static const double dividerOpacity = 0.1;
 }

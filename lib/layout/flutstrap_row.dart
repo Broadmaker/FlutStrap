@@ -2,6 +2,32 @@
 ///
 /// A responsive row component that creates horizontal layout containers
 /// for organizing columns with consistent spacing and alignment.
+///
+/// ## Usage Examples
+///
+/// ```dart
+/// // Basic row with default gap
+/// FlutstrapRow(
+///   children: [Text('Item 1'), Text('Item 2'), Text('Item 3')],
+///   gap: 16,
+/// )
+///
+/// // Centered row with custom alignment
+/// FlutstrapRow(
+///   children: [Icon(Icons.star), Text('Rating: 4.5')],
+///   mainAxisAlignment: MainAxisAlignment.center,
+///   crossAxisAlignment: CrossAxisAlignment.center,
+///   gap: 8,
+/// ).center()
+///
+/// // Using copyWith for modifications
+/// FlutstrapRow(
+///   children: [/* items */],
+/// ).copyWith(gap: 20, mainAxisAlignment: MainAxisAlignment.spaceBetween)
+/// ```
+///
+/// {@category Layout}
+/// {@category Components}
 
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
@@ -22,7 +48,7 @@ class FlutstrapRow extends StatelessWidget {
   final double? gap;
 
   const FlutstrapRow({
-    Key? key,
+    super.key,
     required this.children,
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.crossAxisAlignment = CrossAxisAlignment.center,
@@ -31,14 +57,16 @@ class FlutstrapRow extends StatelessWidget {
     this.verticalDirection = VerticalDirection.down,
     this.textBaseline,
     this.gap,
-  }) : super(key: key);
+  }) : super(); // ✅ REMOVE ASSERT FROM INITIALIZER LIST
 
   @override
   Widget build(BuildContext context) {
-    final theme = FSTheme.of(context);
+    // ✅ MOVE ASSERT TO BUILD METHOD
+    assert(children.isNotEmpty, 'Row must have at least one child');
+
     final rowGap = gap ?? FSSpacing.md;
 
-    // If no gap, use regular Row
+    // Use regular Row for better performance when no gap is needed
     if (rowGap == 0) {
       return Row(
         mainAxisAlignment: mainAxisAlignment,
@@ -51,7 +79,7 @@ class FlutstrapRow extends StatelessWidget {
       );
     }
 
-    // Use Wrap with spacing for gap support (simpler than dealing with margin hacks)
+    // Use Wrap with spacing for gap support
     return Wrap(
       direction: Axis.horizontal,
       spacing: rowGap,
@@ -94,31 +122,63 @@ class FlutstrapRow extends StatelessWidget {
     }
   }
 
-  /// Create a row with no gap between children
-  FlutstrapRow noGap() {
+  // ✅ CONSISTENT COPYWITH PATTERN
+  FlutstrapRow copyWith({
+    Key? key,
+    List<Widget>? children,
+    MainAxisAlignment? mainAxisAlignment,
+    CrossAxisAlignment? crossAxisAlignment,
+    MainAxisSize? mainAxisSize,
+    TextDirection? textDirection,
+    VerticalDirection? verticalDirection,
+    TextBaseline? textBaseline,
+    double? gap,
+  }) {
     return FlutstrapRow(
-      children: children,
-      mainAxisAlignment: mainAxisAlignment,
-      crossAxisAlignment: crossAxisAlignment,
-      mainAxisSize: mainAxisSize,
-      textDirection: textDirection,
-      verticalDirection: verticalDirection,
-      textBaseline: textBaseline,
-      gap: 0,
+      key: key ?? this.key,
+      children: children ?? this.children,
+      mainAxisAlignment: mainAxisAlignment ?? this.mainAxisAlignment,
+      crossAxisAlignment: crossAxisAlignment ?? this.crossAxisAlignment,
+      mainAxisSize: mainAxisSize ?? this.mainAxisSize,
+      textDirection: textDirection ?? this.textDirection,
+      verticalDirection: verticalDirection ?? this.verticalDirection,
+      textBaseline: textBaseline ?? this.textBaseline,
+      gap: gap ?? this.gap,
     );
   }
 
-  /// Create a row with custom gap
-  FlutstrapRow withGap(double customGap) {
-    return FlutstrapRow(
-      children: children,
-      mainAxisAlignment: mainAxisAlignment,
-      crossAxisAlignment: crossAxisAlignment,
-      mainAxisSize: mainAxisSize,
-      textDirection: textDirection,
-      verticalDirection: verticalDirection,
-      textBaseline: textBaseline,
-      gap: customGap,
-    );
-  }
+  // ✅ CONVENIENCE METHODS USING COPYWITH
+  FlutstrapRow noGap() => copyWith(gap: 0);
+  FlutstrapRow withGap(double customGap) => copyWith(gap: customGap);
+
+  FlutstrapRow center() => copyWith(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+      );
+
+  FlutstrapRow spaceBetween() => copyWith(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      );
+
+  FlutstrapRow spaceAround() => copyWith(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      );
+
+  FlutstrapRow spaceEvenly() => copyWith(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      );
+
+  FlutstrapRow start() => copyWith(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+      );
+
+  FlutstrapRow end() => copyWith(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+      );
+
+  FlutstrapRow stretch() => copyWith(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+      );
 }

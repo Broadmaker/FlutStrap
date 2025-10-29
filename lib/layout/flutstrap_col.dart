@@ -2,6 +2,34 @@
 ///
 /// A responsive column component for creating flexible grid columns
 /// with breakpoint-based sizing.
+///
+/// ## Usage Examples
+///
+/// ```dart
+/// // Responsive column that adapts to screen size
+/// FlutstrapCol(
+///   size: FSColSize(xs: 12, sm: 6, md: 4, lg: 3),
+///   child: Card(child: Text('Responsive Card')),
+/// )
+///
+/// // Full width column on all screens
+/// FlutstrapCol(
+///   size: FSColSize.all(12),
+///   child: Container(color: Colors.blue, height: 100),
+/// ).fullWidth()
+///
+/// // Using copyWith for modifications
+/// FlutstrapCol(
+///   child: Text('Original'),
+///   padding: EdgeInsets.all(16),
+/// ).copyWith(
+///   size: FSColSize(xs: 6, md: 4),
+///   margin: EdgeInsets.only(bottom: 16),
+/// )
+/// ```
+///
+/// {@category Layout}
+/// {@category Components}
 
 import 'package:flutter/material.dart';
 import '../core/breakpoints.dart';
@@ -27,7 +55,7 @@ class FSColSize {
     this.lg,
     this.xl,
     this.xxl,
-  });
+  }) : assert(xs >= 1 && xs <= 12, 'XS column size must be between 1 and 12');
 
   /// Create a column size that spans all breakpoints
   const FSColSize.all(int size)
@@ -36,7 +64,8 @@ class FSColSize {
         md = size,
         lg = size,
         xl = size,
-        xxl = size;
+        xxl = size,
+        assert(size >= 1 && size <= 12, 'Column size must be between 1 and 12');
 
   /// Get the size for a specific breakpoint
   int? getSize(FSBreakpoint breakpoint) {
@@ -55,6 +84,26 @@ class FSColSize {
         return xxl ?? xl ?? lg ?? md ?? sm ?? xs;
     }
   }
+
+  // ✅ EQUALITY AND HASHCODE FOR BETTER PERFORMANCE
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSColSize &&
+          runtimeType == other.runtimeType &&
+          xs == other.xs &&
+          sm == other.sm &&
+          md == other.md &&
+          lg == other.lg &&
+          xl == other.xl &&
+          xxl == other.xxl;
+
+  @override
+  int get hashCode => Object.hash(xs, sm, md, lg, xl, xxl);
+
+  @override
+  String toString() =>
+      'FSColSize(xs: $xs, sm: $sm, md: $md, lg: $lg, xl: $xl, xxl: $xxl)';
 }
 
 /// Flutstrap Column Component
@@ -69,32 +118,55 @@ class FlutstrapCol extends StatelessWidget {
   final AlignmentGeometry? alignment;
 
   const FlutstrapCol({
-    Key? key,
+    super.key,
     required this.child,
     this.size = const FSColSize(),
     this.padding,
     this.margin,
     this.alignment,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    FSTheme.of(context);
-    final responsive = FSResponsive.of(MediaQuery.of(context).size.width);
-    final currentSize = size.getSize(responsive.breakpoint) ?? 12;
+    return LayoutBuilder(
+      // ✅ USE LAYOUTBUILDER FOR EFFICIENT RESPONSIVE CALCULATIONS
+      builder: (context, constraints) {
+        final responsive = FSResponsive.of(constraints.maxWidth);
+        final currentSize = size.getSize(responsive.breakpoint) ?? 12;
 
-    return Container(
-      padding: padding ?? EdgeInsets.all(FSSpacing.md),
-      margin: margin,
-      alignment: alignment,
-      child: FractionallySizedBox(
-        widthFactor: currentSize / 12, // 12-column grid system
-        child: child,
-      ),
+        return Container(
+          padding: padding,
+          margin: margin,
+          alignment: alignment,
+          child: FractionallySizedBox(
+            widthFactor: currentSize / 12, // 12-column grid system
+            child: child,
+          ),
+        );
+      },
     );
   }
 
-  /// Create a column with specific sizes for all breakpoints
+  // ✅ CONSISTENT COPYWITH PATTERN
+  FlutstrapCol copyWith({
+    Key? key,
+    Widget? child,
+    FSColSize? size,
+    EdgeInsetsGeometry? padding,
+    EdgeInsetsGeometry? margin,
+    AlignmentGeometry? alignment,
+  }) {
+    return FlutstrapCol(
+      key: key ?? this.key,
+      child: child ?? this.child,
+      size: size ?? this.size,
+      padding: padding ?? this.padding,
+      margin: margin ?? this.margin,
+      alignment: alignment ?? this.alignment,
+    );
+  }
+
+  // ✅ CONVENIENCE METHODS USING COPYWITH
   FlutstrapCol withSize({
     int xs = 12,
     int? sm,
@@ -103,63 +175,36 @@ class FlutstrapCol extends StatelessWidget {
     int? xl,
     int? xxl,
   }) {
-    return FlutstrapCol(
-      child: child,
-      size: FSColSize(
-        xs: xs,
-        sm: sm,
-        md: md,
-        lg: lg,
-        xl: xl,
-        xxl: xxl,
-      ),
-      padding: padding,
-      margin: margin,
-      alignment: alignment,
-    );
+    return copyWith(
+        size: FSColSize(
+      xs: xs,
+      sm: sm,
+      md: md,
+      lg: lg,
+      xl: xl,
+      xxl: xxl,
+    ));
   }
 
-  /// Create a column that spans full width on all breakpoints
-  FlutstrapCol fullWidth() {
-    return FlutstrapCol(
-      child: child,
-      size: const FSColSize.all(12),
-      padding: padding,
-      margin: margin,
-      alignment: alignment,
-    );
-  }
+  FlutstrapCol fullWidth() => copyWith(size: const FSColSize.all(12));
+  FlutstrapCol halfWidth() => copyWith(size: const FSColSize.all(6));
+  FlutstrapCol oneThirdWidth() => copyWith(size: const FSColSize.all(4));
+  FlutstrapCol twoThirdsWidth() => copyWith(size: const FSColSize.all(8));
+  FlutstrapCol oneFourthWidth() => copyWith(size: const FSColSize.all(3));
+  FlutstrapCol threeFourthsWidth() => copyWith(size: const FSColSize.all(9));
 
-  /// Create a column that spans half width on all breakpoints
-  FlutstrapCol halfWidth() {
-    return FlutstrapCol(
-      child: child,
-      size: const FSColSize.all(6),
-      padding: padding,
-      margin: margin,
-      alignment: alignment,
-    );
-  }
+  FlutstrapCol withPadding(EdgeInsetsGeometry customPadding) =>
+      copyWith(padding: customPadding);
+  FlutstrapCol withMargin(EdgeInsetsGeometry customMargin) =>
+      copyWith(margin: customMargin);
+  FlutstrapCol withAlignment(AlignmentGeometry customAlignment) =>
+      copyWith(alignment: customAlignment);
 
-  /// Create a column that spans one third width on all breakpoints
-  FlutstrapCol oneThirdWidth() {
-    return FlutstrapCol(
-      child: child,
-      size: const FSColSize.all(4),
-      padding: padding,
-      margin: margin,
-      alignment: alignment,
-    );
-  }
-
-  /// Create a column that spans two thirds width on all breakpoints
-  FlutstrapCol twoThirdsWidth() {
-    return FlutstrapCol(
-      child: child,
-      size: const FSColSize.all(8),
-      padding: padding,
-      margin: margin,
-      alignment: alignment,
-    );
-  }
+  // ✅ MOBILE-FIRST RESPONSIVE CONVENIENCE METHODS
+  FlutstrapCol responsiveHalf() =>
+      copyWith(size: FSColSize(xs: 12, sm: 6, md: 6, lg: 6));
+  FlutstrapCol responsiveThird() =>
+      copyWith(size: FSColSize(xs: 12, sm: 6, md: 4, lg: 4));
+  FlutstrapCol responsiveFourth() =>
+      copyWith(size: FSColSize(xs: 12, sm: 6, md: 3, lg: 3));
 }

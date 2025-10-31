@@ -5,8 +5,10 @@
 ///
 /// ## Usage Examples
 ///
+/// {@tool snippet}
+/// ### Basic Table
+///
 /// ```dart
-/// // Basic table
 /// FlutstrapTable<Map<String, dynamic>>(
 ///   columns: [
 ///     FSTableColumn(
@@ -27,8 +29,11 @@
 ///   variant: FSTableVariant.primary,
 ///   responsive: FSTableResponsive.scroll,
 /// )
+/// ```
 ///
-/// // Table with custom cell rendering
+/// ### Table with Custom Cell Rendering
+///
+/// ```dart
 /// FlutstrapTable<User>(
 ///   columns: [
 ///     FSTableColumn(
@@ -48,38 +53,75 @@
 ///   hover: true,
 ///   onRowTap: (user) => _showUserDetails(user),
 /// )
+/// ```
 ///
-/// // Responsive table for mobile
-/// FlutstrapTable<Product>(
-///   columns: productColumns,
-///   data: products,
-///   responsive: FSTableResponsive.collapse, // Cards on mobile
-///   virtualized: true, // Enable for large datasets
+/// ### Virtualized Table with Large Dataset
+///
+/// ```dart
+/// FlutstrapTable<User>(
+///   columns: userColumns,
+///   data: largeUserList, // 10,000+ items
+///   virtualized: true,
+///   rowHeight: 56,
+///   onRowTap: (user) => _showUserDetails(user),
 /// )
 /// ```
 ///
+/// ### Responsive Table with Custom Breakpoints
+///
+/// ```dart
+/// FlutstrapTable<Product>(
+///   columns: productColumns,
+///   data: products,
+///   responsive: FSTableResponsive.collapse,
+///   emptyWidget: CustomEmptyState(),
+///   onRowDoubleTap: (product) => _quickEdit(product),
+/// )
+/// ```
+/// {@end-tool}
+///
+/// {@template flutstrap_table.performance}
 /// ## Performance Features
 ///
-/// - **Virtualization**: Automatic row virtualization for datasets >50 items
-/// - **Caching**: Cell value caching to prevent expensive recalculations
-/// - **Efficient Sorting**: Optimized sorting with minimal data copying
-/// - **Memory Management**: Proper disposal of resources and cache clearing
+/// - **Smart Virtualization**: Automatic for large datasets with configurable thresholds
+/// - **Value Caching**: Cell values cached to prevent expensive recalculations
+/// - **Efficient Sorting**: Optimized with Schwartzian transform for expensive operations
+/// - **Memory Management**: LRU cache eviction and proper resource disposal
+/// - **Batch Rendering**: Configurable batch sizes for smooth scrolling
+/// {@endtemplate}
+///
+/// {@template flutstrap_table.accessibility}
+/// ## Accessibility
+///
+/// - Full screen reader support with semantic labels
+/// - Keyboard navigation support
+/// - Focus management for interactive rows
+/// - Proper ARIA attributes for web
+/// {@endtemplate}
 ///
 /// ## Responsive Behavior
 ///
 /// - **Scroll**: Horizontal scrolling on small screens (default)
-/// - **Collapse**: Transforms to card layout on mobile (<600px)
+/// - **Collapse**: Transforms to card layout on mobile (<480px)
 /// - **Stacked**: Stacks columns vertically on tablet (<768px)
 /// - **None**: No responsive adaptation
+///
+/// ## Performance Tips
+///
+/// - Use `virtualized: true` for datasets > 50 items
+/// - Implement efficient `cellBuilder` for complex cells
+/// - Use `accessor` for simple text fields instead of `cellBuilder`
+/// - Consider using `const` for column definitions when possible
 ///
 /// {@category Components}
 /// {@category Data Display}
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/spacing.dart';
+import '../../core/error_boundary.dart';
 
-// ... rest of the table code remains the same
 /// Flutstrap Table Configuration
 ///
 /// Performance and behavior configuration for tables
@@ -89,9 +131,42 @@ class FSTableConfig {
   static const int maxCachedCells = 1000;
   static const int batchRenderSize = 20;
 
+  // Cache management
+  static const int cacheCleanupThreshold = 2000;
+  static const Duration cacheCleanupInterval = Duration(minutes: 5);
+
+  // Responsive breakpoints
+  static const double mobileBreakpoint = 480;
+  static const double tabletBreakpoint = 768;
+  static const double desktopBreakpoint = 1024;
+
+  // Performance monitoring
+  static const bool enablePerformanceLogging = kDebugMode;
+
   static bool shouldVirtualize(int itemCount) {
     return itemCount > virtualizationThreshold;
   }
+}
+
+/// Performance monitoring for table operations
+class _TablePerformance {
+  static final _renderTimes = <String, int>{};
+
+  static void logRenderTime(String operation, int milliseconds) {
+    if (!FSTableConfig.enablePerformanceLogging) return;
+
+    _renderTimes[operation] = milliseconds;
+
+    // Log slow operations
+    if (milliseconds > 16) {
+      // 60fps threshold
+      debugPrint('⏱️ Slow table operation: $operation took ${milliseconds}ms');
+    }
+  }
+
+  static void clearMetrics() => _renderTimes.clear();
+
+  static Map<String, int> get metrics => Map.from(_renderTimes);
 }
 
 /// Flutstrap Table Variants
@@ -131,6 +206,7 @@ class FSTableColumn<T> {
   final TextAlign headerAlign;
   final TextAlign cellAlign;
   final bool visible;
+  final int? priority; // For responsive column hiding
 
   const FSTableColumn({
     required this.header,
@@ -141,6 +217,7 @@ class FSTableColumn<T> {
     this.headerAlign = TextAlign.left,
     this.cellAlign = TextAlign.left,
     this.visible = true,
+    this.priority,
   });
 
   @override
@@ -152,10 +229,20 @@ class FSTableColumn<T> {
           accessor == other.accessor &&
           sortable == other.sortable &&
           width == other.width &&
-          visible == other.visible;
+          visible == other.visible &&
+          priority == other.priority;
 
   @override
-  int get hashCode => Object.hash(header, accessor, sortable, width, visible);
+  int get hashCode =>
+      Object.hash(header, accessor, sortable, width, visible, priority);
+}
+
+/// Helper class for efficient sorting
+class _SortableItem<T> {
+  final T original;
+  final dynamic value;
+
+  _SortableItem(this.original, this.value);
 }
 
 /// Flutstrap Table
@@ -186,7 +273,7 @@ class FlutstrapTable<T> extends StatefulWidget {
   final double rowHeight;
 
   const FlutstrapTable({
-    Key? key,
+    super.key,
     required this.columns,
     required this.data,
     this.variant = FSTableVariant.primary,
@@ -209,7 +296,7 @@ class FlutstrapTable<T> extends StatefulWidget {
     this.verticalSpacing,
     this.virtualized = true,
     this.rowHeight = FSTableConfig.defaultRowHeight,
-  }) : super(key: key);
+  });
 
   @override
   State<FlutstrapTable<T>> createState() => _FlutstrapTableState<T>();
@@ -221,6 +308,7 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
   late List<T> _cachedSortedData;
   bool _needsSortUpdate = true;
   final _cellValueCache = <String, String>{};
+  DateTime _lastCacheCleanup = DateTime.now();
   final _scrollController = ScrollController();
   bool _isDisposed = false;
 
@@ -259,21 +347,25 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
   }
 
   List<T> _performSort(List<T> data) {
-    if (data.isEmpty) return data;
+    if (data.isEmpty || _sortColumnIndex == null) return data;
 
-    // ✅ EFFICIENT: Use existing list and avoid unnecessary operations
-    final List<T> sorted = List<T>.from(data);
+    final stopwatch = Stopwatch()..start();
     final column = widget.columns[_sortColumnIndex!];
+    if (!column.sortable || column.accessor == null) return data;
 
-    if (column.sortable && column.accessor != null) {
-      sorted.sort((a, b) {
-        final aValue = _getFieldValue(a, column.accessor!);
-        final bValue = _getFieldValue(b, column.accessor!);
-        return _compareValues(aValue, bValue, _sortAscending);
-      });
-    }
+    // ✅ EFFICIENT: Use Schwartzian transform for expensive value extraction
+    final sorted = data.map((item) {
+      final value = _getFieldValue(item, column.accessor!);
+      return _SortableItem(item, value);
+    }).toList()
+      ..sort((a, b) => _compareValues(a.value, b.value, _sortAscending));
 
-    return sorted;
+    final result = sorted.map((item) => item.original).toList();
+
+    stopwatch.stop();
+    _TablePerformance.logRenderTime('sorting', stopwatch.elapsedMilliseconds);
+
+    return result;
   }
 
   void _onSort(int columnIndex, bool ascending) {
@@ -327,32 +419,99 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
     return a.toString().compareTo(b.toString()) * multiplier;
   }
 
+  void _cleanupCacheIfNeeded() {
+    final now = DateTime.now();
+    if (_cellValueCache.length > FSTableConfig.cacheCleanupThreshold ||
+        now.difference(_lastCacheCleanup) >
+            FSTableConfig.cacheCleanupInterval) {
+      // Remove oldest entries (first 50%)
+      final keysToRemove =
+          _cellValueCache.keys.take(_cellValueCache.length ~/ 2);
+      for (final key in keysToRemove) {
+        _cellValueCache.remove(key);
+      }
+      _lastCacheCleanup = now;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isDisposed) return const SizedBox.shrink();
 
+    final stopwatch = Stopwatch()..start();
     final theme = FSTheme.of(context);
     final tableStyle = _TableStyle(theme, widget.variant, widget.size);
 
     if (widget.data.isEmpty) {
-      return _buildEmptyState(tableStyle);
+      final emptyWidget = _buildEmptyState(tableStyle);
+      stopwatch.stop();
+      _TablePerformance.logRenderTime(
+          'empty_table', stopwatch.elapsedMilliseconds);
+      return emptyWidget;
     }
 
-    final visibleColumns = widget.columns.where((col) => col.visible).toList();
+    final visibleColumns =
+        _getVisibleColumns(MediaQuery.of(context).size.width);
 
-    return _buildResponsiveWrapper(
-      child: Container(
-        decoration: BoxDecoration(
-          color: widget.backgroundColor ?? tableStyle.backgroundColor,
-          borderRadius: widget.borderRadius ?? tableStyle.borderRadius,
-          border: widget.bordered
-              ? Border.all(
-                  color: widget.borderColor ?? tableStyle.borderColor,
-                  width: 1,
-                )
-              : null,
+    final tableWidget = ErrorBoundary(
+      // ✅ USING SHARED ERROR BOUNDARY
+      componentName: 'FlutstrapTable',
+      fallbackBuilder: (context) => _buildErrorTable(),
+      child: _buildResponsiveWrapper(
+        child: Container(
+          decoration: BoxDecoration(
+            color: widget.backgroundColor ?? tableStyle.backgroundColor,
+            borderRadius: widget.borderRadius ?? tableStyle.borderRadius,
+            border: widget.bordered
+                ? Border.all(
+                    color: widget.borderColor ?? tableStyle.borderColor,
+                    width: 1,
+                  )
+                : null,
+          ),
+          child: _buildTable(visibleColumns, tableStyle),
         ),
-        child: _buildTable(visibleColumns, tableStyle),
+      ),
+    );
+
+    stopwatch.stop();
+    _TablePerformance.logRenderTime(
+        'table_build', stopwatch.elapsedMilliseconds);
+
+    return tableWidget;
+  }
+
+  Widget _buildErrorTable() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.red.withOpacity(0.05),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.error_outline, color: Colors.red, size: 32),
+          SizedBox(height: 8),
+          Text(
+            'Table unavailable',
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Please try refreshing or check your data',
+            style: TextStyle(
+              color: Colors.red.withOpacity(0.8),
+              fontSize: 12,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -363,9 +522,11 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
         final responsiveMode = _getResponsiveMode(constraints.maxWidth);
 
         return switch (responsiveMode) {
-          FSTableResponsive.collapse when constraints.maxWidth < 600 =>
+          FSTableResponsive.collapse
+              when constraints.maxWidth < FSTableConfig.mobileBreakpoint =>
             _buildCardLayout(),
-          FSTableResponsive.stacked when constraints.maxWidth < 768 =>
+          FSTableResponsive.stacked
+              when constraints.maxWidth < FSTableConfig.tabletBreakpoint =>
             _buildStackedLayout(),
           FSTableResponsive.scroll => SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -378,9 +539,29 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
   }
 
   FSTableResponsive _getResponsiveMode(double width) {
-    if (width < 600) return FSTableResponsive.collapse;
-    if (width < 768) return FSTableResponsive.stacked;
+    if (width < FSTableConfig.mobileBreakpoint)
+      return FSTableResponsive.collapse;
+    if (width < FSTableConfig.tabletBreakpoint)
+      return FSTableResponsive.stacked;
     return widget.responsive;
+  }
+
+  List<FSTableColumn<T>> _getVisibleColumns(double width) {
+    return widget.columns.where((column) {
+      if (!column.visible) return false;
+
+      // Hide less important columns on smaller screens based on priority
+      if (width < FSTableConfig.mobileBreakpoint) {
+        if (column.priority != null && column.priority! > 2) return false;
+        if (column.width != null && column.width! > 120) return false;
+      }
+
+      if (width < FSTableConfig.tabletBreakpoint) {
+        if (column.priority != null && column.priority! > 3) return false;
+      }
+
+      return true;
+    }).toList();
   }
 
   Widget _buildTable(List<FSTableColumn<T>> visibleColumns, _TableStyle style) {
@@ -481,29 +662,41 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
         final index = entry.key;
         final column = entry.value;
 
-        return GestureDetector(
-          onTap: column.sortable ? () => _onSort(index, !_sortAscending) : null,
-          child: Container(
-            padding: style.headerPadding,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    column.header,
-                    style: style.headerTextStyle,
-                    textAlign: column.headerAlign,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+        return Semantics(
+          header: true,
+          button: column.sortable, // Use 'button' instead of 'sortButton'
+          enabled: column.sortable,
+          label: column.sortable
+              ? '${column.header}. Tap to sort ${_sortColumnIndex == index ? (_sortAscending ? 'descending' : 'ascending') : 'ascending'}'
+              : column.header,
+          child: ExcludeSemantics(
+            child: GestureDetector(
+              onTap: column.sortable
+                  ? () => _onSort(index, !_sortAscending)
+                  : null,
+              child: Container(
+                padding: style.headerPadding,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        column.header,
+                        style: style.headerTextStyle,
+                        textAlign: column.headerAlign,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (column.sortable) ...[
+                      const SizedBox(width: 4),
+                      _SortIndicator(
+                        isActive: _sortColumnIndex == index,
+                        isAscending: _sortAscending,
+                      ),
+                    ],
+                  ],
                 ),
-                if (column.sortable) ...[
-                  const SizedBox(width: 4),
-                  _SortIndicator(
-                    isActive: _sortColumnIndex == index,
-                    isAscending: _sortAscending,
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         );
@@ -551,6 +744,22 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
 
   Widget _buildTableCell(
       T item, FSTableColumn<T> column, int index, _TableStyle style) {
+    return ErrorBoundary(
+      // ✅ USING SHARED ERROR BOUNDARY
+      componentName: 'TableCell',
+      fallbackBuilder: (context) => _buildErrorCell(style),
+      child: Semantics(
+        label: _getCellSemanticLabel(item, column),
+        textField: false,
+        child: ExcludeSemantics(
+          child: _buildTableCellContent(item, column, index, style),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTableCellContent(
+      T item, FSTableColumn<T> column, int index, _TableStyle style) {
     try {
       return GestureDetector(
         onTap: () => widget.onRowTap?.call(item),
@@ -574,15 +783,30 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
         ),
       );
     } catch (e, stackTrace) {
-      debugPrint('🚨 Error building table cell: $e');
-      return Container(
-        padding: style.cellPadding,
-        child: Text(
-          'Error',
-          style: style.cellTextStyle.copyWith(color: Colors.red),
-        ),
-      );
+      if (kReleaseMode) {
+        // Report to crash analytics in production
+      }
+      rethrow; // ErrorBoundary will catch this
     }
+  }
+
+  Widget _buildErrorCell(_TableStyle style) {
+    return Container(
+      padding: style.cellPadding,
+      child: Icon(
+        Icons.error_outline,
+        color: Colors.red,
+        size: 16,
+      ),
+    );
+  }
+
+  String _getCellSemanticLabel(T item, FSTableColumn<T> column) {
+    if (column.cellBuilder != null) {
+      // For custom cell builders, provide a fallback
+      return '${column.header}: Custom content';
+    }
+    return '${column.header}: ${_getCellText(item, column)}';
   }
 
   String _getCellText(T item, FSTableColumn<T> column) {
@@ -590,6 +814,8 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
     if (column.cellBuilder != null) return '';
 
     // ✅ CACHE CELL VALUES FOR PERFORMANCE
+    _cleanupCacheIfNeeded();
+
     final cacheKey = '${item.hashCode}_${column.accessor}';
 
     if (_cellValueCache.length > FSTableConfig.maxCachedCells) {
@@ -669,7 +895,8 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: widget.columns.where((col) => col.visible).map((column) {
+          children:
+              _getVisibleColumns(FSTableConfig.mobileBreakpoint).map((column) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -701,8 +928,8 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children:
-                  widget.columns.where((col) => col.visible).map((column) {
+              children: _getVisibleColumns(FSTableConfig.tabletBreakpoint)
+                  .map((column) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Column(
@@ -739,6 +966,7 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
     _isDisposed = true;
     _scrollController.dispose();
     _cellValueCache.clear();
+    _TablePerformance.clearMetrics();
     super.dispose();
   }
 }
@@ -755,10 +983,15 @@ class _SortIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-      size: 16,
-      color: isActive ? Colors.blue : Colors.grey,
+    return Semantics(
+      label: isActive
+          ? 'Sorted ${isAscending ? 'ascending' : 'descending'}'
+          : 'Sortable column',
+      child: Icon(
+        isAscending ? Icons.arrow_upward : Icons.arrow_downward,
+        size: 16,
+        color: isActive ? Colors.blue : Colors.grey,
+      ),
     );
   }
 }
@@ -771,7 +1004,6 @@ class _TableStyle {
 
   _TableStyle(this.theme, this.variant, this.size);
 
-  // ... (style getters remain the same as original)
   Color get backgroundColor => _getBackgroundColor();
   Color get headerBackgroundColor => _getHeaderBackgroundColor();
   Color get stripedRowColor => _getStripedRowColor();

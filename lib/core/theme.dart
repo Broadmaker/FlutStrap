@@ -1,40 +1,54 @@
-/// Flutstrap Theming System
-///
-/// {@category Theming}
-/// {@category Foundation}
-///
-/// Provides a comprehensive theming system with:
-/// - 🎨 Color schemes (light/dark, seed-based)
-/// - 📝 Typography scale (Material 3 compliant)
-/// - 📏 Consistent spacing system
-/// - 🎬 Animation configurations
-/// - 📱 Responsive breakpoints
-///
-/// ## Usage
-///
-/// ```dart
-/// // Basic usage with default theme
-/// FSTheme(
-///   data: FSThemeData.light(),
-///   child: MyApp(),
-/// )
-///
-/// // Custom seed color
-/// FSTheme(
-///   data: FSThemeData.dark(seedColor: Colors.blue),
-///   child: MyApp(),
-/// )
-/// ```
-///
-/// ## Theming Principles
-/// - **Consistency**: Uniform design tokens across components
-/// - **Accessibility**: WCAG compliant color contrasts
-/// - **Flexibility**: Easy customization and extension
-/// - **Performance**: Efficient theme propagation and caching
+// Flutstrap Theming System
+//
+// {@category Theming}
+// {@category Foundation}
+//
+// Provides a comprehensive theming system with:
+// - 🎨 Color schemes (light/dark, seed-based)
+// - 📝 Typography scale (Material 3 compliant)
+// - 📏 Consistent spacing system
+// - 🎬 Animation configurations
+// - 📱 Responsive breakpoints
+//
+// ## Usage
+//
+// {@tool snippet}
+// ### Basic Usage
+//
+// ```dart
+// // Simple light theme
+// FSTheme(
+//   data: FSThemeData.light(),
+//   child: MyApp(),
+// )
+//
+// // Custom seed color with dark mode
+// FSTheme(
+//   data: FSThemeData.dark(seedColor: Colors.blue),
+//   child: MyApp(),
+// )
+//
+// // Material 3 theming
+// FSTheme(
+//   data: FSThemeData.material3(seedColor: Colors.purple),
+//   child: MyApp(),
+// )
+// ```
+// {@end-tool}
+//
+// ## Theming Principles
+// - **Consistency**: Uniform design tokens across components
+// - **Accessibility**: WCAG compliant color contrasts
+// - **Flexibility**: Easy customization and extension
+// - **Performance**: Efficient theme propagation and caching
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'breakpoints.dart';
 import 'spacing.dart';
+
+// ✅ IMPORT: Use the animation system's FSAnimation to avoid conflicts
+import '../animations/animation_types.dart';
 
 /// Flutstrap Color Scheme
 ///
@@ -221,23 +235,27 @@ class FSColorScheme {
     );
   }
 
-  // ✅ EQUALITY AND HASHCODE FOR PROPER THEME COMPARISON
+  // ✅ SIMPLIFIED EQUALITY AND HASHCODE FOR PROPER THEME COMPARISON
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FSColorScheme &&
-          runtimeType == other.runtimeType &&
-          primary == other.primary &&
-          secondary == other.secondary &&
-          background == other.background &&
-          onBackground == other.onBackground;
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is FSColorScheme &&
+            runtimeType == other.runtimeType &&
+            primary == other.primary &&
+            secondary == other.secondary &&
+            background == other.background &&
+            onBackground == other.onBackground;
+  }
 
   @override
   int get hashCode => Object.hash(primary, secondary, background, onBackground);
 
+  // ✅ SIMPLIFIED toString WITHOUT DIAGNOSTICABLE COMPLEXITY
   @override
-  String toString() =>
-      'FSColorScheme(primary: $primary, brightness: ${onBackground.computeLuminance() > 0.5 ? 'light' : 'dark'})';
+  String toString() {
+    final brightness = onBackground.computeLuminance() > 0.5 ? 'light' : 'dark';
+    return 'FSColorScheme(primary: $primary, brightness: $brightness)';
+  }
 }
 
 /// Flutstrap Typography System
@@ -281,97 +299,92 @@ class FSTypography {
 
   /// Create typography from base text style with font fallbacks
   factory FSTypography.fromBaseTextStyle(TextStyle base) {
-    // ✅ USE FONT FALLBACK CHAIN FOR BETTER COMPATIBILITY
-    final effectiveStyle = base.copyWith(
-      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
-    );
-
     return FSTypography(
-      displayLarge: effectiveStyle.copyWith(
+      displayLarge: base.copyWith(
         fontSize: 57,
         fontWeight: FontWeight.w400,
         height: 1.12,
         letterSpacing: -0.25,
       ),
-      displayMedium: effectiveStyle.copyWith(
+      displayMedium: base.copyWith(
         fontSize: 45,
         fontWeight: FontWeight.w400,
         height: 1.16,
         letterSpacing: 0,
       ),
-      displaySmall: effectiveStyle.copyWith(
+      displaySmall: base.copyWith(
         fontSize: 36,
         fontWeight: FontWeight.w400,
         height: 1.22,
         letterSpacing: 0,
       ),
-      headlineLarge: effectiveStyle.copyWith(
+      headlineLarge: base.copyWith(
         fontSize: 32,
         fontWeight: FontWeight.w400,
         height: 1.25,
         letterSpacing: 0,
       ),
-      headlineMedium: effectiveStyle.copyWith(
+      headlineMedium: base.copyWith(
         fontSize: 28,
         fontWeight: FontWeight.w400,
         height: 1.29,
         letterSpacing: 0,
       ),
-      headlineSmall: effectiveStyle.copyWith(
+      headlineSmall: base.copyWith(
         fontSize: 24,
         fontWeight: FontWeight.w400,
         height: 1.33,
         letterSpacing: 0,
       ),
-      titleLarge: effectiveStyle.copyWith(
+      titleLarge: base.copyWith(
         fontSize: 22,
         fontWeight: FontWeight.w500,
         height: 1.27,
         letterSpacing: 0,
       ),
-      titleMedium: effectiveStyle.copyWith(
+      titleMedium: base.copyWith(
         fontSize: 16,
         fontWeight: FontWeight.w500,
         height: 1.5,
         letterSpacing: 0.15,
       ),
-      titleSmall: effectiveStyle.copyWith(
+      titleSmall: base.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.43,
         letterSpacing: 0.1,
       ),
-      bodyLarge: effectiveStyle.copyWith(
+      bodyLarge: base.copyWith(
         fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.5,
         letterSpacing: 0.5,
       ),
-      bodyMedium: effectiveStyle.copyWith(
+      bodyMedium: base.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         height: 1.43,
         letterSpacing: 0.25,
       ),
-      bodySmall: effectiveStyle.copyWith(
+      bodySmall: base.copyWith(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         height: 1.33,
         letterSpacing: 0.4,
       ),
-      labelLarge: effectiveStyle.copyWith(
+      labelLarge: base.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.43,
         letterSpacing: 0.1,
       ),
-      labelMedium: effectiveStyle.copyWith(
+      labelMedium: base.copyWith(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         height: 1.33,
         letterSpacing: 0.5,
       ),
-      labelSmall: effectiveStyle.copyWith(
+      labelSmall: base.copyWith(
         fontSize: 11,
         fontWeight: FontWeight.w500,
         height: 1.45,
@@ -417,7 +430,7 @@ class FSTypography {
     );
   }
 
-  // ✅ EQUALITY AND HASHCODE
+  // ✅ SIMPLIFIED EQUALITY AND HASHCODE
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -433,43 +446,7 @@ class FSTypography {
   String toString() => 'FSTypography()';
 }
 
-/// Flutstrap Animation Configuration
-///
-/// Defines standardized animation durations and curves for consistent
-/// motion throughout the application.
-class FSAnimation {
-  final Duration duration;
-  final Curve curve;
-
-  const FSAnimation({
-    this.duration = const Duration(milliseconds: 300),
-    this.curve = Curves.easeInOut,
-  });
-
-  FSAnimation copyWith({
-    Duration? duration,
-    Curve? curve,
-  }) {
-    return FSAnimation(
-      duration: duration ?? this.duration,
-      curve: curve ?? this.curve,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FSAnimation &&
-          runtimeType == other.runtimeType &&
-          duration == other.duration &&
-          curve == other.curve;
-
-  @override
-  int get hashCode => Object.hash(duration, curve);
-
-  @override
-  String toString() => 'FSAnimation(duration: $duration, curve: $curve)';
-}
+// ✅ REMOVED: Local FSAnimation class - using imported version from animation system
 
 /// Main Flutstrap Theme Data
 ///
@@ -479,7 +456,7 @@ class FSThemeData {
   final FSColorScheme colors;
   final FSTypography typography;
   final FSSpacing spacing;
-  final FSAnimation animation;
+  final FSAnimation animation; // ✅ USING IMPORTED FSAnimation
   final FSCustomBreakpoints breakpoints;
   final Brightness brightness;
 
@@ -492,41 +469,24 @@ class FSThemeData {
     required this.brightness,
   });
 
-  // ✅ ENHANCED CACHING STRATEGY
-  static final FSThemeData _defaultLight = _createLightTheme();
-  static final FSThemeData _defaultDark = _createDarkTheme();
-  static final Map<String, FSThemeData> _themeCache = {};
-  static const int _maxCacheSize = 10;
-
-  /// Creates or retrieves a cached theme instance
-  static FSThemeData _createCachedTheme({
-    required Color seedColor,
-    required bool isLight,
-  }) {
-    final cacheKey = '${seedColor.value}_${isLight ? 'light' : 'dark'}';
-
-    return _themeCache.putIfAbsent(cacheKey, () {
-      // ✅ MAINTAIN CACHE SIZE
-      if (_themeCache.length > _maxCacheSize) {
-        _themeCache.remove(_themeCache.keys.first);
-      }
-
-      return isLight
-          ? _createLightTheme(seedColor: seedColor)
-          : _createDarkTheme(seedColor: seedColor);
-    });
-  }
+  // ✅ SIMPLIFIED CACHING STRATEGY
+  static FSThemeData? _cachedLight;
+  static FSThemeData? _cachedDark;
 
   /// Create light theme with optional seed color
   factory FSThemeData.light({Color? seedColor}) {
-    if (seedColor == null) return _defaultLight;
-    return _createCachedTheme(seedColor: seedColor, isLight: true);
+    if (seedColor == null) {
+      return _cachedLight ??= _createLightTheme();
+    }
+    return _createLightTheme(seedColor: seedColor);
   }
 
   /// Create dark theme with optional seed color
   factory FSThemeData.dark({Color? seedColor}) {
-    if (seedColor == null) return _defaultDark;
-    return _createCachedTheme(seedColor: seedColor, isLight: false);
+    if (seedColor == null) {
+      return _cachedDark ??= _createDarkTheme();
+    }
+    return _createDarkTheme(seedColor: seedColor);
   }
 
   /// Create a Material 3 compliant theme
@@ -541,14 +501,13 @@ class FSThemeData {
 
     final baseTextStyle = TextStyle(
       color: colors.onBackground,
-      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
     );
 
     return FSThemeData._internal(
       colors: colors,
       typography: FSTypography.fromBaseTextStyle(baseTextStyle),
       spacing: const FSSpacing(),
-      animation: const FSAnimation(),
+      animation: const FSAnimation(), // ✅ USING IMPORTED FSAnimation
       breakpoints: const FSCustomBreakpoints(),
       brightness: brightness,
     );
@@ -563,14 +522,13 @@ class FSThemeData {
 
     final baseTextStyle = TextStyle(
       color: colors.onBackground,
-      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
     );
 
     return FSThemeData._internal(
       colors: colors,
       typography: FSTypography.fromBaseTextStyle(baseTextStyle),
       spacing: const FSSpacing(),
-      animation: const FSAnimation(),
+      animation: const FSAnimation(), // ✅ USING IMPORTED FSAnimation
       breakpoints: const FSCustomBreakpoints(),
       brightness: Brightness.light,
     );
@@ -584,14 +542,13 @@ class FSThemeData {
 
     final baseTextStyle = TextStyle(
       color: colors.onBackground,
-      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
     );
 
     return FSThemeData._internal(
       colors: colors,
       typography: FSTypography.fromBaseTextStyle(baseTextStyle),
       spacing: const FSSpacing(),
-      animation: const FSAnimation(),
+      animation: const FSAnimation(), // ✅ USING IMPORTED FSAnimation
       breakpoints: const FSCustomBreakpoints(),
       brightness: Brightness.dark,
     );
@@ -649,18 +606,22 @@ class FSTheme extends InheritedWidget {
   static FSThemeData of(BuildContext context) {
     final theme = context.dependOnInheritedWidgetOfExactType<FSTheme>();
 
-    assert(theme != null, '''
+    if (theme == null) {
+      throw FlutterError('''
 No FSTheme found in context. 
-Wrap your app with FSTheme to use Flutstrap components.
+          
+To fix this, please wrap your app with FSTheme:
 
-Example:
 FSTheme(
-  data: FSThemeData.light(),
+  data: FSThemeData.light(), // or FSThemeData.dark()
   child: MaterialApp(...),
 )
-''');
 
-    return theme?.data ?? FSThemeData.light();
+If you're using MaterialApp, make sure FSTheme is above it in the widget tree.
+''');
+    }
+
+    return theme.data;
   }
 
   @override
@@ -670,9 +631,6 @@ FSTheme(
 }
 
 /// Theme extension methods for easy access throughout the widget tree
-///
-/// {@category Extensions}
-/// {@category Theming}
 extension FSThemeExtensions on BuildContext {
   /// Get the current Flutstrap theme
   FSThemeData get fsTheme => FSTheme.of(this);

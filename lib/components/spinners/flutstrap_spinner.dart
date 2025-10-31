@@ -1,3 +1,60 @@
+/// Flutstrap Spinner
+///
+/// A customizable loading spinner with Bootstrap-inspired styling.
+///
+/// {@macro flutstrap_spinner.usage}
+/// {@macro flutstrap_spinner.accessibility}
+///
+/// {@template flutstrap_spinner.usage}
+/// ## Usage Examples
+///
+/// ```dart
+/// // Basic border spinner
+/// FlutstrapSpinner(
+///   variant: FSSpinnerVariant.primary,
+///   size: FSSpinnerSize.md,
+/// )
+///
+/// // Growing spinner with label
+/// FlutstrapSpinner(
+///   variant: FSSpinnerVariant.success,
+///   type: FSSpinnerType.growing,
+///   label: 'Loading...',
+///   centered: true,
+/// )
+///
+/// // Dots spinner with custom color
+/// FlutstrapSpinner(
+///   type: FSSpinnerType.dots,
+///   color: Colors.blue,
+///   size: FSSpinnerSize.lg,
+/// )
+///
+/// // Spinner button
+/// FlutstrapSpinnerButton(
+///   isLoading: isSubmitting,
+///   onPressed: submitForm,
+///   child: Text('Submit'),
+///   spinner: FlutstrapSpinner(
+///     variant: FSSpinnerVariant.light,
+///     size: FSSpinnerSize.sm,
+///   ),
+/// )
+/// ```
+/// {@endtemplate}
+///
+/// {@template flutstrap_spinner.accessibility}
+/// ## Accessibility
+///
+/// - Full screen reader support with proper semantic labels
+/// - Live region updates for loading states
+/// - High contrast support for all variants
+/// - Clear visual indicators for different spinner types
+/// {@endtemplate}
+///
+/// {@category Components}
+/// {@category Feedback}
+
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/spacing.dart';
@@ -37,6 +94,7 @@ enum FSSpinnerType {
 /// Flutstrap Spinner
 ///
 /// A customizable loading spinner with Bootstrap-inspired styling.
+@immutable
 class FlutstrapSpinner extends StatefulWidget {
   final FSSpinnerVariant variant;
   final FSSpinnerSize size;
@@ -49,7 +107,7 @@ class FlutstrapSpinner extends StatefulWidget {
   final bool centered;
 
   const FlutstrapSpinner({
-    Key? key,
+    super.key,
     this.variant = FSSpinnerVariant.primary,
     this.size = FSSpinnerSize.md,
     this.type = FSSpinnerType.border,
@@ -59,7 +117,85 @@ class FlutstrapSpinner extends StatefulWidget {
     this.strokeWidth,
     this.animationDuration = const Duration(milliseconds: 1000),
     this.centered = false,
-  }) : super(key: key);
+  });
+
+  /// Creates a copy of this spinner with the given properties replaced
+  FlutstrapSpinner copyWith({
+    Key? key,
+    FSSpinnerVariant? variant,
+    FSSpinnerSize? size,
+    FSSpinnerType? type,
+    String? label,
+    Widget? customLabel,
+    Color? color,
+    double? strokeWidth,
+    Duration? animationDuration,
+    bool? centered,
+  }) {
+    return FlutstrapSpinner(
+      key: key ?? this.key,
+      variant: variant ?? this.variant,
+      size: size ?? this.size,
+      type: type ?? this.type,
+      label: label ?? this.label,
+      customLabel: customLabel ?? this.customLabel,
+      color: color ?? this.color,
+      strokeWidth: strokeWidth ?? this.strokeWidth,
+      animationDuration: animationDuration ?? this.animationDuration,
+      centered: centered ?? this.centered,
+    );
+  }
+
+  /// Creates a primary variant spinner
+  FlutstrapSpinner primary() => copyWith(variant: FSSpinnerVariant.primary);
+
+  /// Creates a secondary variant spinner
+  FlutstrapSpinner secondary() => copyWith(variant: FSSpinnerVariant.secondary);
+
+  /// Creates a success variant spinner
+  FlutstrapSpinner success() => copyWith(variant: FSSpinnerVariant.success);
+
+  /// Creates a danger variant spinner
+  FlutstrapSpinner danger() => copyWith(variant: FSSpinnerVariant.danger);
+
+  /// Creates a warning variant spinner
+  FlutstrapSpinner warning() => copyWith(variant: FSSpinnerVariant.warning);
+
+  /// Creates an info variant spinner
+  FlutstrapSpinner info() => copyWith(variant: FSSpinnerVariant.info);
+
+  /// Creates a light variant spinner
+  FlutstrapSpinner light() => copyWith(variant: FSSpinnerVariant.light);
+
+  /// Creates a dark variant spinner
+  FlutstrapSpinner dark() => copyWith(variant: FSSpinnerVariant.dark);
+
+  /// Creates a small size spinner
+  FlutstrapSpinner small() => copyWith(size: FSSpinnerSize.sm);
+
+  /// Creates a medium size spinner
+  FlutstrapSpinner medium() => copyWith(size: FSSpinnerSize.md);
+
+  /// Creates a large size spinner
+  FlutstrapSpinner large() => copyWith(size: FSSpinnerSize.lg);
+
+  /// Creates a border type spinner
+  FlutstrapSpinner asBorder() => copyWith(type: FSSpinnerType.border);
+
+  /// Creates a growing type spinner
+  FlutstrapSpinner asGrowing() => copyWith(type: FSSpinnerType.growing);
+
+  /// Creates a dots type spinner
+  FlutstrapSpinner asDots() => copyWith(type: FSSpinnerType.dots);
+
+  /// Creates a centered spinner
+  FlutstrapSpinner asCentered() => copyWith(centered: true);
+
+  /// Creates a spinner with a label
+  FlutstrapSpinner withLabel(String newLabel) => copyWith(label: newLabel);
+
+  /// Creates a spinner with custom color
+  FlutstrapSpinner withColor(Color newColor) => copyWith(color: newColor);
 
   @override
   State<FlutstrapSpinner> createState() => _FlutstrapSpinnerState();
@@ -79,6 +215,14 @@ class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
   }
 
   @override
+  void didUpdateWidget(FlutstrapSpinner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animationDuration != oldWidget.animationDuration) {
+      _animationController.duration = widget.animationDuration;
+    }
+  }
+
+  @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
@@ -92,15 +236,19 @@ class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
     final spinnerContent = _buildSpinnerContent(spinnerStyle);
     final showLabel = widget.label != null || widget.customLabel != null;
 
-    Widget content = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        spinnerContent,
-        if (showLabel) ...[
-          const SizedBox(height: 8),
-          _buildLabel(spinnerStyle),
+    Widget content = Semantics(
+      liveRegion: true,
+      label: 'Loading',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          spinnerContent,
+          if (showLabel) ...[
+            SizedBox(height: _SpinnerConstants.labelSpacing),
+            _buildLabel(spinnerStyle),
+          ],
         ],
-      ],
+      ),
     );
 
     if (widget.centered) {
@@ -148,6 +296,7 @@ class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
 }
 
 /// Border spinner (classic rotating border)
+@immutable
 class _BorderSpinner extends AnimatedWidget {
   final double size;
   final Color color;
@@ -171,7 +320,7 @@ class _BorderSpinner extends AnimatedWidget {
   @override
   Widget build(BuildContext context) {
     return Transform.rotate(
-      angle: rotation.value * 2 * 3.14159, // Full rotation
+      angle: rotation.value * _SpinnerConstants.piTimesTwo,
       child: Container(
         width: size,
         height: size,
@@ -195,6 +344,7 @@ class _BorderSpinner extends AnimatedWidget {
 }
 
 /// Painter for the spinner arc
+@immutable
 class _SpinnerArcPainter extends CustomPainter {
   final Color color;
   final double strokeWidth;
@@ -217,8 +367,13 @@ class _SpinnerArcPainter extends CustomPainter {
       radius: size.width / 2 - strokeWidth / 2,
     );
 
-    // Draw an arc (about 3/4 of a circle)
-    canvas.drawArc(rect, -0.8, 2.2, false, paint);
+    canvas.drawArc(
+      rect,
+      _SpinnerConstants.arcStartAngle,
+      _SpinnerConstants.arcSweepAngle,
+      false,
+      paint,
+    );
   }
 
   @override
@@ -226,6 +381,7 @@ class _SpinnerArcPainter extends CustomPainter {
 }
 
 /// Growing spinner (pulsing circle)
+@immutable
 class _GrowingSpinner extends AnimatedWidget {
   final double size;
   final Color color;
@@ -267,6 +423,7 @@ class _GrowingSpinner extends AnimatedWidget {
 }
 
 /// Dots spinner (bouncing dots)
+@immutable
 class _DotsSpinner extends AnimatedWidget {
   final double size;
   final Color color;
@@ -280,7 +437,7 @@ class _DotsSpinner extends AnimatedWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: size * 3, // Space for 3 dots
+      width: size * _SpinnerConstants.dotsContainerMultiplier,
       height: size,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -300,8 +457,8 @@ class _DotsSpinner extends AnimatedWidget {
           return ScaleTransition(
             scale: animation,
             child: Container(
-              width: size / 3,
-              height: size / 3,
+              width: size / _SpinnerConstants.dotSizeDivisor,
+              height: size / _SpinnerConstants.dotSizeDivisor,
               decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
@@ -315,6 +472,7 @@ class _DotsSpinner extends AnimatedWidget {
 }
 
 /// Spinner button - Button that shows spinner when loading
+@immutable
 class FlutstrapSpinnerButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback? onPressed;
@@ -323,13 +481,13 @@ class FlutstrapSpinnerButton extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   const FlutstrapSpinnerButton({
-    Key? key,
+    super.key,
     required this.isLoading,
     required this.onPressed,
     required this.child,
     this.spinner = const FlutstrapSpinner(size: FSSpinnerSize.sm),
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -351,24 +509,23 @@ class _SpinnerStyle {
   double get spinnerSize {
     switch (size) {
       case FSSpinnerSize.sm:
-        return 16.0;
+        return _SpinnerConstants.smallSize;
       case FSSpinnerSize.md:
-        return 24.0;
+        return _SpinnerConstants.mediumSize;
       case FSSpinnerSize.lg:
-        return 32.0;
+        return _SpinnerConstants.largeSize;
     }
   }
 
   double get strokeWidth {
     switch (size) {
       case FSSpinnerSize.sm:
-        return 2.0;
+        return _SpinnerConstants.smallStroke;
       case FSSpinnerSize.md:
-        return 3.0;
+        return _SpinnerConstants.mediumStroke;
       case FSSpinnerSize.lg:
-        return 4.0;
+        return _SpinnerConstants.largeStroke;
     }
-    return 3.0;
   }
 
   Color get color => _getColor();
@@ -398,4 +555,20 @@ class _SpinnerStyle {
         return colors.onBackground;
     }
   }
+}
+
+// CONSTANTS FOR BETTER MAINTAINABILITY
+class _SpinnerConstants {
+  static const double smallSize = 16.0;
+  static const double mediumSize = 24.0;
+  static const double largeSize = 32.0;
+  static const double smallStroke = 2.0;
+  static const double mediumStroke = 3.0;
+  static const double largeStroke = 4.0;
+  static const double labelSpacing = 8.0;
+  static const double dotsContainerMultiplier = 3.0;
+  static const double dotSizeDivisor = 3.0;
+  static const double arcStartAngle = -0.8;
+  static const double arcSweepAngle = 2.2;
+  static const double piTimesTwo = 6.28318;
 }

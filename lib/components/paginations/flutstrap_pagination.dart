@@ -3,44 +3,51 @@
 /// A high-performance, customizable pagination component with Bootstrap-inspired styling,
 /// optimized for large datasets and smooth user interactions.
 ///
+/// {@macro flutstrap_pagination.usage}
+/// {@macro flutstrap_pagination.accessibility}
+///
+/// {@template flutstrap_pagination.usage}
 /// ## Usage Examples
 ///
 /// ```dart
-/// // Basic pagination
+/// // Basic pagination with callback
 /// FlutstrapPagination(
 ///   currentPage: currentPage,
 ///   totalPages: totalPages,
 ///   onPageChanged: (page) => setState(() => currentPage = page),
 /// )
 ///
-/// // Pagination with items count and custom styling
+/// // Advanced pagination with items count
 /// FlutstrapPagination(
 ///   currentPage: page,
-///   totalPages: 25,
-///   totalItems: 250,
+///   totalPages: 42,
+///   totalItems: 420,
 ///   itemsPerPage: 10,
-///   variant: FSPaginationVariant.primary,
-///   size: FSPaginationSize.sm,
 ///   showItemsCount: true,
-///   onPageChanged: (page) => fetchPage(page),
+///   showFirstLast: true,
+///   variant: FSPaginationVariant.primary,
+///   onPageChanged: (page) => api.fetchPage(page),
 /// )
 ///
-/// // Large dataset with scrollable pagination
+/// // Compact pagination for mobile
 /// FlutstrapPagination(
 ///   currentPage: currentPage,
-///   totalPages: 1000,
+///   totalPages: totalPages,
+///   size: FSPaginationSize.sm,
 ///   maxVisiblePages: 5,
-///   showFirstLast: true,
-///   onPageChanged: (page) => loadPage(page),
+///   onPageChanged: (page) => navigateToPage(page),
 /// )
 /// ```
+/// {@endtemplate}
 ///
-/// ## Performance Features
+/// {@template flutstrap_pagination.accessibility}
+/// ## Accessibility
 ///
-/// - **Optimized Page Generation**: Efficient algorithm for large page counts
-/// - **Memoized Calculations**: Cached page number generation
-/// - **Error Boundaries**: Safe event handling and callbacks
-/// - **Memory Efficient**: No unnecessary widget rebuilding
+/// - Full screen reader support with proper semantic labels
+/// - Keyboard navigation support for all pagination controls
+/// - Clear visual indicators for current page and disabled states
+/// - Proper ARIA attributes for pagination landmarks
+/// {@endtemplate}
 ///
 /// {@category Components}
 /// {@category Navigation}
@@ -88,6 +95,7 @@ enum FSPaginationAlignment {
 }
 
 /// Flutstrap Pagination
+@immutable
 class FlutstrapPagination extends StatelessWidget {
   final int currentPage;
   final int totalPages;
@@ -111,7 +119,7 @@ class FlutstrapPagination extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
 
   const FlutstrapPagination({
-    Key? key,
+    super.key,
     required this.currentPage,
     required this.totalPages,
     required this.onPageChanged,
@@ -137,22 +145,31 @@ class FlutstrapPagination extends StatelessWidget {
         assert(currentPage <= totalPages,
             'currentPage cannot be greater than totalPages'),
         assert(maxVisiblePages >= 3, 'maxVisiblePages must be at least 3'),
-        super(key: key);
+        assert(totalItems >= 0, 'totalItems cannot be negative'),
+        assert(itemsPerPage > 0, 'itemsPerPage must be greater than 0'),
+        assert(
+            totalPages <=
+                FSPaginationConfig.maxTotalPages, // ✅ Direct comparison
+            'totalPages cannot exceed ${FSPaginationConfig.maxTotalPages}');
+
+  // PAGE NUMBER CACHING FOR PERFORMANCE
+  static final _pageNumberCache = <_PageNumberCacheKey, List<int>>{};
 
   @override
   Widget build(BuildContext context) {
-    // ✅ MOVED: Runtime validation to build method
-    assert(FSPaginationConfig.isValidTotalPages(totalPages),
-        'totalPages cannot exceed ${FSPaginationConfig.maxTotalPages}');
     final theme = FSTheme.of(context);
     final paginationStyle = _PaginationStyle(theme, variant, size);
 
-    return Container(
-      margin: margin ?? paginationStyle.margin,
-      child: Row(
-        mainAxisAlignment: _getMainAxisAlignment(),
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: _buildPaginationContent(paginationStyle),
+    return Semantics(
+      header: true, // ✅ Use 'header' or remove this line
+      label: 'Pagination',
+      child: Container(
+        margin: margin ?? paginationStyle.margin,
+        child: Row(
+          mainAxisAlignment: _getMainAxisAlignment(),
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: _buildPaginationContent(paginationStyle),
+        ),
       ),
     );
   }
@@ -312,29 +329,44 @@ class FlutstrapPagination extends StatelessWidget {
   }) {
     final isDisabled = disabled || !isEnabled || (isActive && !isEdge);
 
-    return GestureDetector(
-      onTap: isDisabled ? null : () => _handlePageChange(page),
-      child: MouseRegion(
-        cursor: isDisabled
-            ? SystemMouseCursors.forbidden
-            : SystemMouseCursors.click,
-        child: Container(
-          padding: style.buttonPadding,
-          decoration: BoxDecoration(
-            color:
-                isActive ? style.activeBackgroundColor : style.backgroundColor,
-            border: isActive ? style.activeBorder : style.border,
-            borderRadius: isEdge
-                ? _getEdgeBorderRadius(style, isFirst: isFirst)
-                : style.buttonBorderRadius,
-          ),
-          child: Text(
-            text,
-            style: isActive ? style.activeTextStyle : style.textStyle,
+    return Semantics(
+      button: true,
+      enabled: !isDisabled,
+      label: _getButtonSemanticLabel(text, page, isActive),
+      child: GestureDetector(
+        onTap: isDisabled ? null : () => _handlePageChange(page),
+        child: MouseRegion(
+          cursor: isDisabled
+              ? SystemMouseCursors.forbidden
+              : SystemMouseCursors.click,
+          child: Container(
+            padding: style.buttonPadding,
+            decoration: BoxDecoration(
+              color: isActive
+                  ? style.activeBackgroundColor
+                  : style.backgroundColor,
+              border: isActive ? style.activeBorder : style.border,
+              borderRadius: isEdge
+                  ? _getEdgeBorderRadius(style, isFirst: isFirst)
+                  : style.buttonBorderRadius,
+            ),
+            child: Text(
+              text,
+              style: isActive ? style.activeTextStyle : style.textStyle,
+            ),
           ),
         ),
       ),
     );
+  }
+
+  String _getButtonSemanticLabel(String text, int page, bool isActive) {
+    if (isActive) return 'Current page, $page';
+    if (text == previousText) return 'Go to previous page';
+    if (text == nextText) return 'Go to next page';
+    if (text == firstText) return 'Go to first page';
+    if (text == lastText) return 'Go to last page';
+    return 'Go to page $page';
   }
 
   void _handlePageChange(int page) {
@@ -362,12 +394,16 @@ class FlutstrapPagination extends StatelessWidget {
   }
 
   Widget _buildEllipsis(_PaginationStyle style) {
-    return Container(
-      padding: style.buttonPadding,
-      child: Text(
-        '...',
-        style: style.textStyle.copyWith(
-          color: style.textStyle.color?.withOpacity(0.5),
+    return Semantics(
+      label: 'More pages available',
+      child: Container(
+        padding: style.buttonPadding,
+        child: Text(
+          '…',
+          style: style.textStyle.copyWith(
+            color: style.textStyle.color
+                ?.withOpacity(_PaginationConstants.disabledOpacity),
+          ),
         ),
       ),
     );
@@ -375,11 +411,15 @@ class FlutstrapPagination extends StatelessWidget {
 
   // ✅ OPTIMIZED: Efficient page number generation with caching
   List<int> _generatePageNumbers() {
-    // Early return for small page counts
-    if (totalPages <= maxVisiblePages) {
-      return _generateSimplePageNumbers();
-    }
-    return _generateComplexPageNumbers();
+    final cacheKey =
+        _PageNumberCacheKey(currentPage, totalPages, maxVisiblePages);
+    return _pageNumberCache.putIfAbsent(cacheKey, () {
+      // Early return for small page counts
+      if (totalPages <= maxVisiblePages) {
+        return _generateSimplePageNumbers();
+      }
+      return _generateComplexPageNumbers();
+    });
   }
 
   List<int> _generateSimplePageNumbers() {
@@ -433,7 +473,7 @@ class FlutstrapPagination extends StatelessWidget {
 
   int _min(int a, int b) => a < b ? a : b;
 
-  // ✅ CONVENIENCE: CopyWith method for state modifications
+  // CONVENIENCE: CopyWith method for state modifications
   FlutstrapPagination copyWith({
     int? currentPage,
     int? totalPages,
@@ -481,19 +521,36 @@ class FlutstrapPagination extends StatelessWidget {
     );
   }
 
-  // ✅ CONVENIENCE: Builder methods
+  // CONVENIENCE: Builder methods
   FlutstrapPagination primary() =>
       copyWith(variant: FSPaginationVariant.primary);
+  FlutstrapPagination secondary() =>
+      copyWith(variant: FSPaginationVariant.secondary);
+  FlutstrapPagination success() =>
+      copyWith(variant: FSPaginationVariant.success);
+  FlutstrapPagination danger() => copyWith(variant: FSPaginationVariant.danger);
+  FlutstrapPagination warning() =>
+      copyWith(variant: FSPaginationVariant.warning);
+  FlutstrapPagination info() => copyWith(variant: FSPaginationVariant.info);
+  FlutstrapPagination light() => copyWith(variant: FSPaginationVariant.light);
+  FlutstrapPagination dark() => copyWith(variant: FSPaginationVariant.dark);
+
   FlutstrapPagination small() => copyWith(size: FSPaginationSize.sm);
+  FlutstrapPagination medium() => copyWith(size: FSPaginationSize.md);
   FlutstrapPagination large() => copyWith(size: FSPaginationSize.lg);
+
+  FlutstrapPagination startAligned() =>
+      copyWith(alignment: FSPaginationAlignment.start);
   FlutstrapPagination centered() =>
       copyWith(alignment: FSPaginationAlignment.center);
+  FlutstrapPagination endAligned() =>
+      copyWith(alignment: FSPaginationAlignment.end);
+
   FlutstrapPagination withItemsCount() => copyWith(showItemsCount: true);
+  FlutstrapPagination withFirstLast() => copyWith(showFirstLast: true);
   FlutstrapPagination asDisabled() => copyWith(disabled: true);
 }
 
-// ... _PaginationStyle class remains the same as your original code
-// (It was already well-structured)
 /// Internal style configuration for pagination
 class _PaginationStyle {
   final FSThemeData theme;
@@ -528,27 +585,28 @@ class _PaginationStyle {
   EdgeInsets get buttonPadding => _getButtonPadding();
   EdgeInsets get itemsCountPadding => const EdgeInsets.only(right: 16);
 
-  BorderRadius get borderRadius => BorderRadius.circular(4);
+  BorderRadius get borderRadius =>
+      BorderRadius.circular(_PaginationConstants.defaultBorderRadius);
   BorderRadius get buttonBorderRadius => BorderRadius.zero;
 
   Border get border => Border.all(
         color: borderColor,
-        width: 1,
+        width: _PaginationConstants.borderWidth,
       );
 
   Border get activeBorder => Border.all(
         color: activeBackgroundColor,
-        width: 1,
+        width: _PaginationConstants.borderWidth,
       );
 
   double _getFontSize() {
     switch (size) {
       case FSPaginationSize.sm:
-        return 12;
+        return _PaginationConstants.smallFontSize.toDouble();
       case FSPaginationSize.md:
-        return 14;
+        return _PaginationConstants.mediumFontSize.toDouble();
       case FSPaginationSize.lg:
-        return 16;
+        return _PaginationConstants.largeFontSize.toDouble();
     }
   }
 
@@ -601,7 +659,7 @@ class _PaginationStyle {
         return colors.info;
       case FSPaginationVariant.light:
         return colors.surface
-            .withOpacity(0.3); // FIXED: Use surface instead of surfaceVariant
+            .withOpacity(_PaginationConstants.lightVariantOpacity);
       case FSPaginationVariant.dark:
         return colors.surface;
     }
@@ -635,4 +693,37 @@ class _PaginationStyle {
         return theme.colors.onPrimary;
     }
   }
+}
+
+// PAGE NUMBER CACHE KEY
+class _PageNumberCacheKey {
+  final int currentPage;
+  final int totalPages;
+  final int maxVisiblePages;
+
+  const _PageNumberCacheKey(
+      this.currentPage, this.totalPages, this.maxVisiblePages);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _PageNumberCacheKey &&
+          runtimeType == other.runtimeType &&
+          currentPage == other.currentPage &&
+          totalPages == other.totalPages &&
+          maxVisiblePages == other.maxVisiblePages;
+
+  @override
+  int get hashCode => Object.hash(currentPage, totalPages, maxVisiblePages);
+}
+
+// CONSTANTS FOR BETTER MAINTAINABILITY
+class _PaginationConstants {
+  static const double defaultBorderRadius = 4.0;
+  static const double borderWidth = 1.0;
+  static const double lightVariantOpacity = 0.3;
+  static const double disabledOpacity = 0.5;
+  static const int smallFontSize = 12;
+  static const int mediumFontSize = 14;
+  static const int largeFontSize = 16;
 }

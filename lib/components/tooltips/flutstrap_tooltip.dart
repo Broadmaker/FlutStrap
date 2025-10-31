@@ -1,6 +1,109 @@
+/// Flutstrap Tooltip
+///
+/// A highly customizable, accessible tooltip with Bootstrap-inspired styling,
+/// smooth animations, and intelligent positioning.
+///
+/// {@tool snippet}
+/// ### Basic Usage
+///
+/// ```dart
+/// FlutstrapTooltip(
+///   message: 'This is a tooltip',
+///   child: Text('Hover me'),
+/// )
+/// ```
+///
+/// ### Advanced Configuration
+///
+/// ```dart
+/// FlutstrapTooltip(
+///   message: 'Danger action',
+///   variant: FSTooltipVariant.danger,
+///   placement: FSTooltipPlacement.bottom,
+///   showDelay: Duration(milliseconds: 500),
+///   maxWidth: 300,
+///   child: IconButton(
+///     icon: Icon(Icons.delete),
+///     onPressed: () => _deleteItem(),
+///   ),
+/// )
+/// ```
+///
+/// ### With Error Boundary
+///
+/// ```dart
+/// FlutstrapTooltip.buildWithErrorBoundary(
+///   message: complexMessage,
+///   child: MyComplexWidget(),
+///   fallback: Text('Tooltip unavailable'),
+/// )
+/// ```
+/// {@end-tool}
+///
+/// {@template flutstrap_tooltip.performance}
+/// ## Performance Features
+///
+/// - **Intelligent Caching**: Text measurements cached for identical tooltips
+/// - **Debounced Interactions**: Prevents rapid show/hide cycles
+/// - **Memory Management**: Proper timer and overlay disposal
+/// - **Efficient Positioning**: Optimized offset calculations
+/// {@endtemplate}
+///
+/// {@template flutstrap_tooltip.accessibility}
+/// ## Accessibility
+///
+/// - Full screen reader support with semantic labels
+/// - Keyboard navigation with focus management
+/// - Touch, hover, and focus trigger support
+/// - Long press support for mobile devices
+/// {@endtemplate}
+///
+/// ## Trigger Methods
+///
+/// Tooltips can be triggered by:
+/// - **Hover** (desktop/mouse)
+/// - **Tap** (mobile/touch)
+/// - **Focus** (keyboard navigation)
+/// - **Long Press** (alternative mobile)
+///
+/// ## Best Practices
+///
+/// - Keep tooltip messages concise and actionable
+/// - Use appropriate variants for message urgency
+/// - Test positioning on different screen sizes
+/// - Consider mobile touch interactions
+/// - Use error boundaries for dynamic content
+///
+/// {@category Components}
+/// {@category Overlays}
+
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/error_boundary.dart'; // ✅ IMPORT SHARED ERROR BOUNDARY
+
+/// Text measurement cache for performance optimization
+class _TextMeasurementCache {
+  static final _cache = <String, Size>{};
+
+  static Size measureText(String text, TextStyle style, double maxWidth) {
+    final cacheKey = '$text${style.fontSize}${style.fontWeight}$maxWidth';
+
+    return _cache.putIfAbsent(cacheKey, () {
+      final textPainter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: TextDirection.ltr,
+        maxLines: 3,
+      )..layout(maxWidth: maxWidth);
+      return textPainter.size;
+    });
+  }
+
+  static void clearCache() => _cache.clear();
+
+  static int get cacheSize => _cache.length;
+}
 
 /// Flutstrap Tooltip Variants
 ///
@@ -38,20 +141,48 @@ enum FSTooltipPlacement {
 class _TooltipManager {
   static OverlayEntry? _currentEntry;
   static FlutstrapTooltipState? _currentTooltip;
+  static final _tooltipStack = <FlutstrapTooltipState>[];
 
   static void showTooltip(FlutstrapTooltipState tooltip, OverlayEntry entry) {
     // Hide any currently showing tooltip
-    hideCurrentTooltip();
+    if (_currentTooltip != null) {
+      _tooltipStack.add(_currentTooltip!);
+    }
 
+    _hideCurrentTooltipImmediate();
     _currentTooltip = tooltip;
     _currentEntry = entry;
-    Overlay.of(tooltip.context)?.insert(entry);
+
+    try {
+      Overlay.of(tooltip.context, rootOverlay: true)?.insert(entry);
+    } catch (e) {
+      debugPrint('❌ TooltipManager: Failed to show tooltip - $e');
+      _currentTooltip = null;
+      _currentEntry = null;
+    }
   }
 
   static void hideCurrentTooltip() {
+    if (_currentTooltip != null) {
+      _hideCurrentTooltipImmediate();
+
+      // Show next tooltip in stack if available
+      if (_tooltipStack.isNotEmpty) {
+        final nextTooltip = _tooltipStack.removeLast();
+        nextTooltip._showTooltip(); // Access private method via state
+      }
+    }
+  }
+
+  static void _hideCurrentTooltipImmediate() {
     _currentEntry?.remove();
     _currentEntry = null;
     _currentTooltip = null;
+  }
+
+  static void clearAllTooltips() {
+    _hideCurrentTooltipImmediate();
+    _tooltipStack.clear();
   }
 
   static bool isCurrentTooltip(FlutstrapTooltipState tooltip) {
@@ -78,7 +209,7 @@ class FlutstrapTooltip extends StatefulWidget {
   final BorderRadiusGeometry? borderRadius;
 
   const FlutstrapTooltip({
-    Key? key,
+    super.key,
     required this.message,
     required this.child,
     this.variant = FSTooltipVariant.primary,
@@ -92,7 +223,49 @@ class FlutstrapTooltip extends StatefulWidget {
     this.textStyle,
     this.backgroundColor,
     this.borderRadius,
-  }) : super(key: key);
+  });
+
+  /// Build tooltip with error boundary for graceful error handling
+  static Widget buildWithErrorBoundary({
+    Key? key,
+    required String message,
+    required Widget child,
+    Widget? fallback,
+    FSTooltipVariant variant = FSTooltipVariant.primary,
+    FSTooltipPlacement placement = FSTooltipPlacement.top,
+    Duration showDelay = const Duration(milliseconds: 100),
+    Duration hideDelay = const Duration(milliseconds: 100),
+    Duration animationDuration = const Duration(milliseconds: 200),
+    bool showArrow = true,
+    double maxWidth = 200.0,
+    EdgeInsetsGeometry padding =
+        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    TextStyle? textStyle,
+    Color? backgroundColor,
+    BorderRadiusGeometry? borderRadius,
+  }) {
+    return ErrorBoundary(
+      // ✅ USING SHARED ERROR BOUNDARY
+      componentName: 'FlutstrapTooltip',
+      fallbackBuilder: (context) => fallback ?? child,
+      child: FlutstrapTooltip(
+        key: key,
+        message: message,
+        child: child,
+        variant: variant,
+        placement: placement,
+        showDelay: showDelay,
+        hideDelay: hideDelay,
+        animationDuration: animationDuration,
+        showArrow: showArrow,
+        maxWidth: maxWidth,
+        padding: padding,
+        textStyle: textStyle,
+        backgroundColor: backgroundColor,
+        borderRadius: borderRadius,
+      ),
+    );
+  }
 
   @override
   State<FlutstrapTooltip> createState() => FlutstrapTooltipState();
@@ -105,26 +278,43 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
   Timer? _showTimer;
   Timer? _hideTimer;
 
+  // Performance optimizations
+  static const Duration _debounceDelay = Duration(milliseconds: 50);
+  DateTime? _lastInteractionTime;
+  bool _isDisposing = false;
+
   @override
   void dispose() {
+    _isDisposing = true;
     _showTimer?.cancel();
     _hideTimer?.cancel();
-    if (_isVisible) {
+    if (_isVisible && _TooltipManager.isCurrentTooltip(this)) {
       _TooltipManager.hideCurrentTooltip();
     }
+    _overlayEntry = null;
     super.dispose();
   }
 
   void _showTooltip() {
-    _hideTimer?.cancel();
+    final now = DateTime.now();
+    if (_lastInteractionTime != null &&
+        now.difference(_lastInteractionTime!) < _debounceDelay) {
+      return;
+    }
+    _lastInteractionTime = now;
 
-    _showTimer = Timer(widget.showDelay, () {
-      if (!_isVisible && mounted) {
-        _isVisible = true;
-        _overlayEntry = _createOverlayEntry();
-        _TooltipManager.showTooltip(this, _overlayEntry!);
-      }
-    });
+    _hideTimer?.cancel();
+    _showTimer?.cancel();
+
+    _showTimer = Timer(widget.showDelay, _showTooltipInternal);
+  }
+
+  void _showTooltipInternal() {
+    if (!_isVisible && mounted && !_isDisposing) {
+      _isVisible = true;
+      _overlayEntry = _createOverlayEntry();
+      _TooltipManager.showTooltip(this, _overlayEntry!);
+    }
   }
 
   void _hideTooltip() {
@@ -133,7 +323,6 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
     _hideTimer = Timer(widget.hideDelay, () {
       if (_isVisible && mounted) {
         _isVisible = false;
-        // Only hide if this is the current tooltip
         if (_TooltipManager.isCurrentTooltip(this)) {
           _TooltipManager.hideCurrentTooltip();
         }
@@ -155,41 +344,16 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
   OverlayEntry _createOverlayEntry() {
     return OverlayEntry(
       builder: (context) {
-        return Positioned(
-          child: CompositedTransformFollower(
-            link: _layerLink,
-            showWhenUnlinked: false,
-            offset: _getTooltipOffset(),
-            child: Material(
-              color: Colors.transparent,
-              child: GestureDetector(
-                onTap: _forceHideTooltip,
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height,
-                  color: Colors.transparent,
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        child: _FadeInAnimation(
-                          duration: widget.animationDuration,
-                          child: _TooltipContent(
-                            message: widget.message,
-                            variant: widget.variant,
-                            placement: widget.placement,
-                            showArrow: widget.showArrow,
-                            maxWidth: widget.maxWidth,
-                            padding: widget.padding,
-                            textStyle: widget.textStyle,
-                            backgroundColor: widget.backgroundColor,
-                            borderRadius: widget.borderRadius,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        return ErrorBoundary(
+          // ✅ USING SHARED ERROR BOUNDARY
+          componentName: 'TooltipOverlay',
+          fallbackBuilder: (context) => const SizedBox.shrink(),
+          child: Positioned(
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: _getTooltipOffset(),
+              child: _buildTooltipContent(),
             ),
           ),
         );
@@ -197,85 +361,130 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
     );
   }
 
+  Widget _buildTooltipContent() {
+    return Material(
+      color: Colors.transparent,
+      child: GestureDetector(
+        onTap: _forceHideTooltip,
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          color: Colors.transparent,
+          child: Stack(
+            children: [
+              Positioned(
+                child: _FadeInAnimation(
+                  duration: widget.animationDuration,
+                  child: _TooltipContent(
+                    message: widget.message,
+                    variant: widget.variant,
+                    placement: widget.placement,
+                    showArrow: widget.showArrow,
+                    maxWidth: widget.maxWidth,
+                    padding: widget.padding,
+                    textStyle: widget.textStyle,
+                    backgroundColor: widget.backgroundColor,
+                    borderRadius: widget.borderRadius,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Offset _getTooltipOffset() {
-    final renderBox = context.findRenderObject() as RenderBox?;
-    final size = renderBox?.size ?? Size.zero;
+    final renderBox = context.findRenderObject();
+    if (renderBox is! RenderBox) {
+      debugPrint('⚠️ Tooltip: Could not find RenderBox for positioning');
+      return Offset.zero;
+    }
+
+    final size = renderBox.size;
+    final tooltipWidth = _getTooltipWidth();
+    final tooltipHeight = _getTooltipHeight();
 
     switch (widget.placement) {
       case FSTooltipPlacement.top:
-        return Offset(0, -size.height - 8);
+        return Offset(-(tooltipWidth - size.width) / 2, -size.height - 12);
       case FSTooltipPlacement.topStart:
-        return Offset(0, -size.height - 8);
+        return Offset(0, -size.height - 12);
       case FSTooltipPlacement.topEnd:
-        return Offset(-_getTooltipWidth() + size.width, -size.height - 8);
-      case FSTooltipPlacement.right:
-        return Offset(size.width + 8, -(_getTooltipHeight() - size.height) / 2);
-      case FSTooltipPlacement.rightStart:
-        return Offset(size.width + 8, 0);
-      case FSTooltipPlacement.rightEnd:
-        return Offset(size.width + 8, -_getTooltipHeight() + size.height);
+        return Offset(-(tooltipWidth - size.width), -size.height - 12);
       case FSTooltipPlacement.bottom:
-        return Offset(0, size.height + 8);
+        return Offset(-(tooltipWidth - size.width) / 2, size.height + 12);
       case FSTooltipPlacement.bottomStart:
-        return Offset(0, size.height + 8);
+        return Offset(0, size.height + 12);
       case FSTooltipPlacement.bottomEnd:
-        return Offset(-_getTooltipWidth() + size.width, size.height + 8);
+        return Offset(-(tooltipWidth - size.width), size.height + 12);
+      case FSTooltipPlacement.right:
+        return Offset(size.width + 12, -(tooltipHeight - size.height) / 2);
+      case FSTooltipPlacement.rightStart:
+        return Offset(size.width + 12, 0);
+      case FSTooltipPlacement.rightEnd:
+        return Offset(size.width + 12, -(tooltipHeight - size.height));
       case FSTooltipPlacement.left:
-        return Offset(
-            -_getTooltipWidth() - 8, -(_getTooltipHeight() - size.height) / 2);
+        return Offset(-tooltipWidth - 12, -(tooltipHeight - size.height) / 2);
       case FSTooltipPlacement.leftStart:
-        return Offset(-_getTooltipWidth() - 8, 0);
+        return Offset(-tooltipWidth - 12, 0);
       case FSTooltipPlacement.leftEnd:
-        return Offset(
-            -_getTooltipWidth() - 8, -_getTooltipHeight() + size.height);
+        return Offset(-tooltipWidth - 12, -(tooltipHeight - size.height));
     }
   }
 
   double _getTooltipWidth() {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: widget.message,
-        style: widget.textStyle ?? _TooltipStyle._defaultTextStyle,
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: widget.maxWidth);
-    return textPainter.size.width + widget.padding.horizontal;
+    final size = _TextMeasurementCache.measureText(
+      widget.message,
+      widget.textStyle ?? _TooltipStyle._defaultTextStyle,
+      widget.maxWidth,
+    );
+    return size.width + widget.padding.horizontal;
   }
 
   double _getTooltipHeight() {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: widget.message,
-        style: widget.textStyle ?? _TooltipStyle._defaultTextStyle,
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: widget.maxWidth);
-    return textPainter.size.height +
-        widget.padding.vertical +
-        (widget.showArrow ? 8 : 0);
+    final size = _TextMeasurementCache.measureText(
+      widget.message,
+      widget.textStyle ?? _TooltipStyle._defaultTextStyle,
+      widget.maxWidth,
+    );
+    return size.height + widget.padding.vertical + (widget.showArrow ? 8 : 0);
   }
 
   @override
   Widget build(BuildContext context) {
     return CompositedTransformTarget(
       link: _layerLink,
-      child: MouseRegion(
-        onEnter: (_) => _showTooltip(),
-        onExit: (_) => _hideTooltip(),
-        child: GestureDetector(
-          onTapDown: (_) => _showTooltip(),
-          onTapCancel: _forceHideTooltip,
-          onTapUp: (_) => _forceHideTooltip,
-          child: widget.child,
+      child: Semantics(
+        tooltip: widget.message,
+        child: Focus(
+          onFocusChange: (hasFocus) {
+            if (hasFocus) {
+              _showTooltip();
+            } else {
+              _hideTooltip();
+            }
+          },
+          child: MouseRegion(
+            onEnter: (_) => _showTooltip(),
+            onExit: (_) => _hideTooltip(),
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTapDown: (_) => _showTooltip(),
+              onTapCancel: _forceHideTooltip,
+              onTapUp: (_) => _forceHideTooltip,
+              onLongPress: _showTooltip,
+              child: widget.child,
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-// ... (keep the rest of the file the same: _FadeInAnimation, _TooltipContent,
-// _TooltipArrowPainter, and _TooltipStyle classes)
-/// Simple fade-in animation widget (temporary until animations are created)
+/// Simple fade-in animation widget
 class _FadeInAnimation extends StatefulWidget {
   final Widget child;
   final Duration duration;

@@ -4,38 +4,56 @@
 /// multiple variants, sizes, and built-in service methods for
 /// common modal patterns.
 ///
+/// {@macro flutstrap_modal.usage}
+/// {@macro flutstrap_modal.accessibility}
+///
+/// {@template flutstrap_modal.usage}
 /// ## Usage Examples
 ///
 /// ```dart
-/// // Basic modal
+/// // Basic modal with custom content
 /// FlutstrapModal(
-///   title: Text('Modal Title'),
-///   content: Text('Modal content goes here...'),
+///   title: Text('User Profile'),
+///   content: Column(
+///     children: [
+///       CircleAvatar(radius: 40),
+///       SizedBox(height: 16),
+///       Text('John Doe', style: TextStyle(fontSize: 18)),
+///       Text('john.doe@example.com'),
+///     ],
+///   ),
 ///   actions: [
 ///     TextButton(
 ///       onPressed: () => Navigator.pop(context),
-///       child: Text('Cancel'),
-///     ),
-///     FilledButton(
-///       onPressed: () => Navigator.pop(context),
-///       child: Text('Save'),
+///       child: Text('Close'),
 ///     ),
 ///   ],
 /// )
 ///
-/// // Using modal service
+/// // Using modal service for common patterns
 /// FlutstrapModalService.showConfirmModal(
 ///   context: context,
-///   title: 'Confirm Action',
-///   content: 'Are you sure you want to proceed?',
-///   confirmText: 'Yes, proceed',
+///   title: 'Delete Item',
+///   content: 'This action cannot be undone. Are you sure?',
+///   confirmText: 'Delete',
 ///   cancelText: 'Cancel',
+///   variant: FSModalVariant.danger,
 /// ).then((confirmed) {
 ///   if (confirmed) {
-///     // Handle confirmation
+///     // Perform deletion
 ///   }
 /// });
 /// ```
+/// {@endtemplate}
+///
+/// {@template flutstrap_modal.accessibility}
+/// ## Accessibility
+///
+/// - Full screen reader support with proper semantic labels
+/// - Keyboard navigation support (Escape to close, Tab to navigate)
+/// - Focus management when modal opens/closes
+/// - Proper ARIA attributes for modal dialogs
+/// {@endtemplate}
 ///
 /// {@category Components}
 /// {@category Overlays}
@@ -70,6 +88,7 @@ enum FSModalSize {
 /// Flutstrap Modal
 ///
 /// A customizable modal dialog with Bootstrap-inspired styling.
+@immutable
 class FlutstrapModal extends StatelessWidget {
   final Widget? title;
   final Widget? content;
@@ -107,15 +126,16 @@ class FlutstrapModal extends StatelessWidget {
     final modalStyle = _ModalStyle(theme, variant, size);
 
     return Semantics(
-      label: 'Dialog',
-      hint: 'Double tap to dismiss', // Optional: Add helpful hint
+      scopesRoute: true, // ✅ Use this for modal dialogs
+      namesRoute: true, // ✅ This helps screen readers
+      label: _getSemanticLabel(),
       child: Dialog(
         backgroundColor: backgroundColor ?? modalStyle.backgroundColor,
         elevation: elevation ?? modalStyle.elevation,
         shape: RoundedRectangleBorder(
           borderRadius: borderRadius ?? modalStyle.borderRadius,
         ),
-        insetPadding: _resolveEdgeInsets(modalStyle.insetPadding),
+        insetPadding: _getInsetPadding(context, modalStyle),
         child: Container(
           constraints: modalStyle.constraints,
           child: Column(
@@ -156,21 +176,28 @@ class FlutstrapModal extends StatelessWidget {
             ),
           ),
           if (showCloseButton)
-            IconButton(
-              icon: Icon(
-                Icons.close,
-                size: 20,
-                color: modalStyle.closeIconColor,
+            Semantics(
+              button: true,
+              label: 'Close dialog',
+              child: IconButton(
+                icon: Icon(
+                  Icons.close,
+                  size: _ModalConstants.closeIconSize,
+                  color: modalStyle.closeIconColor,
+                ),
+                onPressed: () {
+                  if (dismissible) {
+                    Navigator.of(context).pop();
+                    onDismiss?.call();
+                  }
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: _ModalConstants.closeButtonSize,
+                  minHeight: _ModalConstants.closeButtonSize,
+                ),
+                tooltip: 'Close',
               ),
-              onPressed: () {
-                if (dismissible) {
-                  Navigator.of(context).pop();
-                  onDismiss?.call();
-                }
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              tooltip: 'Close',
             ),
         ],
       ),
@@ -209,18 +236,34 @@ class FlutstrapModal extends StatelessWidget {
     return List.generate(
       actions!.length,
       (index) => Padding(
-        padding: EdgeInsets.only(left: index > 0 ? 8.0 : 0.0),
+        padding: EdgeInsets.only(
+          left: index > 0 ? _ModalConstants.actionSpacing : 0.0,
+        ),
         child: actions![index],
       ),
     );
   }
 
-  // ✅ SAFE: Resolve EdgeInsetsGeometry to EdgeInsets
+  String _getSemanticLabel() {
+    if (title is Text) {
+      return (title as Text).data ?? 'Dialog';
+    }
+    return 'Dialog';
+  }
+
   EdgeInsets _resolveEdgeInsets(EdgeInsetsGeometry geometry) {
     return geometry.resolve(TextDirection.ltr);
   }
 
-  // ✅ CONSISTENT: Add copyWith method
+  EdgeInsets _getInsetPadding(BuildContext context, _ModalStyle modalStyle) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < 600) {
+      return const EdgeInsets.all(16.0);
+    }
+    return _resolveEdgeInsets(modalStyle.insetPadding);
+  }
+
+  // CONVENIENCE: Builder methods
   FlutstrapModal copyWith({
     Key? key,
     Widget? title,
@@ -253,14 +296,27 @@ class FlutstrapModal extends StatelessWidget {
     );
   }
 
-  // ✅ CONVENIENCE: Builder methods
+  // CONVENIENCE: Variant methods
   FlutstrapModal primary() => copyWith(variant: FSModalVariant.primary);
+  FlutstrapModal secondary() => copyWith(variant: FSModalVariant.secondary);
   FlutstrapModal success() => copyWith(variant: FSModalVariant.success);
   FlutstrapModal danger() => copyWith(variant: FSModalVariant.danger);
+  FlutstrapModal warning() => copyWith(variant: FSModalVariant.warning);
+  FlutstrapModal info() => copyWith(variant: FSModalVariant.info);
+  FlutstrapModal light() => copyWith(variant: FSModalVariant.light);
+  FlutstrapModal dark() => copyWith(variant: FSModalVariant.dark);
+
+  // CONVENIENCE: Size methods
   FlutstrapModal small() => copyWith(size: FSModalSize.sm);
+  FlutstrapModal medium() => copyWith(size: FSModalSize.md);
   FlutstrapModal large() => copyWith(size: FSModalSize.lg);
+  FlutstrapModal xlarge() => copyWith(size: FSModalSize.xl);
+
+  // CONVENIENCE: Content methods
   FlutstrapModal withTitle(Widget title) => copyWith(title: title);
   FlutstrapModal withContent(Widget content) => copyWith(content: content);
+  FlutstrapModal withActions(List<Widget> actions) =>
+      copyWith(actions: actions);
 }
 
 /// Internal style configuration for modals
@@ -271,7 +327,7 @@ class _ModalStyle {
 
   _ModalStyle(this.theme, this.variant, this.size);
 
-  // ✅ OPTIMIZED: Memoize expensive calculations
+  // OPTIMIZED: Memoize expensive calculations
   late final Color _headerColor = _getHeaderColor();
   late final Color _titleColor = _getTitleColor();
 
@@ -280,16 +336,17 @@ class _ModalStyle {
   Color get actionsBackgroundColor => theme.colors.surface.withOpacity(0.05);
   Color get closeIconColor => theme.colors.onBackground.withOpacity(0.6);
 
-  double get elevation => 24.0;
+  double get elevation => _ModalConstants.defaultElevation;
 
-  BorderRadiusGeometry get borderRadius => BorderRadius.circular(12.0);
+  BorderRadiusGeometry get borderRadius =>
+      BorderRadius.circular(_ModalConstants.defaultBorderRadius);
   BorderRadiusGeometry get headerBorderRadius => const BorderRadius.only(
-        topLeft: Radius.circular(12.0),
-        topRight: Radius.circular(12.0),
+        topLeft: Radius.circular(_ModalConstants.defaultBorderRadius),
+        topRight: Radius.circular(_ModalConstants.defaultBorderRadius),
       );
   BorderRadiusGeometry get actionsBorderRadius => const BorderRadius.only(
-        bottomLeft: Radius.circular(12.0),
-        bottomRight: Radius.circular(12.0),
+        bottomLeft: Radius.circular(_ModalConstants.defaultBorderRadius),
+        bottomRight: Radius.circular(_ModalConstants.defaultBorderRadius),
       );
 
   EdgeInsetsGeometry get insetPadding => const EdgeInsets.all(24.0);
@@ -303,13 +360,13 @@ class _ModalStyle {
   BoxConstraints get constraints {
     switch (size) {
       case FSModalSize.sm:
-        return const BoxConstraints(maxWidth: 300);
+        return const BoxConstraints(maxWidth: _ModalConstants.smallModalWidth);
       case FSModalSize.md:
-        return const BoxConstraints(maxWidth: 500);
+        return const BoxConstraints(maxWidth: _ModalConstants.mediumModalWidth);
       case FSModalSize.lg:
-        return const BoxConstraints(maxWidth: 800);
+        return const BoxConstraints(maxWidth: _ModalConstants.largeModalWidth);
       case FSModalSize.xl:
-        return const BoxConstraints(maxWidth: 1140);
+        return const BoxConstraints(maxWidth: _ModalConstants.xlargeModalWidth);
     }
   }
 
@@ -516,7 +573,7 @@ class FlutstrapModalService {
     );
   }
 
-  // ✅ HELPER: Default actions for modal
+  // HELPER: Default actions for modal
   static List<Widget> _getDefaultActions(BuildContext context) {
     return [
       TextButton(
@@ -528,6 +585,7 @@ class FlutstrapModalService {
 }
 
 /// A button that triggers a modal when pressed
+@immutable
 class FlutstrapModalTrigger extends StatelessWidget {
   final Widget child;
   final Widget? modalTitle;
@@ -570,4 +628,17 @@ class FlutstrapModalTrigger extends StatelessWidget {
       ),
     );
   }
+}
+
+// CONSTANTS FOR BETTER MAINTAINABILITY
+class _ModalConstants {
+  static const double defaultElevation = 24.0;
+  static const double defaultBorderRadius = 12.0;
+  static const double closeButtonSize = 32.0;
+  static const double closeIconSize = 20.0;
+  static const double actionSpacing = 8.0;
+  static const double smallModalWidth = 300.0;
+  static const double mediumModalWidth = 500.0;
+  static const double largeModalWidth = 800.0;
+  static const double xlargeModalWidth = 1140.0;
 }

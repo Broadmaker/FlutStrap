@@ -1,48 +1,74 @@
-/// Flutstrap FadeIn Animation
-///
-/// A high-performance widget that gradually fades in its child with
-/// theme integration, memory optimization, and flexible configuration.
-///
-/// ## Usage Examples
-///
-/// ```dart
-/// // Basic usage
-/// FadeIn(
-///   child: Text('Hello World'),
-/// )
-///
-/// // Custom duration and curve
-/// FadeIn(
-///   child: MyWidget(),
-///   duration: Duration(milliseconds: 1000),
-///   curve: Curves.easeInOut,
-///   delay: Duration(milliseconds: 200),
-/// )
-///
-/// // Using theme configuration
-/// FadeIn.themed(
-///   context: context,
-///   child: MyWidget(),
-/// )
-///
-/// // Manual control
-/// final fadeKey = GlobalKey<FadeInState>();
-/// FadeIn(
-///   key: fadeKey,
-///   child: MyWidget(),
-///   autoPlay: false,
-/// )
-/// // Later...
-/// fadeKey.currentState?.play();
-/// ```
-///
-/// {@category Animations}
-/// {@category Components}
+// Flutstrap FadeIn Animation
+//
+// A high-performance widget that gradually fades in its child with
+// theme integration, memory optimization, and flexible configuration.
+//
+// ## Usage Examples
+//
+// ```dart
+// // Basic usage
+// FadeIn(
+//   child: Text('Hello World'),
+// )
+//
+// // Custom duration and curve
+// FadeIn(
+//   child: MyWidget(),
+//   duration: Duration(milliseconds: 1000),
+//   curve: Curves.easeInOut,
+//   delay: Duration(milliseconds: 200),
+// )
+//
+// // Using theme configuration
+// FadeIn.themed(
+//   context: context,
+//   child: MyWidget(),
+// )
+//
+// // Manual control
+// final fadeKey = GlobalKey<FadeInState>();
+// FadeIn(
+//   key: fadeKey,
+//   child: MyWidget(),
+//   autoPlay: false,
+// )
+// // Later...
+// fadeKey.currentState?.play();
+// ```
+//
+// {@template flutstrap_fade_in.performance}
+// ## Performance Features
+//
+// - **Memory Optimized**: Proper controller disposal and timer cleanup
+// - **Efficient Rebuilds**: Uses `AnimatedBuilder` for minimal rebuilds
+// - **State Management**: Configurable state maintenance for off-screen widgets
+// - **Frame Rate Aware**: Smooth 60fps animations with proper timing
+//
+// ### Best Practices
+//
+// - Use `maintainState: false` for large lists to improve performance
+// - Set `autoPlay: false` for manually triggered animations
+// - Use pre-configured variations (`FadeInQuick`, `FadeInStandard`) for consistency
+// - Consider using `respectSystemPreferences: true` for accessibility
+// {@endtemplate}
+//
+// {@template flutstrap_fade_in.accessibility}
+// ## Accessibility
+//
+// - Respects system animation preferences when `respectSystemPreferences` is true
+// - Maintains semantic focus order during animations
+// - Screen reader compatible animation states
+// - Reduced motion consideration for users with vestibular disorders
+// {@endtemplate}
+//
+// {@category Animations}
+// {@category Components}
 
-import 'dart:async'; // ✅ ADDED: For Timer class
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/error_boundary.dart';
 
 /// FadeIn Animation Widget
 ///
@@ -74,6 +100,9 @@ class FadeIn extends StatefulWidget {
   /// Whether to maintain the widget's state when not visible
   final bool maintainState;
 
+  /// Whether to respect system animation preferences
+  final bool respectSystemPreferences;
+
   /// Creates a fade-in animation widget
   const FadeIn({
     super.key,
@@ -85,6 +114,7 @@ class FadeIn extends StatefulWidget {
     this.onComplete,
     this.onCancel,
     this.maintainState = true,
+    this.respectSystemPreferences = true,
   });
 
   /// Create a fade-in animation using theme configuration
@@ -99,6 +129,7 @@ class FadeIn extends StatefulWidget {
     VoidCallback? onComplete,
     VoidCallback? onCancel,
     bool maintainState = true,
+    bool respectSystemPreferences = true,
   }) {
     final theme = FSTheme.of(context);
     final animationConfig = theme.animation;
@@ -113,6 +144,7 @@ class FadeIn extends StatefulWidget {
       onComplete: onComplete,
       onCancel: onCancel,
       maintainState: maintainState,
+      respectSystemPreferences: respectSystemPreferences,
     );
   }
 
@@ -127,6 +159,14 @@ class FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   Timer? _delayTimer;
+  bool _isDisposed = false;
+
+  /// Whether animations should play based on system preferences
+  bool get _shouldAnimate {
+    if (!widget.respectSystemPreferences) return true;
+    final mediaQuery = MediaQuery.maybeOf(context);
+    return mediaQuery?.disableAnimations != true;
+  }
 
   /// Current opacity value (0.0 to 1.0)
   double get opacity => _animation.value.clamp(_beginOpacity, _endOpacity);
@@ -142,7 +182,7 @@ class FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
     super.initState();
     _initializeAnimation();
 
-    if (widget.autoPlay) {
+    if (widget.autoPlay && _shouldAnimate) {
       _startAnimation();
     }
   }
@@ -168,6 +208,8 @@ class FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
   }
 
   void _handleStatusChange(AnimationStatus status) {
+    if (_isDisposed) return;
+
     if (status == AnimationStatus.completed) {
       widget.onComplete?.call();
     } else if (status == AnimationStatus.dismissed) {
@@ -176,7 +218,7 @@ class FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _startAnimation() async {
-    if (!mounted) return;
+    if (!mounted || _isDisposed) return;
 
     if (widget.delay > Duration.zero) {
       _delayTimer = Timer(widget.delay, _executeAnimation);
@@ -186,13 +228,13 @@ class FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _executeAnimation() async {
-    if (!mounted) return;
+    if (!mounted || _isDisposed) return;
 
     try {
       await _controller.forward().orCancel;
     } catch (error) {
       // Handle animation cancellation gracefully
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         widget.onCancel?.call();
       }
     }
@@ -200,7 +242,7 @@ class FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
 
   /// Manually start the fade-in animation
   Future<void> play() async {
-    if (!mounted || _controller.isAnimating) return;
+    if (!mounted || _controller.isAnimating || !_shouldAnimate) return;
     await _controller.forward().orCancel;
   }
 
@@ -212,21 +254,21 @@ class FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
 
   /// Manually reset the animation to its initial state
   void reset() {
-    if (mounted && !_controller.isAnimating) {
+    if (mounted && !_isDisposed && !_controller.isAnimating) {
       _controller.reset();
     }
   }
 
   /// Manually stop the animation
   void stop() {
-    if (mounted) {
+    if (mounted && !_isDisposed) {
       _controller.stop();
     }
   }
 
   /// Set the animation to a specific value (0.0 to 1.0)
   void setValue(double value) {
-    if (mounted) {
+    if (mounted && !_isDisposed) {
       _controller.value = value.clamp(0.0, 1.0);
     }
   }
@@ -256,14 +298,15 @@ class FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
       );
     }
 
-    // Restart animation if autoPlay changed to true
-    if (widget.autoPlay && !oldWidget.autoPlay) {
+    // Restart animation if autoPlay changed to true and should animate
+    if (widget.autoPlay && !oldWidget.autoPlay && _shouldAnimate) {
       _startAnimation();
     }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _delayTimer?.cancel();
     _controller.removeStatusListener(_handleStatusChange);
     _controller.dispose();
@@ -272,22 +315,29 @@ class FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: opacity,
-          // Use Visibility to properly handle state maintenance
-          child: widget.maintainState
-              ? child
-              : Visibility(
-                  visible: opacity > 0.0,
-                  maintainState: widget.maintainState,
-                  child: child!,
-                ),
-        );
-      },
-      child: widget.child,
+    return ErrorBoundary(
+      componentName: 'FadeIn',
+      fallbackBuilder: (context) =>
+          widget.child, // ✅ FIXED: Removed dynamic parameter
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          // Pre-calculate opacity once
+          final currentOpacity = _animation.value.clamp(0.0, 1.0);
+          return Opacity(
+            opacity: currentOpacity,
+            // Use Visibility to properly handle state maintenance
+            child: widget.maintainState
+                ? child
+                : Visibility(
+                    visible: currentOpacity > 0.0,
+                    maintainState: widget.maintainState,
+                    child: child!,
+                  ),
+          );
+        },
+        child: widget.child,
+      ),
     );
   }
 }
@@ -303,6 +353,7 @@ class FadeInQuick extends StatelessWidget {
   final bool autoPlay;
   final VoidCallback? onComplete;
   final bool maintainState;
+  final bool respectSystemPreferences;
 
   const FadeInQuick({
     super.key,
@@ -311,6 +362,7 @@ class FadeInQuick extends StatelessWidget {
     this.autoPlay = true,
     this.onComplete,
     this.maintainState = true,
+    this.respectSystemPreferences = true,
   });
 
   @override
@@ -323,6 +375,7 @@ class FadeInQuick extends StatelessWidget {
       autoPlay: autoPlay,
       onComplete: onComplete,
       maintainState: maintainState,
+      respectSystemPreferences: respectSystemPreferences,
     );
   }
 }
@@ -334,6 +387,7 @@ class FadeInStandard extends StatelessWidget {
   final bool autoPlay;
   final VoidCallback? onComplete;
   final bool maintainState;
+  final bool respectSystemPreferences;
 
   const FadeInStandard({
     super.key,
@@ -342,6 +396,7 @@ class FadeInStandard extends StatelessWidget {
     this.autoPlay = true,
     this.onComplete,
     this.maintainState = true,
+    this.respectSystemPreferences = true,
   });
 
   @override
@@ -354,6 +409,7 @@ class FadeInStandard extends StatelessWidget {
       autoPlay: autoPlay,
       onComplete: onComplete,
       maintainState: maintainState,
+      respectSystemPreferences: respectSystemPreferences,
     );
   }
 }
@@ -365,6 +421,7 @@ class FadeInSlow extends StatelessWidget {
   final bool autoPlay;
   final VoidCallback? onComplete;
   final bool maintainState;
+  final bool respectSystemPreferences;
 
   const FadeInSlow({
     super.key,
@@ -373,6 +430,7 @@ class FadeInSlow extends StatelessWidget {
     this.autoPlay = true,
     this.onComplete,
     this.maintainState = true,
+    this.respectSystemPreferences = true,
   });
 
   @override
@@ -385,6 +443,7 @@ class FadeInSlow extends StatelessWidget {
       autoPlay: autoPlay,
       onComplete: onComplete,
       maintainState: maintainState,
+      respectSystemPreferences: respectSystemPreferences,
     );
   }
 }
@@ -397,6 +456,7 @@ class FadeInBounce extends StatelessWidget {
   final bool autoPlay;
   final VoidCallback? onComplete;
   final bool maintainState;
+  final bool respectSystemPreferences;
 
   const FadeInBounce({
     super.key,
@@ -406,6 +466,7 @@ class FadeInBounce extends StatelessWidget {
     this.autoPlay = true,
     this.onComplete,
     this.maintainState = true,
+    this.respectSystemPreferences = true,
   });
 
   @override
@@ -419,6 +480,7 @@ class FadeInBounce extends StatelessWidget {
       autoPlay: autoPlay,
       onComplete: onComplete,
       maintainState: maintainState,
+      respectSystemPreferences: respectSystemPreferences,
     );
   }
 }
@@ -431,6 +493,7 @@ class FadeInElastic extends StatefulWidget {
   final bool autoPlay;
   final VoidCallback? onComplete;
   final bool maintainState;
+  final bool respectSystemPreferences;
 
   const FadeInElastic({
     super.key,
@@ -440,6 +503,7 @@ class FadeInElastic extends StatefulWidget {
     this.autoPlay = true,
     this.onComplete,
     this.maintainState = true,
+    this.respectSystemPreferences = true,
   });
 
   @override
@@ -451,13 +515,21 @@ class _FadeInElasticState extends State<FadeInElastic>
   late AnimationController _controller;
   late Animation<double> _animation;
   Timer? _delayTimer;
+  bool _isDisposed = false;
+
+  /// Whether animations should play based on system preferences
+  bool get _shouldAnimate {
+    if (!widget.respectSystemPreferences) return true;
+    final mediaQuery = MediaQuery.maybeOf(context);
+    return mediaQuery?.disableAnimations != true;
+  }
 
   @override
   void initState() {
     super.initState();
     _initializeAnimation();
 
-    if (widget.autoPlay) {
+    if (widget.autoPlay && _shouldAnimate) {
       _startAnimation();
     }
   }
@@ -474,10 +546,18 @@ class _FadeInElasticState extends State<FadeInElastic>
         curve: const ElasticOutCurve(0.7),
       ),
     );
+
+    // Status listener for completion callback
+    _controller.addStatusListener((status) {
+      if (_isDisposed) return;
+      if (status == AnimationStatus.completed) {
+        widget.onComplete?.call();
+      }
+    });
   }
 
   Future<void> _startAnimation() async {
-    if (!mounted) return;
+    if (!mounted || _isDisposed) return;
 
     if (widget.delay > Duration.zero) {
       _delayTimer = Timer(widget.delay, _executeAnimation);
@@ -487,9 +567,15 @@ class _FadeInElasticState extends State<FadeInElastic>
   }
 
   Future<void> _executeAnimation() async {
-    if (!mounted) return;
-    await _controller.forward().orCancel;
-    widget.onComplete?.call();
+    if (!mounted || _isDisposed) return;
+
+    try {
+      await _controller.forward().orCancel;
+    } catch (error) {
+      if (mounted && !_isDisposed) {
+        // Animation was cancelled
+      }
+    }
   }
 
   @override
@@ -501,13 +587,14 @@ class _FadeInElasticState extends State<FadeInElastic>
       _controller.duration = widget.duration;
     }
 
-    if (widget.autoPlay && !oldWidget.autoPlay) {
+    if (widget.autoPlay && !oldWidget.autoPlay && _shouldAnimate) {
       _startAnimation();
     }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _delayTimer?.cancel();
     _controller.dispose();
     super.dispose();
@@ -515,22 +602,27 @@ class _FadeInElasticState extends State<FadeInElastic>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        final opacity = _animation.value.clamp(0.0, 1.0);
-        return Opacity(
-          opacity: opacity,
-          child: widget.maintainState
-              ? child
-              : Visibility(
-                  visible: opacity > 0.0,
-                  maintainState: widget.maintainState,
-                  child: child!,
-                ),
-        );
-      },
-      child: widget.child,
+    return ErrorBoundary(
+      componentName: 'FadeInElastic',
+      fallbackBuilder: (context) =>
+          widget.child, // ✅ FIXED: Removed dynamic parameter
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          final currentOpacity = _animation.value.clamp(0.0, 1.0);
+          return Opacity(
+            opacity: currentOpacity,
+            child: widget.maintainState
+                ? child
+                : Visibility(
+                    visible: currentOpacity > 0.0,
+                    maintainState: widget.maintainState,
+                    child: child!,
+                  ),
+          );
+        },
+        child: widget.child,
+      ),
     );
   }
 }
@@ -539,13 +631,20 @@ class _FadeInElasticState extends State<FadeInElastic>
 class ElasticOutCurve extends Curve {
   final double period;
 
+  // Cache calculations for better performance
+  static const double _twoPi = 2.0 * 3.1415926535897932;
+
   const ElasticOutCurve([this.period = 0.4]);
 
   @override
   double transform(double t) {
     final double s = period / 4.0;
-    return math.pow(2.0, -10.0 * t) *
-            math.sin((t - s) * (2.0 * math.pi) / period) +
+    // Use pre-calculated constants
+    return (math.pow(2.0, -10.0 * t) * math.sin((t - s) * _twoPi / period)) +
         1.0;
   }
+
+  // Better debugging
+  @override
+  String toString() => 'ElasticOutCurve(period: $period)';
 }

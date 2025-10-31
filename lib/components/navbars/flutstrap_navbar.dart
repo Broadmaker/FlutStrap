@@ -3,64 +3,59 @@
 /// A high-performance, responsive navigation bar with Bootstrap-inspired styling,
 /// smooth animations, and optimized state management for large navigation structures.
 ///
+/// {@macro flutstrap_navbar.usage}
+/// {@macro flutstrap_navbar.accessibility}
+///
+/// {@template flutstrap_navbar.usage}
 /// ## Usage Examples
 ///
 /// ```dart
-/// // Basic navbar with brand and items
+/// // Basic navbar with active state
 /// FlutstrapNavbar(
 ///   brandText: 'My App',
 ///   items: [
-///     FSNavbarItem(label: 'Home', onTap: () => navigateToHome()),
-///     FSNavbarItem(label: 'About', onTap: () => navigateToAbout()),
-///     FSNavbarItem(label: 'Contact', onTap: () => navigateToContact()),
+///     FSNavbarItem(label: 'Home', onTap: () {}, isActive: true),
+///     FSNavbarItem(label: 'About', onTap: () {}),
+///     FSNavbarItem(label: 'Services', onTap: () {}),
 ///   ],
 ///   variant: FSNavbarVariant.primary,
 /// )
 ///
-/// // Navbar with dropdown items and search
+/// // Navbar with dropdowns and custom branding
 /// FlutstrapNavbar(
-///   brandText: 'E-Commerce',
+///   brand: Row(
+///     children: [
+///       Icon(Icons.rocket, color: Colors.white),
+///       SizedBox(width: 8),
+///       Text('Flutstrap', style: TextStyle(color: Colors.white)),
+///     ],
+///   ),
 ///   items: [
 ///     FSNavbarItem.simple(label: 'Home', onTap: () {}),
 ///     FSNavbarItem.dropdown(
 ///       label: 'Products',
 ///       children: [
-///         FSNavbarItem(label: 'Electronics', onTap: () {}),
-///         FSNavbarItem(label: 'Clothing', onTap: () {}),
+///         FSNavbarItem(label: 'Web Apps', onTap: () {}),
+///         FSNavbarItem(label: 'Mobile Apps', onTap: () {}),
 ///       ],
 ///     ),
 ///   ],
 ///   showSearch: true,
-///   onSearch: (query) => filterProducts(query),
-/// )
-///
-/// // Fixed top navbar with custom branding
-/// FlutstrapNavbar(
-///   brand: Row(
-///     children: [
-///       Icon(Icons.rocket),
-///       SizedBox(width: 8),
-///       Text('Flutstrap'),
-///     ],
-///   ),
-///   items: navigationItems,
+///   onSearch: (query) => print('Search: $query'),
 ///   position: FSNavbarPosition.fixedTop,
-///   elevation: 4,
 /// )
 /// ```
+/// {@endtemplate}
 ///
-/// ## Performance Features
+/// {@template flutstrap_navbar.accessibility}
+/// ## Accessibility
 ///
-/// - **Optimized State Management**: Efficient hover and dropdown state for multiple items
-/// - **Smooth Animations**: Properly disposed animation controllers for mobile menu
-/// - **Cached Breakpoints**: Efficient responsive behavior calculations
-/// - **Memory Efficient**: No memory leaks from state management
-///
-/// ## Responsive Behavior
-///
-/// - **Desktop**: Full navigation with hover effects and dropdowns
-/// - **Mobile**: Collapsible hamburger menu with smooth animations
-/// - **Automatic**: Switches at 768px breakpoint (FSBreakpoints.md)
+/// - Full screen reader support with proper semantic labels
+/// - Keyboard navigation support for all interactive elements
+/// - Focus management for dropdowns and mobile menu
+/// - Proper ARIA attributes for navigation landmarks
+/// - High contrast support for all variants
+/// {@endtemplate}
 ///
 /// {@category Components}
 /// {@category Navigation}
@@ -104,6 +99,7 @@ enum FSNavbarPosition {
 }
 
 /// Navbar Item Data
+@immutable
 class FSNavbarItem {
   final String label;
   final VoidCallback? onTap;
@@ -172,7 +168,7 @@ class FlutstrapNavbar extends StatefulWidget {
   final bool fluid;
 
   const FlutstrapNavbar({
-    Key? key,
+    super.key,
     this.brand,
     this.brandText,
     this.brandImage,
@@ -189,8 +185,7 @@ class FlutstrapNavbar extends StatefulWidget {
     this.elevation = 0,
     this.padding = const EdgeInsets.symmetric(horizontal: 16.0),
     this.fluid = false,
-  }) : super(key: key);
-
+  });
   @override
   State<FlutstrapNavbar> createState() => _FlutstrapNavbarState();
 }
@@ -208,6 +203,13 @@ class _FlutstrapNavbarState extends State<FlutstrapNavbar>
   @override
   void initState() {
     super.initState();
+
+    // ✅ VALIDATE: Check item count limits
+    assert(
+      FSNavbarConfig.isValidItemCount(widget.items.length),
+      'Navbar cannot have more than ${FSNavbarConfig.maxNavbarItems} items',
+    );
+
     _mobileMenuController = AnimationController(
       duration: FSNavbarConfig.mobileMenuAnimationDuration,
       vsync: this,
@@ -275,6 +277,8 @@ class _FlutstrapNavbarState extends State<FlutstrapNavbar>
   @override
   void dispose() {
     _mobileMenuController.dispose(); // ✅ CRITICAL: Prevent memory leaks
+    _desktopItemHoverStates.clear(); // ✅ CLEAR: State maps
+    _desktopItemDropdownStates.clear();
     super.dispose();
   }
 
@@ -283,46 +287,50 @@ class _FlutstrapNavbarState extends State<FlutstrapNavbar>
     final theme = FSTheme.of(context);
     final navbarStyle = _NavbarStyle(theme, widget.variant);
 
-    return _NavbarWrapper(
-      position: widget.position,
-      child: Material(
-        elevation: widget.elevation,
-        color: widget.backgroundColor ?? navbarStyle.backgroundColor,
-        child: Container(
-          padding: widget.padding,
-          child: ConstrainedBox(
-            constraints: widget.fluid
-                ? const BoxConstraints()
-                : const BoxConstraints(maxWidth: 1140),
-            child: Column(
-              children: [
-                // Main navbar row
-                _NavbarMainRow(
-                  brand: widget.brand,
-                  brandText: widget.brandText,
-                  brandImage: widget.brandImage,
-                  items: widget.items,
-                  customItems: widget.customItems,
-                  variant: widget.variant,
-                  expand: widget.expand,
-                  searchPlaceholder: widget.searchPlaceholder,
-                  onSearch: widget.onSearch,
-                  showSearch: widget.showSearch,
-                  isMobileMenuOpen: _isMobileMenuOpen,
-                  onToggleMobileMenu: _toggleMobileMenu,
-                  onCloseMobileMenu: _closeMobileMenu,
-                  desktopItemHoverStates: _desktopItemHoverStates,
-                  desktopItemDropdownStates: _desktopItemDropdownStates,
-                  onDesktopItemHover: _setDesktopItemHover,
-                  onDesktopItemDropdown: _setDesktopItemDropdown,
-                ),
-                // Mobile menu (animated)
-                if (_isMobileMenuOpen || _mobileMenuController.value > 0)
-                  _MobileNavbarMenu(
+    return Semantics(
+      header: true,
+      label: 'Navigation',
+      child: _NavbarWrapper(
+        position: widget.position,
+        child: Material(
+          elevation: widget.elevation,
+          color: widget.backgroundColor ?? navbarStyle.backgroundColor,
+          child: Container(
+            padding: widget.padding,
+            child: ConstrainedBox(
+              constraints: widget.fluid
+                  ? const BoxConstraints()
+                  : const BoxConstraints(maxWidth: 1140),
+              child: Column(
+                children: [
+                  // Main navbar row
+                  _NavbarMainRow(
+                    brand: widget.brand,
+                    brandText: widget.brandText,
+                    brandImage: widget.brandImage,
                     items: widget.items,
-                    animation: _mobileMenuAnimation,
+                    customItems: widget.customItems,
+                    variant: widget.variant,
+                    expand: widget.expand,
+                    searchPlaceholder: widget.searchPlaceholder,
+                    onSearch: widget.onSearch,
+                    showSearch: widget.showSearch,
+                    isMobileMenuOpen: _isMobileMenuOpen,
+                    onToggleMobileMenu: _toggleMobileMenu,
+                    onCloseMobileMenu: _closeMobileMenu,
+                    desktopItemHoverStates: _desktopItemHoverStates,
+                    desktopItemDropdownStates: _desktopItemDropdownStates,
+                    onDesktopItemHover: _setDesktopItemHover,
+                    onDesktopItemDropdown: _setDesktopItemDropdown,
                   ),
-              ],
+                  // Mobile menu (animated)
+                  if (_isMobileMenuOpen || _mobileMenuController.value > 0)
+                    _MobileNavbarMenu(
+                      items: widget.items,
+                      animation: _mobileMenuAnimation,
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -332,6 +340,7 @@ class _FlutstrapNavbarState extends State<FlutstrapNavbar>
 }
 
 /// Wrapper for navbar positioning
+@immutable
 class _NavbarWrapper extends StatelessWidget {
   final FSNavbarPosition position;
   final Widget child;
@@ -368,6 +377,7 @@ class _NavbarWrapper extends StatelessWidget {
 }
 
 /// Main navbar row with brand, navigation, and mobile menu button
+@immutable
 class _NavbarMainRow extends StatelessWidget {
   final Widget? brand;
   final String? brandText;
@@ -474,6 +484,7 @@ class _NavbarMainRow extends StatelessWidget {
 }
 
 /// Navbar brand/logo section
+@immutable
 class _NavbarBrand extends StatelessWidget {
   final Widget? brand;
   final String? brandText;
@@ -501,32 +512,36 @@ class _NavbarBrand extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          // Typically would navigate to home
-          try {
-            // Navigation logic here
-          } catch (e) {
-            if (kDebugMode) {
-              print('🚨 Navbar brand tap error: $e');
+    return Semantics(
+      button: true,
+      label: 'Home',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () {
+            // Typically would navigate to home
+            try {
+              // Navigation logic here
+            } catch (e) {
+              if (kDebugMode) {
+                print('🚨 Navbar brand tap error: $e');
+              }
             }
-          }
-        },
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (brandImage != null) ...[
-              brandImage!,
-              const SizedBox(width: 8),
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (brandImage != null) ...[
+                brandImage!,
+                SizedBox(width: _NavbarConstants.brandImageSpacing),
+              ],
+              if (brandText != null)
+                Text(
+                  brandText!,
+                  style: navbarStyle.brandTextStyle,
+                ),
             ],
-            if (brandText != null)
-              Text(
-                brandText!,
-                style: navbarStyle.brandTextStyle,
-              ),
-          ],
+          ),
         ),
       ),
     );
@@ -534,6 +549,7 @@ class _NavbarBrand extends StatelessWidget {
 }
 
 /// Optimized desktop navigation item
+@immutable
 class _NavbarItemDesktop extends StatelessWidget {
   final FSNavbarItem item;
   final FSNavbarVariant variant;
@@ -560,44 +576,55 @@ class _NavbarItemDesktop extends StatelessWidget {
 
     final hasChildren = item.children != null && item.children!.isNotEmpty;
 
-    return MouseRegion(
-      onEnter: (_) => onHoverChanged(true),
-      onExit: (_) => onHoverChanged(false),
-      child: GestureDetector(
-        onTap: () {
-          if (hasChildren) {
-            onDropdownToggle(!isDropdownOpen);
-          } else {
-            item.onTap?.call();
-            onItemTap();
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: _getBackgroundColor(navbarStyle),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (item.icon != null) ...[
-                item.icon!,
-                const SizedBox(width: 8),
-              ],
-              Text(
-                item.label,
-                style: _getTextStyle(navbarStyle),
-              ),
-              if (hasChildren) ...[
-                const SizedBox(width: 4),
-                Icon(
-                  isDropdownOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                  size: 16,
-                  color: _getTextColor(navbarStyle),
+    return Semantics(
+      button: true,
+      enabled: item.enabled,
+      label: item.label,
+      expanded: hasChildren ? isDropdownOpen : null,
+      child: MouseRegion(
+        onEnter: (_) => onHoverChanged(true),
+        onExit: (_) => onHoverChanged(false),
+        child: GestureDetector(
+          onTap: () {
+            if (hasChildren) {
+              onDropdownToggle(!isDropdownOpen);
+            } else if (item.enabled) {
+              item.onTap?.call();
+              onItemTap();
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: _NavbarConstants.itemHorizontalPadding,
+              vertical: _NavbarConstants.itemVerticalPadding,
+            ),
+            decoration: BoxDecoration(
+              color: _getBackgroundColor(navbarStyle),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (item.icon != null) ...[
+                  item.icon!,
+                  SizedBox(width: _NavbarConstants.brandImageSpacing),
+                ],
+                Text(
+                  item.label,
+                  style: _getTextStyle(navbarStyle),
                 ),
+                if (hasChildren) ...[
+                  SizedBox(width: _NavbarConstants.dropdownIconSpacing),
+                  Icon(
+                    isDropdownOpen
+                        ? Icons.arrow_drop_up
+                        : Icons.arrow_drop_down,
+                    size: 16,
+                    color: _getTextColor(navbarStyle),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -642,6 +669,7 @@ class _NavbarItemDesktop extends StatelessWidget {
 }
 
 /// Navbar search component
+@immutable
 class _NavbarSearch extends StatelessWidget {
   final String? placeholder;
   final ValueChanged<String>? onSearch;
@@ -659,8 +687,8 @@ class _NavbarSearch extends StatelessWidget {
     final navbarStyle = _NavbarStyle(theme, variant);
 
     return Container(
-      width: 200,
-      height: 36,
+      width: _NavbarConstants.searchFieldWidth,
+      height: _NavbarConstants.searchFieldHeight,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: navbarStyle.searchBackgroundColor,
@@ -677,7 +705,7 @@ class _NavbarSearch extends StatelessWidget {
             size: 16,
             color: navbarStyle.searchIconColor,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: _NavbarConstants.searchIconSpacing),
           Expanded(
             child: TextField(
               onChanged: onSearch,
@@ -698,6 +726,7 @@ class _NavbarSearch extends StatelessWidget {
 }
 
 /// Mobile menu button (hamburger)
+@immutable
 class _MobileMenuButton extends StatelessWidget {
   final bool isOpen;
   final VoidCallback onTap;
@@ -714,17 +743,22 @@ class _MobileMenuButton extends StatelessWidget {
     final theme = FSTheme.of(context);
     final navbarStyle = _NavbarStyle(theme, variant);
 
-    return IconButton(
-      onPressed: onTap,
-      icon: Icon(
-        isOpen ? Icons.close : Icons.menu,
-        color: navbarStyle.mobileMenuIconColor,
+    return Semantics(
+      button: true,
+      label: isOpen ? 'Close menu' : 'Open menu',
+      child: IconButton(
+        onPressed: onTap,
+        icon: Icon(
+          isOpen ? Icons.close : Icons.menu,
+          color: navbarStyle.mobileMenuIconColor,
+        ),
       ),
     );
   }
 }
 
 /// Mobile navbar menu (animated)
+@immutable
 class _MobileNavbarMenu extends StatelessWidget {
   final List<FSNavbarItem> items;
   final Animation<double> animation;
@@ -746,7 +780,7 @@ class _MobileNavbarMenu extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 8),
+              SizedBox(height: _NavbarConstants.mobileMenuTopSpacing),
               for (final item in items) _MobileNavbarMenuItem(item: item),
             ],
           ),
@@ -757,6 +791,7 @@ class _MobileNavbarMenu extends StatelessWidget {
 }
 
 /// Individual mobile navbar menu item
+@immutable
 class _MobileNavbarMenuItem extends StatelessWidget {
   final FSNavbarItem item;
 
@@ -768,27 +803,39 @@ class _MobileNavbarMenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FSTheme.of(context);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      child: Row(
-        children: [
-          if (item.icon != null) ...[
-            item.icon!,
-            const SizedBox(width: 12),
-          ],
-          Expanded(
-            child: Text(
-              item.label,
-              style: theme.typography.bodyMedium.copyWith(
-                fontWeight: item.isActive ? FontWeight.w600 : FontWeight.normal,
-                color: item.enabled
-                    ? null
-                    : theme.colors.onSurface.withOpacity(0.5),
-              ),
-            ),
+    return Semantics(
+      button: true,
+      enabled: item.enabled,
+      label: item.label,
+      child: InkWell(
+        onTap: item.enabled ? item.onTap : null,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            vertical: _NavbarConstants.itemVerticalPadding,
+            horizontal: _NavbarConstants.itemHorizontalPadding,
           ),
-        ],
+          child: Row(
+            children: [
+              if (item.icon != null) ...[
+                item.icon!,
+                SizedBox(width: _NavbarConstants.mobileMenuItemSpacing),
+              ],
+              Expanded(
+                child: Text(
+                  item.label,
+                  style: theme.typography.bodyMedium.copyWith(
+                    fontWeight:
+                        item.isActive ? FontWeight.w600 : FontWeight.normal,
+                    color: item.enabled
+                        ? null
+                        : theme.colors.onSurface.withOpacity(0.5),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -975,4 +1022,17 @@ class _NavbarStyle {
   Color _getMobileMenuIconColor() {
     return _getItemTextColor();
   }
+}
+
+// CONSTANTS FOR BETTER MAINTAINABILITY
+class _NavbarConstants {
+  static const double itemHorizontalPadding = 16.0;
+  static const double itemVerticalPadding = 12.0;
+  static const double brandImageSpacing = 8.0;
+  static const double dropdownIconSpacing = 4.0;
+  static const double mobileMenuItemSpacing = 12.0;
+  static const double searchFieldWidth = 200.0;
+  static const double searchFieldHeight = 36.0;
+  static const double searchIconSpacing = 8.0;
+  static const double mobileMenuTopSpacing = 8.0;
 }

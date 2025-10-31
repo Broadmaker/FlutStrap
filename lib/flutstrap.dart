@@ -1,48 +1,63 @@
-/// Flutstrap - Bootstrap-inspired Component Library for Flutter
-///
-/// A comprehensive set of Flutter widgets that follow Bootstrap design principles
-/// and provide a consistent, responsive UI framework.
-///
-/// ## Usage
-///
-/// ```dart
-/// import 'package:flutstrap/flutstrap.dart';
-///
-/// class MyApp extends StatelessWidget {
-///   @override
-///   Widget build(BuildContext context) {
-///     return FSTheme(
-///       data: FSThemeData.light(),
-///       child: MaterialApp(
-///         home: Scaffold(
-///           body: FlutstrapButton(
-///             onPressed: () {},
-///             text: 'Hello Flutstrap',
-///             variant: FSButtonVariant.primary,
-///           ),
-///         ),
-///       ),
-///     );
-///   }
-/// }
-/// ```
+// Flutstrap - Bootstrap-inspired Component Library for Flutter
+//
+// {@template flutstrap.introduction}
+// ## Introduction
+//
+// Flutstrap provides a comprehensive set of Flutter widgets that follow
+// Bootstrap design principles with a consistent, responsive UI framework.
+//
+// ### Key Features:
+//
+// - **Bootstrap-inspired Design**: Familiar patterns for web developers
+// - **Responsive Layout**: Built-in responsive grid system
+// - **Theme System**: Customizable theming with light/dark modes
+// - **Animation System**: Smooth, performant animations
+// - **Production Ready**: Battle-tested components for real apps
+// {@endtemplate}
+//
+// {@category Flutstrap}
+// {@category UI Framework}
 
 library flutstrap;
 
-// Core foundation
+// =============================================================================
+// CORE FOUNDATION
+// =============================================================================
+
+/// Core utilities, responsive system, and theme foundation
 export 'core/index.dart';
 
-// Theme system
+// =============================================================================
+// THEME SYSTEM
+// =============================================================================
+
+/// Light and dark themes, theme data, and customization
 export 'themes/index.dart';
 
-// Layout components
+// =============================================================================
+// LAYOUT SYSTEM
+// =============================================================================
+
+/// Responsive grid, containers, and layout components
 export 'layout/index.dart';
 
-// Animations
+// =============================================================================
+// ANIMATION SYSTEM
+// =============================================================================
+
+/// Smooth animations, transitions, and animation utilities
 export 'animations/index.dart';
 
-// UI Components
+// =============================================================================
+// UI COMPONENTS
+// =============================================================================
+
+/// Buttons, forms, modals, navigation, and other UI components
 export 'components/index.dart';
 
-// Extensions
+// =============================================================================
+// EXTENSIONS
+// =============================================================================
+
+/// Helper extensions for BuildContext and Widgets
 // export 'extensions/index.dart';

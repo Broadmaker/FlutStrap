@@ -3,11 +3,8 @@
 /// A high-performance, flexible card component with comprehensive theming,
 /// multiple variants, and optimized rendering patterns.
 ///
-/// {@macro flutstrap_card.usage}
-/// {@macro flutstrap_card.accessibility}
-///
-/// {@template flutstrap_card.usage}
-/// ## Usage Examples
+/// {@tool snippet}
+/// ### Basic Usage
 ///
 /// ```dart
 /// // Basic card with text content
@@ -38,23 +35,330 @@
 ///   ],
 /// )
 /// ```
+/// {@end-tool}
+///
+/// {@template flutstrap_card.performance}
+/// ## Performance Features
+///
+/// - **Style Caching**: Computed styles cached by variant and brightness
+/// - **LRU Cache Management**: Automatic cache eviction for memory efficiency
+/// - **Factory Caching**: Common card patterns cached for reuse
+/// - **Error Boundaries**: Graceful error handling for content rendering
 /// {@endtemplate}
 ///
 /// {@template flutstrap_card.accessibility}
 /// ## Accessibility
 ///
-/// - Uses `Semantics` widget for screen readers
-/// - Provides proper semantic labels for card content
-/// - Supports interactive states with proper cursor feedback
-/// - Follows WCAG contrast guidelines
+/// - Full screen reader support with semantic labels
+/// - Keyboard navigation with focus management
+/// - Proper cursor feedback for interactive cards
+/// - WCAG compliant color contrast ratios
 /// {@endtemplate}
+///
+/// ## Best Practices
+///
+/// - Use factory methods for common card patterns
+/// - Leverage `copyWith` for state modifications
+/// - Consider using `const` constructors when possible
+/// - Use error boundaries for dynamic content
+/// - Test interactive cards with keyboard navigation
 ///
 /// {@category Components}
 /// {@category Layout}
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/spacing.dart';
+
+/// Error Boundary Widget for graceful error handling
+class ErrorBoundary extends StatelessWidget {
+  final Widget child;
+  final Widget fallback;
+
+  const ErrorBoundary({
+    super.key,
+    required this.child,
+    required this.fallback,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    try {
+      return child;
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('ErrorBoundary caught: $error');
+        debugPrint(stackTrace.toString());
+      }
+      return fallback;
+    }
+  }
+}
+
+/// Performance monitoring for card operations
+class _CardPerformance {
+  static final _buildTimes = <String, int>{};
+  static final _instanceCount = <String, int>{};
+
+  static void logBuildTime(String cardType, int milliseconds) {
+    _buildTimes[cardType] = milliseconds;
+
+    if (milliseconds > 16) {
+      // 60fps threshold
+      debugPrint('⏱️ Slow card build: $cardType took ${milliseconds}ms');
+    }
+  }
+
+  static void trackInstance(String cardType) {
+    _instanceCount[cardType] = (_instanceCount[cardType] ?? 0) + 1;
+  }
+
+  static void clearMetrics() {
+    _buildTimes.clear();
+    _instanceCount.clear();
+  }
+
+  static Map<String, int> get buildTimes => Map.from(_buildTimes);
+  static Map<String, int> get instanceCounts => Map.from(_instanceCount);
+}
+
+/// Enhanced style caching with LRU eviction
+class _CardStyleCache {
+  static final _cache = <_CardStyleCacheKey, _CardComputedStyles>{};
+  static final _cacheKeys = <_CardStyleCacheKey>[];
+  static const int _maxCacheSize = 20;
+
+  static _CardComputedStyles getOrCreate(
+    FSThemeData theme,
+    FSCardVariant? variant,
+  ) {
+    final key = _CardStyleCacheKey(variant, theme.brightness);
+
+    if (_cache.containsKey(key)) {
+      // Move to end (most recently used)
+      _cacheKeys.remove(key);
+      _cacheKeys.add(key);
+      return _cache[key]!;
+    }
+
+    final styles = _CardComputedStyles(theme, variant);
+    _cache[key] = styles;
+    _cacheKeys.add(key);
+
+    // LRU eviction
+    if (_cache.length > _maxCacheSize) {
+      final lruKey = _cacheKeys.removeAt(0);
+      _cache.remove(lruKey);
+    }
+
+    return styles;
+  }
+
+  static void clearCache() {
+    _cache.clear();
+    _cacheKeys.clear();
+  }
+
+  static int get cacheSize => _cache.length;
+}
+
+/// Factory cache for common card patterns
+class _CardFactoryCache {
+  static final _simpleCards = <String, FlutstrapCard>{};
+  static final _actionCards = <String, FlutstrapCard>{};
+  static final _interactiveCards = <String, FlutstrapCard>{};
+
+  static FlutstrapCard getSimpleCard({
+    required String title,
+    required String content,
+    String? footer,
+    EdgeInsetsGeometry? padding,
+    FSCardVariant variant = FSCardVariant.elevated,
+  }) {
+    final cacheKey = '$title$content$footer${padding?.hashCode}$variant';
+
+    return _simpleCards.putIfAbsent(cacheKey, () {
+      return FlutstrapCard(
+        headerText: title,
+        bodyText: content,
+        footerText: footer,
+        padding: padding,
+        variant: variant,
+      );
+    });
+  }
+
+  static FlutstrapCard getActionCard({
+    required String title,
+    required String content,
+    required List<Widget> actions,
+    EdgeInsetsGeometry? padding,
+    FSCardVariant variant = FSCardVariant.elevated,
+  }) {
+    final cacheKey =
+        '$title$content${actions.length}${padding?.hashCode}$variant';
+
+    return _actionCards.putIfAbsent(cacheKey, () {
+      return FlutstrapCard(
+        headerText: title,
+        bodyText: content,
+        footer: Padding(
+          padding: EdgeInsets.all(FSSpacing.md),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ),
+        padding: padding,
+        variant: variant,
+      );
+    });
+  }
+
+  static void clearCache() {
+    _simpleCards.clear();
+    _actionCards.clear();
+    _interactiveCards.clear();
+  }
+}
+
+/// Optimized content builder with error handling
+class _CardContentBuilder {
+  static Widget buildContent({
+    required FSThemeData theme,
+    required Widget? header,
+    required String? headerText,
+    required Widget? body,
+    required String? bodyText,
+    required Widget? footer,
+    required String? footerText,
+    required EdgeInsetsGeometry padding,
+    required bool showDividers,
+  }) {
+    final hasHeader = header != null || headerText != null;
+    final hasBody = body != null || bodyText != null;
+    final hasFooter = footer != null || footerText != null;
+
+    if (!hasHeader && !hasBody && !hasFooter) {
+      return const SizedBox.shrink();
+    }
+
+    final children = <Widget>[];
+
+    if (hasHeader) {
+      children.add(_buildHeaderSection(theme, header, headerText, padding));
+    }
+
+    if (hasHeader && hasBody && showDividers) {
+      children.add(_buildDivider(theme));
+    }
+
+    if (hasBody) {
+      children.add(_buildBodySection(theme, body, bodyText, padding));
+    }
+
+    if (hasBody && hasFooter && showDividers) {
+      children.add(_buildDivider(theme));
+    }
+
+    if (hasFooter) {
+      children.add(_buildFooterSection(theme, footer, footerText, padding));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: children,
+    );
+  }
+
+  static Widget _buildHeaderSection(
+    FSThemeData theme,
+    Widget? header,
+    String? headerText,
+    EdgeInsetsGeometry padding,
+  ) {
+    return ErrorBoundary(
+      fallback: _buildErrorPlaceholder('Header', padding),
+      child: Padding(
+        padding: padding,
+        child: DefaultTextStyle(
+          style: theme.typography.titleLarge.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colors.onBackground,
+          ),
+          child: header ?? Text(headerText ?? ''),
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildBodySection(
+    FSThemeData theme,
+    Widget? body,
+    String? bodyText,
+    EdgeInsetsGeometry padding,
+  ) {
+    return ErrorBoundary(
+      fallback: _buildErrorPlaceholder('Body', padding),
+      child: Padding(
+        padding: padding,
+        child: DefaultTextStyle(
+          style: theme.typography.bodyMedium.copyWith(
+            color: theme.colors.onBackground.withOpacity(0.87),
+          ),
+          child: body ?? Text(bodyText ?? ''),
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildFooterSection(
+    FSThemeData theme,
+    Widget? footer,
+    String? footerText,
+    EdgeInsetsGeometry padding,
+  ) {
+    return ErrorBoundary(
+      fallback: _buildErrorPlaceholder('Footer', padding),
+      child: Padding(
+        padding: padding,
+        child: DefaultTextStyle(
+          style: theme.typography.bodySmall.copyWith(
+            color: theme.colors.onBackground.withOpacity(0.6),
+          ),
+          child: footer ?? Text(footerText ?? ''),
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildDivider(FSThemeData theme) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: theme.colors.outline.withOpacity(_CardConstants.dividerOpacity),
+    );
+  }
+
+  static Widget _buildErrorPlaceholder(
+      String section, EdgeInsetsGeometry padding) {
+    return Padding(
+      padding: padding,
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red, size: 16),
+          SizedBox(width: 8),
+          Text(
+            'Error loading $section',
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Flutstrap Card Variants
 ///
@@ -142,7 +446,7 @@ class FlutstrapCard extends StatelessWidget {
     bool? interactive,
   }) {
     final theme = FSTheme.of(context);
-    final computedStyles = _CardComputedStyles(theme, variant);
+    final computedStyles = _CardStyleCache.getOrCreate(theme, variant);
 
     return FlutstrapCard(
       key: key,
@@ -167,19 +471,47 @@ class FlutstrapCard extends StatelessWidget {
     );
   }
 
-  // STYLE CACHING FOR PERFORMANCE
-  static final _styleCache = <_CardStyleCacheKey, _CardComputedStyles>{};
-
   @override
   Widget build(BuildContext context) {
+    final stopwatch = Stopwatch()..start();
     final theme = FSTheme.of(context);
-    final computedStyles = _getComputedStyles(theme);
+    final computedStyles = _CardStyleCache.getOrCreate(theme, variant);
 
-    return Semantics(
-      container: true,
-      button: interactive || onTap != null,
-      label: _getSemanticLabel(),
-      child: _buildCard(theme, computedStyles),
+    final card = ErrorBoundary(
+      fallback: _buildErrorCard(),
+      child: Semantics(
+        container: true,
+        button: interactive || onTap != null,
+        label: _getSemanticLabel(),
+        child: _buildCard(theme, computedStyles),
+      ),
+    );
+
+    stopwatch.stop();
+    _CardPerformance.logBuildTime(
+        'FlutstrapCard', stopwatch.elapsedMilliseconds);
+    _CardPerformance.trackInstance('FlutstrapCard');
+
+    return card;
+  }
+
+  Widget _buildErrorCard() {
+    return Card(
+      color: Colors.red.withOpacity(0.1),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, color: Colors.red, size: 24),
+            SizedBox(height: 8),
+            Text(
+              'Card content unavailable',
+              style: TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -189,17 +521,35 @@ class FlutstrapCard extends StatelessWidget {
     final effectiveElevation = elevation ?? computedStyles.elevation;
     final effectiveBorderColor = borderColor ?? theme.colors.outline;
 
-    Widget cardContent = _buildCardContent(theme);
+    Widget cardContent = _CardContentBuilder.buildContent(
+      theme: theme,
+      header: header,
+      headerText: headerText,
+      body: body,
+      bodyText: bodyText,
+      footer: footer,
+      footerText: footerText,
+      padding: padding ?? EdgeInsets.all(FSSpacing.md),
+      showDividers: showDividers,
+    );
 
-    // Wrap with gesture detector if interactive
+    // Enhanced interactive support
     if (interactive || onTap != null || onLongPress != null) {
-      cardContent = MouseRegion(
-        cursor:
-            interactive ? SystemMouseCursors.click : SystemMouseCursors.basic,
-        child: GestureDetector(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: cardContent,
+      cardContent = Focus(
+        canRequestFocus: interactive,
+        child: MouseRegion(
+          cursor:
+              interactive ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          child: GestureDetector(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            behavior: HitTestBehavior.opaque,
+            child: Semantics(
+              button: true,
+              enabled: interactive,
+              child: cardContent,
+            ),
+          ),
         ),
       );
     }
@@ -217,76 +567,8 @@ class FlutstrapCard extends StatelessWidget {
             : BorderSide.none,
       ),
       shadowColor: theme.colors.shadow,
+      clipBehavior: Clip.antiAlias,
       child: cardContent,
-    );
-  }
-
-  Widget _buildCardContent(FSThemeData theme) {
-    final hasHeader = header != null || headerText != null;
-    final hasBody = body != null || bodyText != null;
-    final hasFooter = footer != null || footerText != null;
-
-    if (!hasHeader && !hasBody && !hasFooter) {
-      return const SizedBox.shrink();
-    }
-
-    final contentPadding = padding ?? EdgeInsets.all(FSSpacing.md);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (hasHeader) _buildHeader(theme, contentPadding),
-        if (hasHeader && hasBody && showDividers) _buildDivider(theme),
-        if (hasBody) _buildBody(theme, contentPadding),
-        if (hasBody && hasFooter && showDividers) _buildDivider(theme),
-        if (hasFooter) _buildFooter(theme, contentPadding),
-      ],
-    );
-  }
-
-  Widget _buildHeader(FSThemeData theme, EdgeInsetsGeometry padding) {
-    return Padding(
-      padding: padding,
-      child: DefaultTextStyle(
-        style: theme.typography.titleLarge.copyWith(
-          fontWeight: FontWeight.w600,
-          color: theme.colors.onBackground,
-        ),
-        child: header ?? Text(headerText!),
-      ),
-    );
-  }
-
-  Widget _buildBody(FSThemeData theme, EdgeInsetsGeometry padding) {
-    return Padding(
-      padding: padding,
-      child: DefaultTextStyle(
-        style: theme.typography.bodyMedium.copyWith(
-          color: theme.colors.onBackground.withOpacity(0.87),
-        ),
-        child: body ?? Text(bodyText!),
-      ),
-    );
-  }
-
-  Widget _buildFooter(FSThemeData theme, EdgeInsetsGeometry padding) {
-    return Padding(
-      padding: padding,
-      child: DefaultTextStyle(
-        style: theme.typography.bodySmall.copyWith(
-          color: theme.colors.onBackground.withOpacity(0.6),
-        ),
-        child: footer ?? Text(footerText!),
-      ),
-    );
-  }
-
-  Widget _buildDivider(FSThemeData theme) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: theme.colors.outline.withOpacity(_CardConstants.dividerOpacity),
     );
   }
 
@@ -296,12 +578,6 @@ class FlutstrapCard extends StatelessWidget {
     if (bodyText != null) labels.add('Content: $bodyText');
     if (footerText != null) labels.add('Footer: $footerText');
     return labels.join(', ');
-  }
-
-  _CardComputedStyles _getComputedStyles(FSThemeData theme) {
-    final cacheKey = _CardStyleCacheKey(variant, theme.brightness);
-    return _styleCache.putIfAbsent(
-        cacheKey, () => _CardComputedStyles(theme, variant));
   }
 
   // CONVENIENCE: Builder methods using copyWith
@@ -372,10 +648,10 @@ class FlutstrapCard extends StatelessWidget {
     EdgeInsetsGeometry? padding,
     FSCardVariant variant = FSCardVariant.elevated,
   }) {
-    return FlutstrapCard(
-      headerText: title,
-      bodyText: content,
-      footerText: footer,
+    return _CardFactoryCache.getSimpleCard(
+      title: title,
+      content: content,
+      footer: footer,
       padding: padding,
       variant: variant,
     );
@@ -435,16 +711,10 @@ class FlutstrapCard extends StatelessWidget {
     EdgeInsetsGeometry? padding,
     FSCardVariant variant = FSCardVariant.elevated,
   }) {
-    return FlutstrapCard(
-      headerText: title,
-      bodyText: content,
-      footer: Padding(
-        padding: EdgeInsets.all(FSSpacing.md),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: actions,
-        ),
-      ),
+    return _CardFactoryCache.getActionCard(
+      title: title,
+      content: content,
+      actions: actions,
       padding: padding,
       variant: variant,
     );

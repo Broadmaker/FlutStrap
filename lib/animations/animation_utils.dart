@@ -6,44 +6,122 @@
 /// {@category Animations}
 /// {@category Utilities}
 
-import 'dart:async'; // ✅ ADDED: For Timer
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/animation.dart';
+
+// ✅ FIXED: Import animation_types normally, hide theme's FSAnimation
 import 'animation_types.dart';
 import 'fade_in.dart';
 import 'slide_transition.dart';
-import '../../core/theme.dart';
+import '../../core/theme.dart' hide FSAnimation; // ✅ Hide conflicting class
 
 /// Animation utility functions and builders
 class FSAnimationUtils {
+  // Cache for expensive animation builder creation
+  static final Map<String, Widget Function(Widget, int)> _builderCache = {};
+
+  /// Check if animations should play based on system preferences
+  static bool _shouldAnimate(BuildContext context) {
+    return MediaQuery.of(context).disableAnimations != true;
+  }
+
   /// Creates a staggered animation builder for lists
   static Widget Function(Widget, int) createStaggeredBuilder({
     required BuildContext context,
     required FSAnimationType type,
-    FSAnimationDirection direction = FSAnimationDirection.bottom,
+    required FSAnimationDirection direction,
     Duration? duration,
     Curve? curve,
     Duration staggerDelay = const Duration(milliseconds: 100),
   }) {
-    final theme = FSTheme.of(context);
-    final animationConfig = duration != null || curve != null
-        ? FSAnimation(
-            duration: duration ?? theme.animation.duration,
-            curve: curve ?? theme.animation.curve,
-          )
-        : theme.animation;
+    try {
+      final shouldAnimate = _shouldAnimate(context);
 
-    return (Widget child, int index) {
-      final delay = Duration(milliseconds: staggerDelay.inMilliseconds * index);
+      if (!shouldAnimate) {
+        return (Widget child, int index) => child;
+      }
 
-      return _buildAnimationByType(
-        child: child,
-        type: type,
-        direction: direction,
-        animation: animationConfig,
-        delay: delay,
-      );
-    };
+      final cacheKey =
+          '${type.name}_${direction.name}_${duration?.inMilliseconds}_${curve?.runtimeType}_${staggerDelay.inMilliseconds}';
+
+      return _builderCache.putIfAbsent(cacheKey, () {
+        final theme = FSTheme.of(context);
+
+        // ✅ FIXED: Convert theme.animation to our FSAnimation type
+        final FSAnimation animationConfig = (duration != null || curve != null)
+            ? FSAnimation(
+                duration: duration ?? theme.animation.duration,
+                curve: curve ?? theme.animation.curve,
+              )
+            : _convertThemeAnimationToFSAnimation(theme.animation);
+
+        return (Widget child, int index) {
+          final delay =
+              Duration(milliseconds: staggerDelay.inMilliseconds * index);
+          return _buildAnimationByType(
+            child: child,
+            type: type,
+            direction: direction,
+            animation: animationConfig,
+            delay: delay,
+          );
+        };
+      });
+    } catch (error, stackTrace) {
+      debugPrint('Error creating staggered builder: $error\n$stackTrace');
+      return (Widget child, int index) => child;
+    }
+  }
+
+  /// Convert theme animation to FSAnimation type
+  static FSAnimation _convertThemeAnimationToFSAnimation(
+      Object themeAnimation) {
+    // ✅ Convert the theme animation to our standard FSAnimation
+    // This is a workaround for the type conflict
+    if (themeAnimation is FSAnimation) {
+      return themeAnimation;
+    }
+
+    // If it's a different type, extract properties dynamically
+    try {
+      final duration = _getDurationFromObject(themeAnimation);
+      final curve = _getCurveFromObject(themeAnimation);
+      return FSAnimation(duration: duration, curve: curve);
+    } catch (e) {
+      // Fallback to default animation
+      debugPrint('Error converting theme animation: $e');
+      return const FSAnimation(
+          duration: Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
+  }
+
+  /// Helper to extract duration from animation object
+  static Duration _getDurationFromObject(Object animation) {
+    try {
+      // Try to access duration property dynamically
+      final dynamic anim = animation;
+      if (anim.duration is Duration) {
+        return anim.duration;
+      }
+    } catch (e) {
+      debugPrint('Error getting duration: $e');
+    }
+    return const Duration(milliseconds: 300);
+  }
+
+  /// Helper to extract curve from animation object
+  static Curve _getCurveFromObject(Object animation) {
+    try {
+      // Try to access curve property dynamically
+      final dynamic anim = animation;
+      if (anim.curve is Curve) {
+        return anim.curve;
+      }
+    } catch (e) {
+      debugPrint('Error getting curve: $e');
+    }
+    return Curves.easeOut;
   }
 
   /// Builds the appropriate animation widget based on type
@@ -72,13 +150,20 @@ class FSAnimationUtils {
         );
       case FSAnimationType.fadeOut:
         return _FadeOut(
-          // ✅ NEW: Separate fade out component
           child: child,
           duration: animation.duration,
           delay: delay,
           curve: animation.curve,
         );
-      default:
+      case FSAnimationType.slideOut:
+      case FSAnimationType.scale:
+      case FSAnimationType.bounce:
+      case FSAnimationType.shake:
+      case FSAnimationType.pulse:
+      case FSAnimationType.spin:
+      case FSAnimationType.flip:
+        debugPrint(
+            'Animation type $type not yet implemented in _buildAnimationByType');
         return FadeIn(
           child: child,
           duration: animation.duration,
@@ -133,8 +218,8 @@ class FSAnimationUtils {
     );
   }
 
-  // ✅ REMOVED: Unsafe scale method that creates undisposed controllers
-  // Use FSScaleTransition component instead for proper memory management
+  /// Clear the animation builder cache
+  static void clearCache() => _builderCache.clear();
 }
 
 /// Simple fade out animation for utility purposes
@@ -228,20 +313,37 @@ class __FadeOutState extends State<_FadeOut>
 class FSAnimationManager extends ChangeNotifier {
   final Map<String, AnimationController> _controllers = {};
   final Map<String, FSAnimationState> _states = {};
+  bool _isDisposed = false;
 
   /// Register an animation controller with a unique key
   void registerController(String key, AnimationController controller) {
+    if (_isDisposed) {
+      controller.dispose();
+      return;
+    }
+
+    if (_controllers.containsKey(key)) {
+      debugPrint(
+          'Warning: Controller with key "$key" already registered. Overwriting.');
+      unregisterController(key);
+    }
+
     _controllers[key] = controller;
     _states[key] = FSAnimationState.idle;
+
+    controller.addListener(() {
+      if (!controller.isAnimating && _states[key] == FSAnimationState.exiting) {
+        _states[key] = FSAnimationState.idle;
+        notifyListeners();
+      }
+    });
   }
 
   /// Unregister an animation controller
   void unregisterController(String key) {
     final controller = _controllers[key];
     if (controller != null) {
-      if (!controller.isAnimating) {
-        controller.dispose();
-      }
+      controller.dispose();
       _controllers.remove(key);
       _states.remove(key);
     }
@@ -249,21 +351,21 @@ class FSAnimationManager extends ChangeNotifier {
 
   /// Play animation by key
   Future<void> play(String key) async {
+    if (_isDisposed) return;
+
     final controller = _controllers[key];
-    if (controller != null && !controller.isAnimating) {
+    if (controller != null && mounted && !controller.isAnimating) {
       _states[key] = FSAnimationState.entering;
       notifyListeners();
 
       try {
         await controller.forward().orCancel;
-        if (_states.containsKey(key)) {
-          // Check if still registered
+        if (!_isDisposed && _states.containsKey(key)) {
           _states[key] = FSAnimationState.active;
           notifyListeners();
         }
       } catch (error) {
-        // Handle animation cancellation gracefully
-        if (_states.containsKey(key)) {
+        if (!_isDisposed && _states.containsKey(key)) {
           _states[key] = FSAnimationState.idle;
           notifyListeners();
         }
@@ -273,19 +375,21 @@ class FSAnimationManager extends ChangeNotifier {
 
   /// Reverse animation by key
   Future<void> reverse(String key) async {
+    if (_isDisposed) return;
+
     final controller = _controllers[key];
-    if (controller != null && !controller.isAnimating) {
+    if (controller != null && mounted && !controller.isAnimating) {
       _states[key] = FSAnimationState.exiting;
       notifyListeners();
 
       try {
         await controller.reverse().orCancel;
-        if (_states.containsKey(key)) {
+        if (!_isDisposed && _states.containsKey(key)) {
           _states[key] = FSAnimationState.idle;
           notifyListeners();
         }
       } catch (error) {
-        if (_states.containsKey(key)) {
+        if (!_isDisposed && _states.containsKey(key)) {
           _states[key] = FSAnimationState.idle;
           notifyListeners();
         }
@@ -299,13 +403,14 @@ class FSAnimationManager extends ChangeNotifier {
   /// Check if animation is registered
   bool isRegistered(String key) => _controllers.containsKey(key);
 
+  /// Check if manager is still active
+  bool get mounted => !_isDisposed;
+
   @override
   void dispose() {
-    // ✅ FIXED: Use for-in loop instead of forEach
+    _isDisposed = true;
     for (final controller in _controllers.values) {
-      if (!controller.isAnimating) {
-        controller.dispose();
-      }
+      controller.dispose();
     }
     _controllers.clear();
     _states.clear();
@@ -316,7 +421,11 @@ class FSAnimationManager extends ChangeNotifier {
 /// Extension methods for easier animation creation
 extension FSAnimationExtensions on BuildContext {
   /// Quick access to theme animation configuration
-  FSAnimation get fsAnimation => FSTheme.of(this).animation;
+  FSAnimation get fsAnimation {
+    final theme = FSTheme.of(this);
+    return FSAnimationUtils._convertThemeAnimationToFSAnimation(
+        theme.animation);
+  }
 
   /// Create a staggered animation builder for lists
   Widget Function(Widget, int) createStaggeredAnimations({

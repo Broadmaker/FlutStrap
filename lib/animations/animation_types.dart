@@ -1,13 +1,93 @@
-/// Flutstrap Animation Types and Enums
+/// Flutstrap Animation Type System
 ///
-/// Defines standardized animation types, directions, and configurations
-/// for consistent animation patterns throughout the Flutstrap ecosystem.
+/// Defines the core animation type hierarchy and configuration system
+/// for the Flutstrap animation ecosystem.
 ///
 /// {@category Animations}
 /// {@category Foundation}
 
-import 'package:flutter/animation.dart'; // ✅ ADDED
-import '../../core/theme.dart'; // ✅ ADDED
+import 'package:flutter/animation.dart';
+
+// =============================================================================
+// CORE ANIMATION TYPES
+// =============================================================================
+
+/// Base class for all animation configurations
+abstract class FSAnimationBase {
+  final Duration duration;
+  final Curve curve;
+
+  const FSAnimationBase({
+    required this.duration,
+    required this.curve,
+  });
+}
+
+/// Standard animation configuration for single animations
+class FSAnimation extends FSAnimationBase {
+  const FSAnimation({
+    required super.duration,
+    super.curve = Curves.linear,
+  });
+
+  /// Create a copy with modified parameters
+  FSAnimation copyWith({
+    Duration? duration,
+    Curve? curve,
+  }) {
+    return FSAnimation(
+      duration: duration ?? this.duration,
+      curve: curve ?? this.curve,
+    );
+  }
+
+  @override
+  String toString() => 'FSAnimation(duration: $duration, curve: $curve)';
+}
+
+/// Animation sequence configuration for complex multi-step animations
+class FSAnimationSequence extends FSAnimationBase {
+  final List<FSAnimationStep> steps;
+
+  const FSAnimationSequence({
+    required super.duration,
+    required super.curve,
+    required this.steps,
+  });
+
+  /// Total duration including all steps and delays
+  Duration get totalDuration {
+    return steps.fold<Duration>(
+      Duration.zero,
+      (total, step) => total + step.animation.duration + step.delay,
+    );
+  }
+
+  @override
+  String toString() =>
+      'FSAnimationSequence(steps: $steps, totalDuration: $totalDuration)';
+}
+
+/// Individual step in an animation sequence
+class FSAnimationStep {
+  final FSAnimation animation;
+  final Duration delay;
+
+  const FSAnimationStep({
+    required this.animation,
+    this.delay = Duration.zero,
+  });
+
+  /// Get effective curve (handles null case)
+  Curve get effectiveCurve => animation.curve;
+
+  @override
+  String toString() => 'FSAnimationStep(animation: $animation, delay: $delay)';
+}
+
+// =============================================================================
+// ANIMATION ENUMS AND DIRECTIONS
+// =============================================================================
 
 /// Standard animation types for common UI patterns
 enum FSAnimationType {
@@ -20,7 +100,10 @@ enum FSAnimationType {
   shake,
   pulse,
   spin,
-  flip,
+  flip;
+
+  @override
+  String toString() => 'FSAnimationType.$name';
 }
 
 /// Animation directions for directional animations
@@ -33,7 +116,10 @@ enum FSAnimationDirection {
   topRight,
   bottomLeft,
   bottomRight,
-  center,
+  center;
+
+  @override
+  String toString() => 'FSAnimationDirection.$name';
 }
 
 /// Animation states for component lifecycle
@@ -42,10 +128,17 @@ enum FSAnimationState {
   entering,
   exiting,
   active,
-  disabled,
+  disabled;
+
+  @override
+  String toString() => 'FSAnimationState.$name';
 }
 
-/// Animation presets for common durations and curves
+// =============================================================================
+// ANIMATION PRESETS
+// =============================================================================
+
+/// Pre-configured animation settings for common UI patterns
 class FSAnimationPreset {
   // Duration presets
   static const Duration instant = Duration(milliseconds: 100);
@@ -55,7 +148,7 @@ class FSAnimationPreset {
   static const Duration slow = Duration(milliseconds: 800);
   static const Duration dramatic = Duration(milliseconds: 1200);
 
-  // Curve presets - ✅ FIXED: Using actual Curve objects
+  // Curve presets
   static const Curve linear = Curves.linear;
   static const Curve ease = Curves.easeInOut;
   static const Curve easeIn = Curves.easeIn;
@@ -65,7 +158,7 @@ class FSAnimationPreset {
   static const Curve sharp = Curves.easeInCubic;
   static const Curve smooth = Curves.easeOutCubic;
 
-  // Pre-configured animation configurations - ✅ FIXED: Using const constructors
+  // Pre-configured animation configurations
   static const FSAnimation buttonPress = FSAnimation(
     duration: quick,
     curve: sharp,
@@ -92,64 +185,44 @@ class FSAnimationPreset {
   );
 }
 
-/// Animation sequence configuration for complex animations
-class FSAnimationSequence {
-  final List<FSAnimationStep> steps;
-  final bool repeat;
-  final int repeatCount;
-  final bool reverseOnRepeat;
+// =============================================================================
+// EXTENSIONS
+// =============================================================================
 
-  const FSAnimationSequence({
-    required this.steps,
-    this.repeat = false,
-    this.repeatCount = 0,
-    this.reverseOnRepeat = false,
-  });
-
-  /// Total duration of the entire sequence
-  Duration get totalDuration {
-    return steps.fold<Duration>(
-      Duration.zero,
-      (total, step) => total + step.duration,
-    );
+/// Extension methods for FSAnimationType
+extension FSAnimationTypeExtension on FSAnimationType {
+  /// Get default duration for each animation type
+  Duration get defaultDuration {
+    switch (this) {
+      case FSAnimationType.fadeIn:
+      case FSAnimationType.fadeOut:
+        return FSAnimationPreset.standard;
+      case FSAnimationType.slideIn:
+      case FSAnimationType.slideOut:
+        return FSAnimationPreset.deliberate;
+      case FSAnimationType.bounce:
+      case FSAnimationType.pulse:
+        return FSAnimationPreset.slow;
+      case FSAnimationType.shake:
+        return FSAnimationPreset.quick;
+      case FSAnimationType.spin:
+        return const Duration(milliseconds: 1000);
+      case FSAnimationType.flip:
+        return FSAnimationPreset.dramatic;
+      case FSAnimationType.scale:
+        return FSAnimationPreset.standard;
+    }
   }
 
-  /// Create a simple sequence from a single animation
-  factory FSAnimationSequence.single(FSAnimation animation) {
-    return FSAnimationSequence(
-      steps: [FSAnimationStep(animation: animation)],
-    );
+  /// Get default curve for each animation type
+  Curve get defaultCurve {
+    switch (this) {
+      case FSAnimationType.bounce:
+        return FSAnimationPreset.bounce;
+      case FSAnimationType.shake:
+        return FSAnimationPreset.sharp;
+      default:
+        return FSAnimationPreset.easeOut;
+    }
   }
-
-  /// Create a staggered sequence for multiple elements
-  factory FSAnimationSequence.staggered({
-    required FSAnimation baseAnimation,
-    required int count,
-    Duration staggerDelay = const Duration(milliseconds: 100),
-  }) {
-    final steps = List<FSAnimationStep>.generate(
-      count,
-      (index) => FSAnimationStep(
-        animation: baseAnimation,
-        delay: Duration(milliseconds: staggerDelay.inMilliseconds * index),
-      ),
-    );
-    return FSAnimationSequence(steps: steps);
-  }
-}
-
-/// Individual step in an animation sequence
-class FSAnimationStep {
-  final FSAnimation animation;
-  final Duration delay;
-  final Curve? curveOverride;
-
-  const FSAnimationStep({
-    required this.animation,
-    this.delay = Duration.zero,
-    this.curveOverride,
-  });
-
-  Duration get duration => animation.duration + delay;
-  Curve get effectiveCurve => curveOverride ?? animation.curve;
 }

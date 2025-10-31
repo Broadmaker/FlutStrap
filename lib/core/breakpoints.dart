@@ -1,7 +1,57 @@
-/// Flutstrap Breakpoint System
+/// {@template flutstrap_breakpoint_system}
+/// ## Flutstrap Breakpoint System
 ///
 /// Defines the responsive breakpoints inspired by Bootstrap but optimized
 /// for Flutter and mobile-first design approach.
+///
+/// ### Default Breakpoints (logical pixels):
+///
+/// - **XS**: 576px (portrait phones)
+/// - **SM**: 768px (landscape phones)
+/// - **MD**: 992px (tablets)
+/// - **LG**: 1200px (desktops)
+/// - **XL**: 1400px (large desktops)
+/// - **XXL**: 1600px (larger desktops)
+///
+/// ### Usage Examples:
+///
+/// ```dart
+/// // Get current breakpoint
+/// final breakpoint = FSCustomBreakpoints().getBreakpoint(MediaQuery.of(context).size.width);
+///
+/// // Responsive layout
+/// if (breakpoint == FSBreakpoint.xs) {
+///   return MobileLayout();
+/// } else {
+///   return DesktopLayout();
+/// }
+///
+/// // Using breakpoint extensions
+/// if (FSBreakpoint.lg.isLargerThan(currentBreakpoint)) {
+///   return CompactLayout();
+/// }
+/// ```
+/// {@endtemplate}
+///
+/// {@template flutstrap_breakpoints.performance}
+/// ## Performance Features
+///
+/// - **Compile-time Constants**: All default breakpoints are const for better performance
+/// - **Efficient Lookups**: Cached value mappings for fast breakpoint resolution
+/// - **Memory Optimized**: Lightweight breakpoint detection without heavy computations
+/// - **Tree-shakeable**: Unused breakpoint configurations can be removed by Dart compiler
+///
+/// ### Best Practices:
+///
+/// - Use `const FSCustomBreakpoints()` when using default values
+/// - Cache breakpoint calculations in stateful widgets
+/// - Use breakpoint extensions for cleaner code
+/// - Consider using `LayoutBuilder` for responsive layouts
+/// {@endtemplate}
+///
+/// {@category Responsive}
+/// {@category Layout}
+/// {@category Foundation}
 
 /// Breakpoint identifiers for different screen sizes
 enum FSBreakpoint {
@@ -24,8 +74,13 @@ enum FSBreakpoint {
   xxl,
 }
 
+/// {@template fs_breakpoints}
 /// Flutstrap breakpoint values matching Bootstrap's default breakpoints
-/// but converted to logical pixels for Flutter
+/// but converted to logical pixels for Flutter.
+///
+/// These values represent the minimum width at which each breakpoint applies
+/// in a mobile-first responsive design approach.
+/// {@endtemplate}
 class FSBreakpoints {
   /// Maximum container width for extra small screens
   static const double xs = 576;
@@ -42,23 +97,21 @@ class FSBreakpoints {
   /// Maximum container width for extra large screens
   static const double xl = 1400;
 
+  /// Maximum container width for double extra large screens
+  static const double xxl = 1600;
+
+  // ✅ Cached value mapping for faster lookups
+  static const Map<FSBreakpoint, double> _values = {
+    FSBreakpoint.xs: xs,
+    FSBreakpoint.sm: sm,
+    FSBreakpoint.md: md,
+    FSBreakpoint.lg: lg,
+    FSBreakpoint.xl: xl,
+    FSBreakpoint.xxl: xxl,
+  };
+
   /// Get the numeric value for a given breakpoint
-  static double value(FSBreakpoint breakpoint) {
-    switch (breakpoint) {
-      case FSBreakpoint.xs:
-        return xs;
-      case FSBreakpoint.sm:
-        return sm;
-      case FSBreakpoint.md:
-        return md;
-      case FSBreakpoint.lg:
-        return lg;
-      case FSBreakpoint.xl:
-        return xl;
-      case FSBreakpoint.xxl:
-        return xl; // xxl uses same as xl by default
-    }
-  }
+  static double value(FSBreakpoint breakpoint) => _values[breakpoint]!;
 
   /// Get the breakpoint name as a string
   static String name(FSBreakpoint breakpoint) {
@@ -108,7 +161,21 @@ extension FSBreakpointExtensions on FSBreakpoint {
   bool isEqualOrSmallerThan(FSBreakpoint other) => value <= other.value;
 }
 
-/// Custom breakpoint configuration for advanced theming
+/// {@template fs_custom_breakpoints}
+/// Custom breakpoint configuration for advanced theming and responsive design.
+///
+/// Allows customization of breakpoint values for specific design requirements
+/// while maintaining the same mobile-first responsive approach.
+///
+/// ### Example:
+///
+/// ```dart
+/// const customBreakpoints = FSCustomBreakpoints(
+///   sm: 600,  // Custom small breakpoint
+///   lg: 1100, // Custom large breakpoint
+/// );
+/// ```
+/// {@endtemplate}
 class FSCustomBreakpoints {
   final double xs;
   final double sm;
@@ -123,8 +190,11 @@ class FSCustomBreakpoints {
     this.md = FSBreakpoints.md,
     this.lg = FSBreakpoints.lg,
     this.xl = FSBreakpoints.xl,
-    this.xxl = FSBreakpoints.xl,
-  });
+    this.xxl = FSBreakpoints.xxl,
+  })  : assert(xs >= 0 && sm >= 0 && md >= 0 && lg >= 0 && xl >= 0 && xxl >= 0,
+            'Breakpoint values must be non-negative'),
+        assert(xs < sm && sm < md && md < lg && lg < xl && xl < xxl,
+            'Breakpoints must be in ascending order');
 
   /// Get the numeric value for a given breakpoint from custom configuration
   double value(FSBreakpoint breakpoint) {
@@ -171,5 +241,56 @@ class FSCustomBreakpoints {
       xl: xl ?? this.xl,
       xxl: xxl ?? this.xxl,
     );
+  }
+}
+
+/// Extension methods for [FSCustomBreakpoints]
+extension FSCustomBreakpointsExtensions on FSCustomBreakpoints {
+  /// Check if screen width matches a specific breakpoint
+  bool isBreakpoint(double screenWidth, FSBreakpoint breakpoint) {
+    return getBreakpoint(screenWidth) == breakpoint;
+  }
+
+  /// Check if screen width is at least a specific breakpoint
+  bool isAtLeast(double screenWidth, FSBreakpoint breakpoint) {
+    return screenWidth >= value(breakpoint);
+  }
+
+  /// Check if screen width is less than a specific breakpoint
+  bool isLessThan(double screenWidth, FSBreakpoint breakpoint) {
+    return screenWidth < value(breakpoint);
+  }
+
+  /// Check if screen width is between two breakpoints (inclusive)
+  bool isBetween(double screenWidth, FSBreakpoint min, FSBreakpoint max) {
+    return screenWidth >= value(min) && screenWidth < value(max);
+  }
+
+  /// Get the next larger breakpoint
+  FSBreakpoint? nextBreakpoint(FSBreakpoint current) {
+    final values = [
+      FSBreakpoint.xs,
+      FSBreakpoint.sm,
+      FSBreakpoint.md,
+      FSBreakpoint.lg,
+      FSBreakpoint.xl,
+      FSBreakpoint.xxl
+    ];
+    final index = values.indexOf(current);
+    return index < values.length - 1 ? values[index + 1] : null;
+  }
+
+  /// Get the previous smaller breakpoint
+  FSBreakpoint? previousBreakpoint(FSBreakpoint current) {
+    final values = [
+      FSBreakpoint.xs,
+      FSBreakpoint.sm,
+      FSBreakpoint.md,
+      FSBreakpoint.lg,
+      FSBreakpoint.xl,
+      FSBreakpoint.xxl
+    ];
+    final index = values.indexOf(current);
+    return index > 0 ? values[index - 1] : null;
   }
 }

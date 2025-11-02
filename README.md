@@ -17,6 +17,7 @@ dependencies:
   flutstrap:
     git:
       url: https://github.com/Broadmaker/FlutStrap.git
+      ref: main
 ````
 
 Then run:

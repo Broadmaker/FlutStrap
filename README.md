@@ -414,12 +414,9 @@ FlutstrapSpinner(
 
 FlutstrapSpinner(
   variant: FSSpinnerVariant.success,
-```
-
-
-type: FSSpinnerType.growing,
-label: 'Processing payment...',
-centered: true,
+  type: FSSpinnerType.growing,
+  label: 'Processing payment...',
+  centered: true,
 )
 
 FlutstrapSpinner(

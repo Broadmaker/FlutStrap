@@ -446,8 +446,6 @@ class FSTypography {
   String toString() => 'FSTypography()';
 }
 
-// ✅ REMOVED: Local FSAnimation class - using imported version from animation system
-
 /// Main Flutstrap Theme Data
 ///
 /// Aggregates all theme aspects (colors, typography, spacing, animations, breakpoints)
@@ -507,7 +505,11 @@ class FSThemeData {
       colors: colors,
       typography: FSTypography.fromBaseTextStyle(baseTextStyle),
       spacing: const FSSpacing(),
-      animation: const FSAnimation(), // ✅ USING IMPORTED FSAnimation
+      animation: FSAnimation(
+        // ✅ FIXED: Provide required duration parameter
+        duration: FSAnimationPreset.standard,
+        curve: FSAnimationPreset.ease,
+      ),
       breakpoints: const FSCustomBreakpoints(),
       brightness: brightness,
     );
@@ -528,7 +530,11 @@ class FSThemeData {
       colors: colors,
       typography: FSTypography.fromBaseTextStyle(baseTextStyle),
       spacing: const FSSpacing(),
-      animation: const FSAnimation(), // ✅ USING IMPORTED FSAnimation
+      animation: FSAnimation(
+        // ✅ FIXED: Provide required duration parameter
+        duration: FSAnimationPreset.standard,
+        curve: FSAnimationPreset.ease,
+      ),
       breakpoints: const FSCustomBreakpoints(),
       brightness: Brightness.light,
     );
@@ -548,7 +554,11 @@ class FSThemeData {
       colors: colors,
       typography: FSTypography.fromBaseTextStyle(baseTextStyle),
       spacing: const FSSpacing(),
-      animation: const FSAnimation(), // ✅ USING IMPORTED FSAnimation
+      animation: FSAnimation(
+        // ✅ FIXED: Provide required duration parameter
+        duration: FSAnimationPreset.standard,
+        curve: FSAnimationPreset.ease,
+      ),
       breakpoints: const FSCustomBreakpoints(),
       brightness: Brightness.dark,
     );

@@ -1,580 +1,1002 @@
+/// Flutstrap Tooltips Demo Screen
+///
+/// Comprehensive demonstration of Flutstrap tooltip components including:
+/// - 🎨 All tooltip variants (primary, success, danger, warning, info, light, dark)
+/// - 📍 Multiple placements (top, bottom, left, right with start/end variations)
+/// - ⚡ Advanced features (custom delays, animations, error handling)
+/// - 🎯 Interactive demonstrations with real-time controls
+/// - 📱 Mobile-friendly touch interactions
+///
+/// Features:
+/// - Live interactive tooltip demonstrations
+/// - Code examples for each tooltip configuration
+/// - State management for dynamic examples
+/// - Real-time positioning testing
+///
+/// {@category Demo}
+/// {@category Screens}
+/// {@category Overlays}
+
 import 'package:flutter/material.dart';
 import 'package:master_flutstrap/flutstrap.dart';
 
 class TooltipsScreen extends StatefulWidget {
   const TooltipsScreen({super.key});
 
+  /// Route name for navigation
+  static const String routeName = '/tooltips';
+
   @override
   State<TooltipsScreen> createState() => _TooltipsScreenState();
 }
 
 class _TooltipsScreenState extends State<TooltipsScreen> {
+  // ✅ STATE FOR INTERACTIVE EXAMPLES
+  FSTooltipVariant _selectedVariant = FSTooltipVariant.primary;
+  FSTooltipPlacement _selectedPlacement = FSTooltipPlacement.top;
+  double _showDelay = 100.0;
+  double _hideDelay = 100.0;
+  double _animationDuration = 200.0;
+  bool _showArrow = true;
+  double _maxWidth = 200.0;
+  bool _useErrorBoundary = false;
+  String _customMessage = 'Custom tooltip message';
+
+  // ✅ ADD: TextEditingController for custom message
+  late TextEditingController _messageController;
+
+  // ✅ CONSTANTS FOR PERFORMANCE
+  static const EdgeInsets _screenPadding = EdgeInsets.all(16.0);
+  static const EdgeInsets _sectionPadding = EdgeInsets.only(bottom: 32.0);
+  static const EdgeInsets _demoPadding = EdgeInsets.all(16.0);
+  static const double _sectionSpacing = 24.0;
+  static const double _itemSpacing = 16.0;
+
+  // ✅ TOOLTIP VARIANTS
+  final List<Map<String, dynamic>> _tooltipVariants = [
+    {
+      'variant': FSTooltipVariant.primary,
+      'name': 'Primary',
+      'color': Colors.blue
+    },
+    {
+      'variant': FSTooltipVariant.secondary,
+      'name': 'Secondary',
+      'color': Colors.grey
+    },
+    {
+      'variant': FSTooltipVariant.success,
+      'name': 'Success',
+      'color': Colors.green
+    },
+    {'variant': FSTooltipVariant.danger, 'name': 'Danger', 'color': Colors.red},
+    {
+      'variant': FSTooltipVariant.warning,
+      'name': 'Warning',
+      'color': Colors.orange
+    },
+    {'variant': FSTooltipVariant.info, 'name': 'Info', 'color': Colors.cyan},
+    {
+      'variant': FSTooltipVariant.light,
+      'name': 'Light',
+      'color': Colors.grey.shade200
+    },
+    {
+      'variant': FSTooltipVariant.dark,
+      'name': 'Dark',
+      'color': Colors.grey.shade800
+    },
+  ];
+
+  // ✅ TOOLTIP PLACEMENTS
+  final List<Map<String, dynamic>> _tooltipPlacements = [
+    {
+      'placement': FSTooltipPlacement.top,
+      'name': 'Top',
+      'icon': Icons.arrow_upward
+    },
+    {
+      'placement': FSTooltipPlacement.topStart,
+      'name': 'Top Start',
+      'icon': Icons.arrow_upward
+    },
+    {
+      'placement': FSTooltipPlacement.topEnd,
+      'name': 'Top End',
+      'icon': Icons.arrow_upward
+    },
+    {
+      'placement': FSTooltipPlacement.bottom,
+      'name': 'Bottom',
+      'icon': Icons.arrow_downward
+    },
+    {
+      'placement': FSTooltipPlacement.bottomStart,
+      'name': 'Bottom Start',
+      'icon': Icons.arrow_downward
+    },
+    {
+      'placement': FSTooltipPlacement.bottomEnd,
+      'name': 'Bottom End',
+      'icon': Icons.arrow_downward
+    },
+    {
+      'placement': FSTooltipPlacement.left,
+      'name': 'Left',
+      'icon': Icons.arrow_back
+    },
+    {
+      'placement': FSTooltipPlacement.leftStart,
+      'name': 'Left Start',
+      'icon': Icons.arrow_back
+    },
+    {
+      'placement': FSTooltipPlacement.leftEnd,
+      'name': 'Left End',
+      'icon': Icons.arrow_back
+    },
+    {
+      'placement': FSTooltipPlacement.right,
+      'name': 'Right',
+      'icon': Icons.arrow_forward
+    },
+    {
+      'placement': FSTooltipPlacement.rightStart,
+      'name': 'Right Start',
+      'icon': Icons.arrow_forward
+    },
+    {
+      'placement': FSTooltipPlacement.rightEnd,
+      'name': 'Right End',
+      'icon': Icons.arrow_forward
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ INITIALIZE: TextEditingController with initial value
+    _messageController = TextEditingController(text: _customMessage);
+  }
+
+  @override
+  void dispose() {
+    // ✅ DISPOSE: TextEditingController to prevent memory leaks
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _testErrorHandling() {
+    _showSnackbar('Error handling test triggered - check console for errors');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final fsTheme = FSTheme.of(context);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tooltips'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('Tooltip Components'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Padding(
+        padding: _screenPadding,
+        child: ListView(
           children: [
-            _buildSectionTitle(context, 'Basic Tooltips'),
+            // ✅ INTRODUCTION SECTION
+            _buildIntroductionSection(context),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ BASIC TOOLTIPS
             _buildBasicTooltipsSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Tooltip Variants'),
-            _buildVariantTooltipsSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Tooltip Placement'),
-            _buildPlacementTooltipsSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Advanced Features'),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ TOOLTIP VARIANTS
+            _buildTooltipVariantsSection(context),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ TOOLTIP PLACEMENTS
+            _buildTooltipPlacementsSection(context),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ ADVANCED FEATURES
             _buildAdvancedFeaturesSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Real-world Examples'),
-            _buildRealWorldExamplesSection(context, fsTheme),
-            const SizedBox(height: 32),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ INTERACTIVE DEMO
+            _buildInteractiveDemoSection(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
+  /// Build introduction section
+  Widget _buildIntroductionSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Flutstrap Tooltips',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
+          const SizedBox(height: _itemSpacing),
+          Text(
+            'High-performance, customizable tooltips with Bootstrap-inspired styling. '
+            'Tooltips support multiple variants, placements, animations, and comprehensive '
+            'accessibility features for all interaction methods.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  height: 1.5,
+                ),
+          ),
+        ],
+      ),
     );
   }
 
+  /// Build basic tooltips section
   Widget _buildBasicTooltipsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Hover over or tap on the elements below to see tooltips:',
-          style: TextStyle(color: Colors.grey),
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            FlutstrapTooltip(
-              message: 'This is a basic tooltip',
-              child: FlutstrapButton(
-                onPressed: () {},
-                text: 'Hover Me',
-                size: FSButtonSize.sm,
-              ),
-            ),
-            FlutstrapTooltip(
-              message: 'Tooltip with primary variant',
-              variant: FSTooltipVariant.primary,
-              child: FlutstrapButton(
-                onPressed: () {},
-                text: 'Primary Tip',
-                variant: FSButtonVariant.primary,
-                size: FSButtonSize.sm,
-              ),
-            ),
-            FlutstrapTooltip(
-              message: 'Tooltip on an icon',
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(8),
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Basic Tooltips',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                child: const Icon(Icons.info, size: 24),
-              ),
-            ),
-            FlutstrapTooltip(
-              message: 'Tooltip on text',
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(4),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Simple tooltips with default configurations',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
-                child: const Text(
-                  'Hover this text',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVariantTooltipsSection(BuildContext context) {
-    final variants = FSTooltipVariant.values;
-
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: variants.map((variant) {
-        return FlutstrapTooltip(
-          message: '${_getVariantName(variant)} tooltip variant',
-          variant: variant,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: _getVariantColor(context, variant),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              _getVariantName(variant),
-              style: TextStyle(
-                color: _getVariantTextColor(variant),
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _demoPadding,
+              child: Column(
+                children: [
+                  _buildTooltipWithCode(
+                    context,
+                    FlutstrapTooltip(
+                      message: 'This is a basic tooltip',
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Hover or Tap Me',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    'Basic tooltip with default settings',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTooltipWithCode(
+                    context,
+                    FlutstrapTooltip(
+                      message:
+                          'Tooltip with longer message that might wrap to multiple lines',
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Long Message',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    'Tooltip with longer message',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTooltipWithCode(
+                    context,
+                    FlutstrapTooltip(
+                      message: 'No arrow tooltip',
+                      showArrow: false,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.tertiary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'No Arrow',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    'Tooltip without arrow',
+                  ),
+                ],
               ),
             ),
           ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildPlacementTooltipsSection(BuildContext context) {
-    final placements = [
-      FSTooltipPlacement.top,
-      FSTooltipPlacement.right,
-      FSTooltipPlacement.bottom,
-      FSTooltipPlacement.left,
-      FSTooltipPlacement.topStart,
-      FSTooltipPlacement.topEnd,
-      FSTooltipPlacement.bottomStart,
-      FSTooltipPlacement.bottomEnd,
-    ];
-
-    return Column(
-      children: [
-        const Text(
-          'Try hovering over the buttons to see different tooltip placements:',
-          style: TextStyle(color: Colors.grey),
-        ),
-        const SizedBox(height: 20),
-        // Top placements
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildPlacementButton(
-                context, FSTooltipPlacement.topStart, 'Top Start'),
-            _buildPlacementButton(context, FSTooltipPlacement.top, 'Top'),
-            _buildPlacementButton(
-                context, FSTooltipPlacement.topEnd, 'Top End'),
-          ],
-        ),
-        const SizedBox(height: 80),
-
-        // Middle row with left and right
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildPlacementButton(context, FSTooltipPlacement.left, 'Left'),
-            _buildPlacementButton(context, FSTooltipPlacement.right, 'Right'),
-          ],
-        ),
-        const SizedBox(height: 80),
-
-        // Bottom placements
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildPlacementButton(
-                context, FSTooltipPlacement.bottomStart, 'Bottom Start'),
-            _buildPlacementButton(context, FSTooltipPlacement.bottom, 'Bottom'),
-            _buildPlacementButton(
-                context, FSTooltipPlacement.bottomEnd, 'Bottom End'),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPlacementButton(
-      BuildContext context, FSTooltipPlacement placement, String label) {
-    return FlutstrapTooltip(
-      message: 'Tooltip placed $label',
-      placement: placement,
-      child: FlutstrapButton(
-        onPressed: () {},
-        text: label,
-        size: FSButtonSize.sm,
-        variant: FSButtonVariant.outlinePrimary,
+        ],
       ),
     );
   }
 
+  /// Build tooltip variants section
+  Widget _buildTooltipVariantsSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tooltip Variants',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Different color variants for various contexts and semantic meanings',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _demoPadding,
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (final variant in _tooltipVariants)
+                    _buildVariantTooltip(
+                      variant['name'] as String,
+                      variant['variant'] as FSTooltipVariant,
+                      variant['color'] as Color,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build tooltip placements section
+  Widget _buildTooltipPlacementsSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tooltip Placements',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Different positioning options relative to the target element',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _demoPadding,
+              child: Column(
+                children: [
+                  // Placement grid
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.5,
+                    ),
+                    itemCount: _tooltipPlacements.length,
+                    itemBuilder: (context, index) {
+                      final placement = _tooltipPlacements[index];
+                      return _buildPlacementTooltip(
+                        placement['name'] as String,
+                        placement['placement'] as FSTooltipPlacement,
+                        placement['icon'] as IconData,
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Placement explanation
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Placement Guide:',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '• Start: Aligns with the start of the target\n'
+                          '• End: Aligns with the end of the target\n'
+                          '• Default: Centers relative to the target',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build advanced features section
   Widget _buildAdvancedFeaturesSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Advanced Features',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Custom animations, error handling, and performance optimizations',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _demoPadding,
+              child: Column(
+                children: [
+                  _buildTooltipWithCode(
+                    context,
+                    FlutstrapTooltip(
+                      message: 'Tooltip with custom animation',
+                      animationDuration:
+                          Duration(milliseconds: _animationDuration.round()),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.purple,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Custom Animation',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    'Custom animation duration: ${_animationDuration.round()}ms',
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildTooltipWithCode(
+                    context,
+                    FlutstrapTooltip(
+                      message: 'Tooltip with custom styling',
+                      backgroundColor: Colors.deepOrange,
+                      textStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Custom Style',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    'Custom colors, typography, and border radius',
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildTooltipWithCode(
+                    context,
+                    FlutstrapTooltip(
+                      message: 'Wide tooltip with maximum width constraint',
+                      maxWidth: _maxWidth,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.teal,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Max Width: ${_maxWidth.round()}px',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    'Custom maximum width constraint',
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Error boundary demo
+                  _buildTooltipWithCode(
+                    context,
+                    _useErrorBoundary
+                        ? FlutstrapTooltip.buildWithErrorBoundary(
+                            message: _customMessage,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.amber,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'With Error Boundary',
+                                style: TextStyle(color: Colors.black),
+                              ),
+                            ),
+                            fallback: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Tooltip Error',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          )
+                        : FlutstrapTooltip(
+                            message: _customMessage,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.amber,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Normal Tooltip',
+                                style: TextStyle(color: Colors.black),
+                              ),
+                            ),
+                          ),
+                    'Error boundary protection for dynamic content',
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Configuration controls
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Advanced Configuration:',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Animation duration
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                              'Animation Duration: ${_animationDuration.round()}ms'),
+                          Slider(
+                            value: _animationDuration,
+                            min: 100,
+                            max: 1000,
+                            divisions: 9,
+                            onChanged: (value) =>
+                                setState(() => _animationDuration = value),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Max width
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Max Width: ${_maxWidth.round()}px'),
+                          Slider(
+                            value: _maxWidth,
+                            min: 100,
+                            max: 400,
+                            divisions: 6,
+                            onChanged: (value) =>
+                                setState(() => _maxWidth = value),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Error boundary toggle
+                      Row(
+                        children: [
+                          Switch(
+                            value: _useErrorBoundary,
+                            onChanged: (value) =>
+                                setState(() => _useErrorBoundary = value),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Use Error Boundary'),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Custom message - ✅ FIXED: Use TextEditingController instead of value parameter
+                      TextField(
+                        controller:
+                            _messageController, // ✅ FIX: Use controller instead of value
+                        decoration: const InputDecoration(
+                          labelText: 'Custom Tooltip Message',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) =>
+                            setState(() => _customMessage = value),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build interactive demo section
+  Widget _buildInteractiveDemoSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Interactive Demo',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Customize and test tooltip features in real-time',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _demoPadding,
+              child: Column(
+                children: [
+                  // Current configuration display
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Current Configuration:',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Variant: ${_selectedVariant.name}'),
+                        Text('Placement: ${_selectedPlacement.name}'),
+                        Text('Show Delay: ${_showDelay.round()}ms'),
+                        Text('Hide Delay: ${_hideDelay.round()}ms'),
+                        Text('Show Arrow: $_showArrow'),
+                        Text('Error Boundary: $_useErrorBoundary'),
+                        Text('Custom Message: $_customMessage'),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Live tooltip preview
+                  Center(
+                    child: _buildTooltipWithCode(
+                      context,
+                      FlutstrapTooltip(
+                        message:
+                            _customMessage, // ✅ USE: Updated custom message
+                        variant: _selectedVariant,
+                        placement: _selectedPlacement,
+                        showDelay: Duration(milliseconds: _showDelay.round()),
+                        hideDelay: Duration(milliseconds: _hideDelay.round()),
+                        showArrow: _showArrow,
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Test Tooltip',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      'Live tooltip preview',
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Configuration controls
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Variant Selection:',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 8),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            for (final variant in _tooltipVariants)
+                              FlutstrapButton(
+                                onPressed: () => setState(() =>
+                                    _selectedVariant =
+                                        variant['variant'] as FSTooltipVariant),
+                                text: variant['name'] as String,
+                                size: FSButtonSize.sm,
+                                variant: _selectedVariant == variant['variant']
+                                    ? FSButtonVariant.primary
+                                    : FSButtonVariant.outlinePrimary,
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        'Placement Selection:',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final placement in _tooltipPlacements)
+                            FlutstrapButton(
+                              onPressed: () => setState(() =>
+                                  _selectedPlacement = placement['placement']
+                                      as FSTooltipPlacement),
+                              text: placement['name'] as String,
+                              size: FSButtonSize.sm,
+                              variant:
+                                  _selectedPlacement == placement['placement']
+                                      ? FSButtonVariant.success
+                                      : FSButtonVariant.outlineSuccess,
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Delay controls
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Show Delay: ${_showDelay.round()}ms'),
+                          Slider(
+                            value: _showDelay,
+                            min: 0,
+                            max: 1000,
+                            divisions: 10,
+                            onChanged: (value) =>
+                                setState(() => _showDelay = value),
+                          ),
+                          const SizedBox(height: 8),
+                          Text('Hide Delay: ${_hideDelay.round()}ms'),
+                          Slider(
+                            value: _hideDelay,
+                            min: 0,
+                            max: 1000,
+                            divisions: 10,
+                            onChanged: (value) =>
+                                setState(() => _hideDelay = value),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Arrow toggle
+                      Row(
+                        children: [
+                          Switch(
+                            value: _showArrow,
+                            onChanged: (value) =>
+                                setState(() => _showArrow = value),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Show Arrow'),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Test buttons
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          FlutstrapButton(
+                            onPressed: _testErrorHandling,
+                            text: 'Test Error Handling',
+                            size: FSButtonSize.sm,
+                            variant: FSButtonVariant.warning,
+                          ),
+                          FlutstrapButton(
+                            onPressed: () =>
+                                _showSnackbar('Tooltip configuration saved'),
+                            text: 'Save Configuration',
+                            size: FSButtonSize.sm,
+                            variant: FSButtonVariant.success,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ HELPER METHODS
+
+  /// Build tooltip with code example
+  Widget _buildTooltipWithCode(
+      BuildContext context, Widget tooltip, String description) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Custom styling
-        const Text(
-          'Custom Styled Tooltip:',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
+        Center(child: tooltip),
         const SizedBox(height: 8),
-        FlutstrapTooltip(
-          message: 'This tooltip has custom styling',
-          backgroundColor: Colors.purple,
-          textStyle: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            borderRadius: BorderRadius.circular(4),
           ),
-          padding: const EdgeInsets.all(12),
+          child: Text(
+            description,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build variant tooltip
+  Widget _buildVariantTooltip(
+      String label, FSTooltipVariant variant, Color color) {
+    return FlutstrapTooltip(
+      message: '$label tooltip variant',
+      variant: variant,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color,
           borderRadius: BorderRadius.circular(8),
-          child: FlutstrapButton(
-            onPressed: () {},
-            text: 'Custom Style',
-            variant: FSButtonVariant.outlinePrimary,
-            size: FSButtonSize.sm,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color:
+                variant == FSTooltipVariant.light ? Colors.black : Colors.white,
+            fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 20),
-
-        // Without arrow
-        const Text(
-          'Tooltip Without Arrow:',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        FlutstrapTooltip(
-          message: 'This tooltip has no arrow',
-          showArrow: false,
-          child: FlutstrapButton(
-            onPressed: () {},
-            text: 'No Arrow',
-            variant: FSButtonVariant.outlineSecondary,
-            size: FSButtonSize.sm,
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Long content
-        const Text(
-          'Tooltip with Long Content:',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        FlutstrapTooltip(
-          message:
-              'This is a longer tooltip message that demonstrates how the tooltip handles multi-line content and text wrapping within the maximum width constraints.',
-          maxWidth: 250,
-          child: FlutstrapButton(
-            onPressed: () {},
-            text: 'Long Content',
-            variant: FSButtonVariant.outlineInfo,
-            size: FSButtonSize.sm,
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Different delays
-        const Text(
-          'Tooltip with Custom Delay:',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        FlutstrapTooltip(
-          message: 'This tooltip appears after 500ms delay',
-          showDelay: const Duration(milliseconds: 500),
-          hideDelay: const Duration(milliseconds: 200),
-          child: FlutstrapButton(
-            onPressed: () {},
-            text: 'Custom Delay',
-            variant: FSButtonVariant.outlineWarning,
-            size: FSButtonSize.sm,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildRealWorldExamplesSection(
-      BuildContext context, FSThemeData fsTheme) {
-    return Column(
-      children: [
-        // Icon buttons with tooltips
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Icon Buttons with Tooltips',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Common UI pattern for action buttons',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    FlutstrapTooltip(
-                      message: 'Edit item',
-                      placement: FSTooltipPlacement.bottom,
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.edit),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.1),
-                        ),
-                      ),
-                    ),
-                    FlutstrapTooltip(
-                      message: 'Delete item',
-                      placement: FSTooltipPlacement.bottom,
-                      variant: FSTooltipVariant.danger,
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.delete),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Theme.of(context)
-                              .colorScheme
-                              .error
-                              .withOpacity(0.1),
-                        ),
-                      ),
-                    ),
-                    FlutstrapTooltip(
-                      message: 'Share content',
-                      placement: FSTooltipPlacement.bottom,
-                      variant: FSTooltipVariant.success,
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.share),
-                        style: IconButton.styleFrom(
-                          backgroundColor: _getVariantColor(
-                                  context, FSTooltipVariant.success)
-                              .withOpacity(0.1),
-                        ),
-                      ),
-                    ),
-                    FlutstrapTooltip(
-                      message: 'Download file',
-                      placement: FSTooltipPlacement.bottom,
-                      variant: FSTooltipVariant.info,
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.download),
-                        style: IconButton.styleFrom(
-                          backgroundColor:
-                              _getVariantColor(context, FSTooltipVariant.info)
-                                  .withOpacity(0.1),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+  /// Build placement tooltip
+  Widget _buildPlacementTooltip(
+      String label, FSTooltipPlacement placement, IconData icon) {
+    return FlutstrapTooltip(
+      message: '$label placement',
+      placement: placement,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(8),
         ),
-        const SizedBox(height: 16),
-
-        // Form field hints
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Form Field Hints',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Tooltips for form field explanations',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: 'Username',
-                          suffixIcon: FlutstrapTooltip(
-                            message:
-                                'Your username must be 3-20 characters long and can contain letters, numbers, and underscores.',
-                            placement: FSTooltipPlacement.right,
-                            child: const Icon(Icons.help_outline, size: 18),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: 'API Key',
-                          suffixIcon: FlutstrapTooltip(
-                            message:
-                                'Find your API key in the developer settings of your account dashboard.',
-                            placement: FSTooltipPlacement.right,
-                            variant: FSTooltipVariant.warning,
-                            child: const Icon(Icons.info_outline, size: 18),
-                          ),
-                        ),
-                        obscureText: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+              textAlign: TextAlign.center,
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 16),
-
-        // Feature explanations
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Feature Explanations',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Tooltips for explaining features or settings',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: [
-                    FlutstrapTooltip(
-                      message:
-                          'Enable this to receive notifications for important updates',
-                      placement: FSTooltipPlacement.bottom,
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.notifications, size: 16),
-                          SizedBox(width: 8),
-                          Text('Notifications'),
-                        ],
-                      ),
-                    ),
-                    FlutstrapTooltip(
-                      message:
-                          'Automatically sync your data across all your devices',
-                      placement: FSTooltipPlacement.bottom,
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.sync, size: 16),
-                          SizedBox(width: 8),
-                          Text('Auto Sync'),
-                        ],
-                      ),
-                    ),
-                    FlutstrapTooltip(
-                      message:
-                          'Use dark theme for better battery life on OLED screens',
-                      placement: FSTooltipPlacement.bottom,
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.dark_mode, size: 16),
-                          SizedBox(width: 8),
-                          Text('Dark Mode'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
-  }
-
-  Color _getVariantColor(BuildContext context, FSTooltipVariant variant) {
-    final colors = Theme.of(context).colorScheme;
-    final fsTheme = FSTheme.of(context);
-
-    switch (variant) {
-      case FSTooltipVariant.primary:
-        return colors.primary;
-      case FSTooltipVariant.secondary:
-        return colors.secondary;
-      case FSTooltipVariant.success:
-        return fsTheme.colors.success; // Use Flutstrap theme colors
-      case FSTooltipVariant.danger:
-        return colors.error;
-      case FSTooltipVariant.warning:
-        return fsTheme.colors.warning; // Use Flutstrap theme colors
-      case FSTooltipVariant.info:
-        return fsTheme.colors.info; // Use Flutstrap theme colors
-      case FSTooltipVariant.light:
-        return colors.surfaceVariant;
-      case FSTooltipVariant.dark:
-        return colors.onSurface;
-    }
-  }
-
-  Color _getVariantTextColor(FSTooltipVariant variant) {
-    switch (variant) {
-      case FSTooltipVariant.light:
-        return Colors.black87;
-      case FSTooltipVariant.dark:
-        return Colors.white;
-      default:
-        return Colors.white;
-    }
-  }
-
-  String _getVariantName(FSTooltipVariant variant) {
-    switch (variant) {
-      case FSTooltipVariant.primary:
-        return 'Primary';
-      case FSTooltipVariant.secondary:
-        return 'Secondary';
-      case FSTooltipVariant.success:
-        return 'Success';
-      case FSTooltipVariant.danger:
-        return 'Danger';
-      case FSTooltipVariant.warning:
-        return 'Warning';
-      case FSTooltipVariant.info:
-        return 'Info';
-      case FSTooltipVariant.light:
-        return 'Light';
-      case FSTooltipVariant.dark:
-        return 'Dark';
-    }
   }
 }

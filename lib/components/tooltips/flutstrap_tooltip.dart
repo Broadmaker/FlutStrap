@@ -154,11 +154,18 @@ class _TooltipManager {
     _currentEntry = entry;
 
     try {
-      Overlay.of(tooltip.context, rootOverlay: true)?.insert(entry);
+      final overlay = Overlay.of(tooltip.context, rootOverlay: true);
+      if (overlay != null) {
+        overlay.insert(entry);
+      } else {
+        throw FlutterError('No overlay found for tooltip');
+      }
     } catch (e) {
       debugPrint('❌ TooltipManager: Failed to show tooltip - $e');
       _currentTooltip = null;
       _currentEntry = null;
+      // ✅ ADD: Error callback
+      tooltip.widget.onShowError?.call(e);
     }
   }
 
@@ -166,10 +173,15 @@ class _TooltipManager {
     if (_currentTooltip != null) {
       _hideCurrentTooltipImmediate();
 
-      // Show next tooltip in stack if available
+      // ✅ FIX: Use delayed show instead of direct private method call
       if (_tooltipStack.isNotEmpty) {
         final nextTooltip = _tooltipStack.removeLast();
-        nextTooltip._showTooltip(); // Access private method via state
+        // Use a small delay to ensure the current tooltip is fully hidden
+        Timer(const Duration(milliseconds: 50), () {
+          if (nextTooltip.mounted && !nextTooltip._isDisposing) {
+            nextTooltip._showTooltipInternal();
+          }
+        });
       }
     }
   }
@@ -178,6 +190,11 @@ class _TooltipManager {
     _currentEntry?.remove();
     _currentEntry = null;
     _currentTooltip = null;
+  }
+
+  // ✅ ADD: Stack management method
+  static void _removeFromStack(FlutstrapTooltipState tooltip) {
+    _tooltipStack.removeWhere((t) => t == tooltip);
   }
 
   static void clearAllTooltips() {
@@ -207,6 +224,8 @@ class FlutstrapTooltip extends StatefulWidget {
   final TextStyle? textStyle;
   final Color? backgroundColor;
   final BorderRadiusGeometry? borderRadius;
+  final void Function(Object error)? onShowError;
+  final void Function(Object error)? onHideError;
 
   const FlutstrapTooltip({
     super.key,
@@ -223,6 +242,8 @@ class FlutstrapTooltip extends StatefulWidget {
     this.textStyle,
     this.backgroundColor,
     this.borderRadius,
+    this.onShowError,
+    this.onHideError,
   });
 
   /// Build tooltip with error boundary for graceful error handling
@@ -243,6 +264,8 @@ class FlutstrapTooltip extends StatefulWidget {
     TextStyle? textStyle,
     Color? backgroundColor,
     BorderRadiusGeometry? borderRadius,
+    void Function(Object error)? onShowError,
+    void Function(Object error)? onHideError,
   }) {
     return ErrorBoundary(
       // ✅ USING SHARED ERROR BOUNDARY
@@ -263,6 +286,8 @@ class FlutstrapTooltip extends StatefulWidget {
         textStyle: textStyle,
         backgroundColor: backgroundColor,
         borderRadius: borderRadius,
+        onShowError: onShowError,
+        onHideError: onHideError,
       ),
     );
   }
@@ -283,15 +308,31 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
   DateTime? _lastInteractionTime;
   bool _isDisposing = false;
 
+  // ✅ ADD: Performance monitoring
+  static bool _isAnyTooltipShowing = false;
+
   @override
   void dispose() {
     _isDisposing = true;
+
+    // ✅ ENHANCE: Cancel all pending operations
     _showTimer?.cancel();
     _hideTimer?.cancel();
+    _showTimer = null;
+    _hideTimer = null;
+
+    // Remove from tooltip manager
     if (_isVisible && _TooltipManager.isCurrentTooltip(this)) {
       _TooltipManager.hideCurrentTooltip();
+    } else {
+      // Also check if we're in the stack
+      _TooltipManager._removeFromStack(this);
     }
+
+    _overlayEntry?.remove();
     _overlayEntry = null;
+    _isAnyTooltipShowing = false;
+
     super.dispose();
   }
 
@@ -310,8 +351,9 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
   }
 
   void _showTooltipInternal() {
-    if (!_isVisible && mounted && !_isDisposing) {
+    if (!_isVisible && mounted && !_isDisposing && !_isAnyTooltipShowing) {
       _isVisible = true;
+      _isAnyTooltipShowing = true;
       _overlayEntry = _createOverlayEntry();
       _TooltipManager.showTooltip(this, _overlayEntry!);
     }
@@ -323,6 +365,7 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
     _hideTimer = Timer(widget.hideDelay, () {
       if (_isVisible && mounted) {
         _isVisible = false;
+        _isAnyTooltipShowing = false;
         if (_TooltipManager.isCurrentTooltip(this)) {
           _TooltipManager.hideCurrentTooltip();
         }
@@ -335,6 +378,7 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
     _showTimer?.cancel();
     _hideTimer?.cancel();
     _isVisible = false;
+    _isAnyTooltipShowing = false;
     if (_TooltipManager.isCurrentTooltip(this)) {
       _TooltipManager.hideCurrentTooltip();
     }
@@ -406,32 +450,29 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
     final tooltipWidth = _getTooltipWidth();
     final tooltipHeight = _getTooltipHeight();
 
-    switch (widget.placement) {
-      case FSTooltipPlacement.top:
-        return Offset(-(tooltipWidth - size.width) / 2, -size.height - 12);
-      case FSTooltipPlacement.topStart:
-        return Offset(0, -size.height - 12);
-      case FSTooltipPlacement.topEnd:
-        return Offset(-(tooltipWidth - size.width), -size.height - 12);
-      case FSTooltipPlacement.bottom:
-        return Offset(-(tooltipWidth - size.width) / 2, size.height + 12);
-      case FSTooltipPlacement.bottomStart:
-        return Offset(0, size.height + 12);
-      case FSTooltipPlacement.bottomEnd:
-        return Offset(-(tooltipWidth - size.width), size.height + 12);
-      case FSTooltipPlacement.right:
-        return Offset(size.width + 12, -(tooltipHeight - size.height) / 2);
-      case FSTooltipPlacement.rightStart:
-        return Offset(size.width + 12, 0);
-      case FSTooltipPlacement.rightEnd:
-        return Offset(size.width + 12, -(tooltipHeight - size.height));
-      case FSTooltipPlacement.left:
-        return Offset(-tooltipWidth - 12, -(tooltipHeight - size.height) / 2);
-      case FSTooltipPlacement.leftStart:
-        return Offset(-tooltipWidth - 12, 0);
-      case FSTooltipPlacement.leftEnd:
-        return Offset(-tooltipWidth - 12, -(tooltipHeight - size.height));
-    }
+    // ✅ IMPROVE: Use switch expression for cleaner code
+    return switch (widget.placement) {
+      FSTooltipPlacement.top =>
+        Offset(-(tooltipWidth - size.width) / 2, -size.height - 12),
+      FSTooltipPlacement.topStart => Offset(0, -size.height - 12),
+      FSTooltipPlacement.topEnd =>
+        Offset(-(tooltipWidth - size.width), -size.height - 12),
+      FSTooltipPlacement.bottom =>
+        Offset(-(tooltipWidth - size.width) / 2, size.height + 12),
+      FSTooltipPlacement.bottomStart => Offset(0, size.height + 12),
+      FSTooltipPlacement.bottomEnd =>
+        Offset(-(tooltipWidth - size.width), size.height + 12),
+      FSTooltipPlacement.right =>
+        Offset(size.width + 12, -(tooltipHeight - size.height) / 2),
+      FSTooltipPlacement.rightStart => Offset(size.width + 12, 0),
+      FSTooltipPlacement.rightEnd =>
+        Offset(size.width + 12, -(tooltipHeight - size.height)),
+      FSTooltipPlacement.left =>
+        Offset(-tooltipWidth - 12, -(tooltipHeight - size.height) / 2),
+      FSTooltipPlacement.leftStart => Offset(-tooltipWidth - 12, 0),
+      FSTooltipPlacement.leftEnd =>
+        Offset(-tooltipWidth - 12, -(tooltipHeight - size.height)),
+    };
   }
 
   double _getTooltipWidth() {
@@ -458,6 +499,8 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
       link: _layerLink,
       child: Semantics(
         tooltip: widget.message,
+        // ✅ ADD: Better accessibility properties
+        label: 'Tooltip: ${widget.message}',
         child: Focus(
           onFocusChange: (hasFocus) {
             if (hasFocus) {
@@ -475,6 +518,8 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
               onTapCancel: _forceHideTooltip,
               onTapUp: (_) => _forceHideTooltip,
               onLongPress: _showTooltip,
+              // ✅ ADD: Better touch feedback
+              excludeFromSemantics: true,
               child: widget.child,
             ),
           ),
@@ -488,10 +533,12 @@ class FlutstrapTooltipState extends State<FlutstrapTooltip> {
 class _FadeInAnimation extends StatefulWidget {
   final Widget child;
   final Duration duration;
+  final VoidCallback? onAnimationComplete;
 
   const _FadeInAnimation({
     required this.child,
     required this.duration,
+    this.onAnimationComplete,
   });
 
   @override
@@ -509,7 +556,11 @@ class __FadeInAnimationState extends State<_FadeInAnimation>
     _controller = AnimationController(
       duration: widget.duration,
       vsync: this,
-    );
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          widget.onAnimationComplete?.call();
+        }
+      });
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
     _controller.forward();
   }

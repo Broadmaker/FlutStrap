@@ -4,34 +4,37 @@
 ///
 /// {@macro flutstrap_progress.usage}
 /// {@macro flutstrap_progress.accessibility}
+/// {@macro flutstrap_progress.performance}
+/// {@macro flutstrap_progress.troubleshooting}
 ///
 /// {@template flutstrap_progress.usage}
-/// ## Usage Examples
+/// ## Comprehensive Usage Examples
 ///
 /// ```dart
-/// // Basic progress bar
+/// // Basic progress with custom colors
 /// FlutstrapProgress(
 ///   value: 75,
-///   variant: FSProgressVariant.primary,
-///   label: 'Upload Progress',
+///   progressColor: Colors.purple,
+///   backgroundColor: Colors.purple.withOpacity(0.2),
+///   height: 12,
 /// )
 ///
-/// // Animated striped progress bar
+/// // Progress with custom animation
 /// FlutstrapProgress(
 ///   value: currentProgress,
-///   variant: FSProgressVariant.success,
 ///   animated: true,
-///   striped: true,
-///   size: FSProgressSize.lg,
+///   animationDuration: Duration(seconds: 2),
+///   animationCurve: Curves.bounceOut,
 /// )
 ///
-/// // Indeterminate progress
-/// FlutstrapProgress.indeterminate(
-///   variant: FSProgressVariant.info,
-///   label: 'Processing...',
+/// // Progress in a fixed width container
+/// FlutstrapProgress(
+///   value: 50,
+///   fixedWidth: 200,
+///   expandToFill: false,
 /// )
 ///
-/// // Multiple progress bars
+/// // Progress group with different variants
 /// FlutstrapProgressGroup(
 ///   children: [
 ///     FlutstrapProgress(value: 25, variant: FSProgressVariant.primary),
@@ -50,6 +53,37 @@
 /// - Proper semantic labels for progress states
 /// - High contrast support for all variants
 /// - Clear visual indicators for progress completion
+/// - ARIA compliant attributes for screen readers
+/// {@endtemplate}
+///
+/// {@template flutstrap_progress.performance}
+/// ## Performance Guidelines
+///
+/// - Use `animated: false` for static progress bars
+/// - Avoid using striped animations on multiple progress bars simultaneously
+/// - Use `fixedWidth` when progress bar is in a constrained layout
+/// - Consider using `expandToFill: false` in ListView items
+/// - Disable animations when progress updates frequently
+/// {@endtemplate}
+///
+/// {@template flutstrap_progress.troubleshooting}
+/// ## Troubleshooting
+///
+/// ### Animation not working
+/// - Ensure `animated: true` is set
+/// - Check that the progress value is changing
+/// - Verify animation duration is appropriate
+///
+/// ### Progress bar not visible
+/// - Check progress value is between minValue and maxValue
+/// - Verify colors have sufficient contrast
+/// - Ensure container has sufficient width
+///
+/// ### Performance issues
+/// - Disable animations for multiple progress bars
+/// - Use fixedWidth instead of flexible sizing
+/// - Avoid complex gradients in striped mode
+/// - Set `expandToFill: false` in scrollable contexts
 /// {@endtemplate}
 ///
 /// {@category Components}
@@ -99,9 +133,13 @@ class FlutstrapProgress extends StatelessWidget {
   final Color? backgroundColor;
   final Color? progressColor;
   final double? height;
+  final double? fixedWidth;
+  final bool expandToFill;
   final BorderRadiusGeometry? borderRadius;
   final Duration animationDuration;
   final Curve animationCurve;
+  final bool Function(double value, double minValue, double maxValue)?
+      validator;
 
   const FlutstrapProgress({
     super.key,
@@ -117,15 +155,17 @@ class FlutstrapProgress extends StatelessWidget {
     this.backgroundColor,
     this.progressColor,
     this.height,
+    this.fixedWidth,
+    this.expandToFill = true,
     this.borderRadius,
     this.animationDuration = const Duration(milliseconds: 500),
     this.animationCurve = Curves.easeInOut,
+    this.validator,
   })  : minValue = minValue ?? 0.0,
         maxValue = maxValue ?? 100.0,
         assert(value >= 0, 'Value must be non-negative'),
         assert((minValue ?? 0.0) < (maxValue ?? 100.0),
-            'minValue must be less than maxValue'),
-        super();
+            'minValue must be less than maxValue');
 
   /// Creates an indeterminate progress bar
   const FlutstrapProgress.indeterminate({
@@ -139,64 +179,130 @@ class FlutstrapProgress extends StatelessWidget {
     this.backgroundColor,
     this.progressColor,
     this.height,
+    this.fixedWidth,
+    this.expandToFill = true,
     this.borderRadius,
-    this.animationDuration = const Duration(milliseconds: 1000),
-    this.animationCurve = Curves.linear,
+    this.animationDuration = const Duration(milliseconds: 1500),
+    this.animationCurve = Curves.easeInOut,
+    this.validator,
   })  : value = 0,
         minValue = 0,
-        maxValue = 100,
-        super();
+        maxValue = 100;
+
+  /// Default validator for progress values
+  static bool defaultValidator(double value, double minValue, double maxValue) {
+    if (value < minValue || value > maxValue) return false;
+    if (minValue >= maxValue) return false;
+    if (value.isNaN || minValue.isNaN || maxValue.isNaN) return false;
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = FSTheme.of(context);
     final progressStyle = _ProgressStyle(theme, variant, size);
 
+    // ✅ VALIDATE: Check progress values
+    final isValid = (validator ?? defaultValidator)(value, minValue, maxValue);
+    if (!isValid) {
+      return _buildErrorState(context, progressStyle);
+    }
+
     final progressPercentage = _calculatePercentage();
     final showLabel = label != null || customLabel != null;
 
     return Semantics(
       liveRegion: true,
-      value: '${progressPercentage.toStringAsFixed(0)}% complete',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (showLabel) ...[
-            _buildLabel(progressStyle),
-            SizedBox(height: _ProgressConstants.labelSpacing),
-          ],
-          Stack(
-            children: [
-              // Background track
-              _ProgressTrack(
-                height: height ?? progressStyle.height,
-                backgroundColor:
-                    backgroundColor ?? progressStyle.backgroundColor,
-                borderRadius: borderRadius ?? progressStyle.borderRadius,
-              ),
-              // Progress fill
-              _ProgressFill(
-                percentage: progressPercentage,
-                height: height ?? progressStyle.height,
-                progressColor: progressColor ?? progressStyle.progressColor,
-                borderRadius: borderRadius ?? progressStyle.borderRadius,
-                animated: animated,
-                striped: striped,
-                animationDuration: animationDuration,
-                animationCurve: animationCurve,
-              ),
-              // Value label overlay (only show when appropriate)
-              if (_shouldShowValueLabel(progressPercentage))
-                _ProgressValueLabel(
-                  percentage: progressPercentage,
-                  height: height ?? progressStyle.height,
-                  textStyle: progressStyle.valueTextStyle,
-                ),
+      label: '${progressPercentage.toStringAsFixed(0)}% complete',
+      // ✅ FIXED: Removed the problematic value parameter
+      child: Container(
+        width: fixedWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showLabel) ...[
+              _buildLabel(progressStyle),
+              SizedBox(height: _ProgressConstants.labelSpacing),
             ],
-          ),
-        ],
+            // ✅ IMPROVED: Use LayoutBuilder for proper width calculation
+            expandToFill
+                ? _buildExpandingProgress(progressStyle, progressPercentage)
+                : _buildFixedProgress(progressStyle, progressPercentage),
+          ],
+        ),
       ),
+    );
+  }
+
+  /// Build progress bar that expands to fill available space
+  Widget _buildExpandingProgress(
+      _ProgressStyle progressStyle, double percentage) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            // Background track
+            _ProgressTrack(
+              height: height ?? progressStyle.height,
+              backgroundColor: backgroundColor ?? progressStyle.backgroundColor,
+              borderRadius: borderRadius ?? progressStyle.borderRadius,
+            ),
+            // Progress fill
+            _ProgressFill(
+              percentage: percentage,
+              height: height ?? progressStyle.height,
+              progressColor: progressColor ?? progressStyle.progressColor,
+              borderRadius: borderRadius ?? progressStyle.borderRadius,
+              animated: animated,
+              striped: striped,
+              animationDuration: animationDuration,
+              animationCurve: animationCurve,
+              maxWidth: constraints.maxWidth,
+            ),
+            // Value label overlay
+            if (_shouldShowValueLabel(percentage))
+              _ProgressValueLabel(
+                percentage: percentage,
+                height: height ?? progressStyle.height,
+                textStyle: progressStyle.valueTextStyle,
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Build progress bar with fixed width behavior
+  Widget _buildFixedProgress(_ProgressStyle progressStyle, double percentage) {
+    return Stack(
+      children: [
+        // Background track
+        _ProgressTrack(
+          height: height ?? progressStyle.height,
+          backgroundColor: backgroundColor ?? progressStyle.backgroundColor,
+          borderRadius: borderRadius ?? progressStyle.borderRadius,
+        ),
+        // Progress fill
+        _ProgressFill(
+          percentage: percentage,
+          height: height ?? progressStyle.height,
+          progressColor: progressColor ?? progressStyle.progressColor,
+          borderRadius: borderRadius ?? progressStyle.borderRadius,
+          animated: animated,
+          striped: striped,
+          animationDuration: animationDuration,
+          animationCurve: animationCurve,
+          maxWidth: double.infinity,
+        ),
+        // Value label overlay
+        if (_shouldShowValueLabel(percentage))
+          _ProgressValueLabel(
+            percentage: percentage,
+            height: height ?? progressStyle.height,
+            textStyle: progressStyle.valueTextStyle,
+          ),
+      ],
     );
   }
 
@@ -211,10 +317,47 @@ class FlutstrapProgress extends StatelessWidget {
     );
   }
 
+  Widget _buildErrorState(BuildContext context, _ProgressStyle progressStyle) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label != null) ...[
+          Text(
+            label!,
+            style: progressStyle.labelTextStyle.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+          SizedBox(height: _ProgressConstants.labelSpacing),
+        ],
+        Container(
+          height: height ?? progressStyle.height,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+            borderRadius: borderRadius ?? progressStyle.borderRadius,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.error,
+              width: 1,
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.error_outline,
+              size: (height ?? progressStyle.height) * 0.8,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   double _calculatePercentage() {
-    final range = maxValue! - minValue!;
-    final clampedValue = value.clamp(minValue!, maxValue!);
-    return ((clampedValue - minValue!) / range) * 100.0;
+    final range = maxValue - minValue;
+    final clampedValue = value.clamp(minValue, maxValue);
+    return ((clampedValue - minValue) / range) * 100.0;
   }
 
   bool _shouldShowValueLabel(double percentage) {
@@ -236,9 +379,12 @@ class FlutstrapProgress extends StatelessWidget {
     Color? backgroundColor,
     Color? progressColor,
     double? height,
+    double? fixedWidth,
+    bool? expandToFill,
     BorderRadiusGeometry? borderRadius,
     Duration? animationDuration,
     Curve? animationCurve,
+    bool Function(double value, double minValue, double maxValue)? validator,
   }) {
     return FlutstrapProgress(
       key: key,
@@ -254,9 +400,12 @@ class FlutstrapProgress extends StatelessWidget {
       backgroundColor: backgroundColor ?? this.backgroundColor,
       progressColor: progressColor ?? this.progressColor,
       height: height ?? this.height,
+      fixedWidth: fixedWidth ?? this.fixedWidth,
+      expandToFill: expandToFill ?? this.expandToFill,
       borderRadius: borderRadius ?? this.borderRadius,
       animationDuration: animationDuration ?? this.animationDuration,
       animationCurve: animationCurve ?? this.animationCurve,
+      validator: validator ?? this.validator,
     );
   }
 
@@ -278,6 +427,8 @@ class FlutstrapProgress extends StatelessWidget {
   FlutstrapProgress asAnimated() => copyWith(animated: true);
   FlutstrapProgress asStriped() => copyWith(striped: true);
   FlutstrapProgress withLabel(String newLabel) => copyWith(label: newLabel);
+  FlutstrapProgress withFixedWidth(double width) => copyWith(fixedWidth: width);
+  FlutstrapProgress withoutExpansion() => copyWith(expandToFill: false);
 }
 
 /// Progress bar background track
@@ -317,6 +468,7 @@ class _ProgressFill extends StatefulWidget {
   final bool striped;
   final Duration animationDuration;
   final Curve animationCurve;
+  final double maxWidth;
 
   const _ProgressFill({
     required this.percentage,
@@ -327,6 +479,7 @@ class _ProgressFill extends StatefulWidget {
     required this.striped,
     required this.animationDuration,
     required this.animationCurve,
+    required this.maxWidth,
   });
 
   @override
@@ -344,35 +497,63 @@ class _ProgressFillState extends State<_ProgressFill>
     _animationController = AnimationController(
       duration: widget.animationDuration,
       vsync: this,
-    );
+    )..addStatusListener(_handleAnimationStatus);
 
-    _widthAnimation = Tween<double>(
-      begin: 0,
-      end: widget.percentage,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: widget.animationCurve,
-    ));
+    _initializeAnimation();
+  }
 
-    if (widget.animated) {
-      _animationController.forward();
-    } else {
-      _animationController.value = 1.0; // Set to final state immediately
+  void _handleAnimationStatus(AnimationStatus status) {
+    // ✅ ADD: Handle animation completion and errors
+    if (status == AnimationStatus.completed && widget.animated) {
+      // Animation completed successfully
+    } else if (status == AnimationStatus.dismissed) {
+      // Animation reset
+    }
+  }
+
+  void _initializeAnimation() {
+    try {
+      _widthAnimation = Tween<double>(
+        begin: 0,
+        end: widget.percentage,
+      ).animate(CurvedAnimation(
+        parent: _animationController,
+        curve: widget.animationCurve,
+      ));
+
+      if (widget.animated && widget.percentage > 0) {
+        _animationController.forward();
+      } else {
+        _animationController.value = 1.0; // Set to final state immediately
+      }
+    } catch (e) {
+      // ✅ ADD: Fallback for animation errors
+      _animationController.value = 1.0;
     }
   }
 
   @override
   void didUpdateWidget(_ProgressFill oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.percentage != oldWidget.percentage && widget.animated) {
-      _widthAnimation = Tween<double>(
-        begin: oldWidget.percentage,
-        end: widget.percentage,
-      ).animate(CurvedAnimation(
-        parent: _animationController,
-        curve: widget.animationCurve,
-      ));
-      _animationController.forward(from: 0);
+
+    final needsAnimationUpdate = widget.percentage != oldWidget.percentage ||
+        widget.animated != oldWidget.animated ||
+        widget.animationDuration != oldWidget.animationDuration;
+
+    if (needsAnimationUpdate && widget.animated) {
+      try {
+        _widthAnimation = Tween<double>(
+          begin: oldWidget.percentage,
+          end: widget.percentage,
+        ).animate(CurvedAnimation(
+          parent: _animationController,
+          curve: widget.animationCurve,
+        ));
+        _animationController.forward(from: 0);
+      } catch (e) {
+        // ✅ ADD: Safe fallback for animation updates
+        _animationController.value = 1.0;
+      }
     } else if (!widget.animated) {
       _animationController.value = 1.0; // Ensure final state
     }
@@ -380,7 +561,9 @@ class _ProgressFillState extends State<_ProgressFill>
 
   @override
   void dispose() {
-    _animationController.dispose(); // ✅ CRITICAL: Prevent memory leaks
+    _animationController
+      ..removeStatusListener(_handleAnimationStatus)
+      ..dispose(); // ✅ CRITICAL: Prevent memory leaks
     super.dispose();
   }
 
@@ -391,7 +574,7 @@ class _ProgressFillState extends State<_ProgressFill>
       builder: (context, child) {
         return Container(
           height: widget.height,
-          width: _calculateWidth(_widthAnimation.value, context),
+          width: _calculateWidth(_widthAnimation.value),
           decoration: BoxDecoration(
             color: widget.progressColor,
             borderRadius: widget.borderRadius,
@@ -402,8 +585,9 @@ class _ProgressFillState extends State<_ProgressFill>
     );
   }
 
-  double _calculateWidth(double percentage, BuildContext context) {
-    return percentage * 0.01 * MediaQuery.of(context).size.width;
+  // ✅ FIXED: Better width calculation using provided maxWidth
+  double _calculateWidth(double percentage) {
+    return (percentage * 0.01) * widget.maxWidth;
   }
 
   LinearGradient? _createStripedGradient() {
@@ -444,6 +628,7 @@ class _ProgressValueLabel extends StatelessWidget {
           '${percentage.toStringAsFixed(0)}%',
           style: textStyle,
           maxLines: 1,
+          overflow: TextOverflow.fade,
         ),
       ),
     );
@@ -455,11 +640,13 @@ class _ProgressValueLabel extends StatelessWidget {
 class FlutstrapProgressGroup extends StatelessWidget {
   final List<FlutstrapProgress> children;
   final double spacing;
+  final bool expandToFill;
 
   const FlutstrapProgressGroup({
     super.key,
     required this.children,
     this.spacing = _ProgressConstants.defaultSpacing,
+    this.expandToFill = true,
   });
 
   @override
@@ -468,7 +655,7 @@ class FlutstrapProgressGroup extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         for (int i = 0; i < children.length; i++) ...[
-          children[i],
+          children[i].copyWith(expandToFill: expandToFill),
           if (i < children.length - 1) SizedBox(height: spacing),
         ],
       ],

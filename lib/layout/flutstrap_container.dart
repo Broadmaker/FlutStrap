@@ -1,49 +1,13 @@
-/// Flutstrap Container
+/// Flutstrap Container - ENHANCED VERSION
 ///
 /// A responsive container component that provides consistent spacing,
 /// max-width constraints, and responsive behavior based on breakpoints.
-///
-/// ## Usage Examples
-///
-/// ```dart
-/// // Basic container with default padding
-/// FlutstrapContainer(
-///   child: Text('Hello World'),
-///   fluid: false, // Respects max-width breakpoints
-///   padding: EdgeInsets.all(16),
-/// )
-///
-/// // Fluid container (full width)
-/// FlutstrapContainer(
-///   child: Text('Full Width Container'),
-///   fluid: true,
-///   color: Colors.blue,
-/// ).fluidWidth()
-///
-/// // Using copyWith for modifications
-/// FlutstrapContainer(
-///   child: Text('Original'),
-///   padding: EdgeInsets.all(16),
-/// ).copyWith(
-///   fluid: true,
-///   margin: EdgeInsets.all(24),
-///   color: Colors.red,
-/// )
-/// ```
-///
-/// {@category Layout}
-/// {@category Components}
 
 import 'package:flutter/material.dart';
 import '../core/breakpoints.dart';
 import '../core/responsive.dart';
-import '../core/theme.dart';
 import '../core/spacing.dart';
 
-/// Flutstrap Container Component
-///
-/// A responsive container that adapts its max-width based on breakpoints
-/// and provides consistent padding and margin.
 class FlutstrapContainer extends StatelessWidget {
   final Widget child;
   final bool fluid;
@@ -55,6 +19,12 @@ class FlutstrapContainer extends StatelessWidget {
   final double? height;
   final AlignmentGeometry? alignment;
   final Clip clipBehavior;
+
+  // Constants for consistent styling
+  static const double defaultCardElevation = 2.0;
+  static const double defaultBorderRadius = 8.0;
+  static const double sectionPadding = 24.0;
+  static const double cardPadding = 16.0;
 
   const FlutstrapContainer({
     super.key,
@@ -68,45 +38,56 @@ class FlutstrapContainer extends StatelessWidget {
     this.height,
     this.alignment,
     this.clipBehavior = Clip.none,
-  });
+  }) : assert(color == null || decoration == null,
+            'Cannot provide both color and decoration');
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      // ✅ USE LAYOUTBUILDER FOR EFFICIENT RESPONSIVE CALCULATIONS
       builder: (context, constraints) {
         final responsive = FSResponsive.of(constraints.maxWidth);
 
-        return Container(
-          width: width,
-          height: height,
-          padding: padding ?? EdgeInsets.all(FSSpacing.md),
-          margin: margin,
-          color: color,
-          decoration: decoration,
-          alignment: alignment,
-          clipBehavior: clipBehavior,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: _getMaxWidth(responsive, fluid),
-            ),
-            child: child,
-          ),
-        );
+        // Early return for fluid containers to avoid unnecessary calculations
+        if (fluid && width == null) {
+          return _buildContainer(double.infinity);
+        }
+
+        final maxWidth = _getMaxWidth(responsive, fluid);
+        return _buildContainer(maxWidth);
       },
     );
   }
 
+  Widget _buildContainer(double maxWidth) {
+    return Container(
+      width: width,
+      height: height,
+      padding: padding ?? const EdgeInsets.all(FSSpacing.md),
+      margin: margin,
+      color: color,
+      decoration: decoration,
+      alignment: alignment,
+      clipBehavior: clipBehavior,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: maxWidth,
+        ),
+        child: child,
+      ),
+    );
+  }
+
   double _getMaxWidth(FSResponsive responsive, bool fluid) {
-    if (fluid || width != null) return width ?? double.infinity;
+    if (fluid) return double.infinity;
+    if (width != null) return width!;
 
     return responsive.value<double>(
-      xs: double.infinity, // Full width on mobile
+      xs: double.infinity,
       sm: FSBreakpoints.sm,
       md: FSBreakpoints.md,
       lg: FSBreakpoints.lg,
       xl: FSBreakpoints.xl,
-      xxl: FSBreakpoints.xl,
+      xxl: FSBreakpoints.xxl ?? FSBreakpoints.xl,
       fallback: FSBreakpoints.xl,
     );
   }
@@ -159,8 +140,9 @@ class FlutstrapContainer extends StatelessWidget {
   // ✅ COMMON CONTAINER VARIANTS
   FlutstrapContainer card({
     Color backgroundColor = Colors.white,
-    double elevation = 2.0,
-    BorderRadius borderRadius = const BorderRadius.all(Radius.circular(8.0)),
+    double elevation = defaultCardElevation,
+    BorderRadius borderRadius =
+        const BorderRadius.all(Radius.circular(defaultBorderRadius)),
   }) {
     return copyWith(
       decoration: BoxDecoration(
@@ -174,15 +156,29 @@ class FlutstrapContainer extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(cardPadding),
       margin: const EdgeInsets.all(8.0),
     );
   }
 
   FlutstrapContainer section() {
     return copyWith(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(sectionPadding),
       margin: const EdgeInsets.symmetric(vertical: 16.0),
+    );
+  }
+
+  FlutstrapContainer bordered({
+    Color borderColor = const Color(0xFFE2E8F0),
+    double borderWidth = 1.0,
+    BorderRadius borderRadius =
+        const BorderRadius.all(Radius.circular(defaultBorderRadius)),
+  }) {
+    return copyWith(
+      decoration: BoxDecoration(
+        border: Border.all(color: borderColor, width: borderWidth),
+        borderRadius: borderRadius,
+      ),
     );
   }
 }

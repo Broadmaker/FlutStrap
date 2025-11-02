@@ -1,44 +1,7 @@
-/// Flutstrap Grid System
+/// Flutstrap Grid System - CORRECTED VERSION
 ///
 /// A comprehensive grid system container that combines container, rows, and columns
 /// for easy responsive layout creation inspired by Bootstrap's grid system.
-///
-/// ## Usage Examples
-///
-/// ```dart
-/// // Basic grid with multiple rows
-/// FlutstrapGrid(
-///   children: [
-///     FlutstrapRow(children: [Text('Row 1, Col 1'), Text('Row 1, Col 2')]),
-///     FlutstrapRow(children: [Text('Row 2, Col 1'), Text('Row 2, Col 2')]),
-///   ],
-///   rowGap: 16,
-/// )
-///
-/// // Responsive grid that adapts to screen size
-/// FlutstrapGrid.responsive(
-///   children: [
-///     Card(child: Text('Item 1')),
-///     Card(child: Text('Item 2')),
-///     Card(child: Text('Item 3')),
-///   ],
-///   xsColumns: 1,  // 1 column on extra small screens
-///   smColumns: 2,  // 2 columns on small screens
-///   mdColumns: 3,  // 3 columns on medium screens
-/// )
-///
-/// // Card grid layout
-/// FlutstrapGrid.cards(
-///   cards: List.generate(6, (i) => Card(child: Text('Card $i'))),
-///   columns: 3, // 3 cards per row
-///   gap: 16,
-/// )
-///
-/// // Using copyWith for modifications
-/// FlutstrapGrid(
-///   children: [/* rows */],
-/// ).copyWith(fluid: true, padding: EdgeInsets.all(16))
-/// ```
 ///
 /// {@category Layout}
 /// {@category Components}
@@ -51,8 +14,15 @@ import 'flutstrap_col.dart';
 import '../core/spacing.dart';
 
 /// Flutstrap Grid Component
+///
+/// {@template flutstrap_grid.important_notes}
+/// Important Notes:
+/// - Properly coordinates between [FlutstrapRow] and [FlutstrapCol] for grid layouts
+/// - Uses flex-based grid system for proper column distribution
+/// - Maintains responsive behavior across all breakpoints
+/// {@endtemplate}
 class FlutstrapGrid extends StatelessWidget {
-  final List<FlutstrapRow> children;
+  final List<Widget> children;
   final bool fluid;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
@@ -60,6 +30,10 @@ class FlutstrapGrid extends StatelessWidget {
   final Decoration? decoration;
   final AlignmentGeometry? alignment;
   final double? rowGap;
+
+  // Constants for consistent grid behavior
+  static const double defaultRowGap = 16.0;
+  static const double defaultColumnGap = 16.0;
 
   const FlutstrapGrid({
     super.key,
@@ -71,12 +45,12 @@ class FlutstrapGrid extends StatelessWidget {
     this.decoration,
     this.alignment,
     this.rowGap,
-  }) : super(); // ✅ REMOVE ASSERT FROM INITIALIZER LIST
+  }); // ✅ REMOVED ASSERT FROM INITIALIZER LIST
 
   @override
   Widget build(BuildContext context) {
-    // ✅ MOVE ASSERT TO BUILD METHOD
-    assert(children.isNotEmpty, 'Grid must have at least one row');
+    // ✅ MOVED ASSERT TO BUILD METHOD
+    assert(children.isNotEmpty, 'Grid must have at least one child');
 
     return FlutstrapContainer(
       fluid: fluid,
@@ -93,20 +67,59 @@ class FlutstrapGrid extends StatelessWidget {
   }
 
   List<Widget> _buildGridChildren() {
-    if (rowGap == null || rowGap! <= 0) return children;
+    final effectiveRowGap = rowGap ?? defaultRowGap;
+
+    if (effectiveRowGap <= 0) return children;
 
     final result = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       result.add(children[i]);
-      if (i < children.length - 1) result.add(SizedBox(height: rowGap!));
+      if (i < children.length - 1) {
+        result.add(SizedBox(height: effectiveRowGap));
+      }
     }
     return result;
+  }
+
+  /// Converts regular rows to grid rows with proper column wrapping
+  List<Widget> _convertToGridRows(List<Widget> rows, double containerWidth) {
+    return rows.map((row) {
+      if (row is FlutstrapRow) {
+        return _wrapRowChildrenWithColumns(row, containerWidth);
+      }
+      return row;
+    }).toList();
+  }
+
+  /// Wraps FlutstrapCol children with Expanded widgets for proper grid behavior
+  Widget _wrapRowChildrenWithColumns(FlutstrapRow row, double containerWidth) {
+    final wrappedChildren = row.children.map((child) {
+      if (child is FlutstrapCol) {
+        final flex = child.getFlex(containerWidth);
+        return Expanded(
+          flex: flex,
+          child: child,
+        );
+      }
+      return child;
+    }).toList();
+
+    return FlutstrapRow(
+      children: wrappedChildren,
+      mainAxisAlignment: row.mainAxisAlignment,
+      crossAxisAlignment: row.crossAxisAlignment,
+      mainAxisSize: row.mainAxisSize,
+      textDirection: row.textDirection,
+      verticalDirection: row.verticalDirection,
+      textBaseline: row.textBaseline,
+      gap: row.gap,
+    );
   }
 
   // ✅ CONSISTENT COPYWITH PATTERN
   FlutstrapGrid copyWith({
     Key? key,
-    List<FlutstrapRow>? children,
+    List<Widget>? children,
     bool? fluid,
     EdgeInsetsGeometry? padding,
     EdgeInsetsGeometry? margin,
@@ -157,7 +170,7 @@ class FlutstrapGrid extends StatelessWidget {
       children: [
         FlutstrapRow(
           children: columns,
-          gap: gap,
+          gap: gap ?? defaultColumnGap,
           mainAxisAlignment: mainAxisAlignment,
           crossAxisAlignment: crossAxisAlignment,
         ),
@@ -187,7 +200,7 @@ class FlutstrapGrid extends StatelessWidget {
       children: rows.map((columns) {
         return FlutstrapRow(
           children: columns,
-          gap: columnGap,
+          gap: columnGap ?? defaultColumnGap,
           mainAxisAlignment: mainAxisAlignment,
           crossAxisAlignment: crossAxisAlignment,
         );
@@ -195,7 +208,7 @@ class FlutstrapGrid extends StatelessWidget {
       fluid: fluid,
       padding: padding,
       margin: margin,
-      rowGap: rowGap,
+      rowGap: rowGap ?? defaultRowGap,
     );
   }
 
@@ -217,7 +230,7 @@ class FlutstrapGrid extends StatelessWidget {
     assert(xsColumns >= 1 && xsColumns <= 12,
         'XS columns must be between 1 and 12');
 
-    // ✅ ACTUAL RESPONSIVE IMPLEMENTATION USING FLUTSTRAPCOL
+    // Convert children to FlutstrapCol with responsive sizing
     final responsiveChildren = children.map((child) {
       return FlutstrapCol(
         size: FSColSize(
@@ -236,7 +249,7 @@ class FlutstrapGrid extends StatelessWidget {
       children: [
         FlutstrapRow(
           children: responsiveChildren,
-          gap: gap,
+          gap: gap ?? defaultColumnGap,
         ),
       ],
       fluid: fluid,
@@ -258,10 +271,10 @@ class FlutstrapGrid extends StatelessWidget {
     assert(cards.isNotEmpty, 'Cards list cannot be empty');
     assert(columns >= 1, 'Columns must be at least 1');
 
-    // ✅ USE EFFICIENT DISTRIBUTION
-    final rows = FSGrid.distributeItems(cards, columns).map((rowCards) {
+    // Distribute cards into rows
+    final rows = FSGridUtils.distributeItems(cards, columns).map((rowCards) {
       final rowChildren = rowCards.map((card) {
-        return equalHeight
+        final wrappedCard = equalHeight
             ? Expanded(
                 child: SizedBox(
                   width: double.infinity,
@@ -269,6 +282,11 @@ class FlutstrapGrid extends StatelessWidget {
                 ),
               )
             : card;
+
+        return FlutstrapCol(
+          size: FSColSize.all(12 ~/ columns),
+          child: wrappedCard,
+        );
       }).toList();
 
       return FlutstrapRow(
@@ -285,14 +303,61 @@ class FlutstrapGrid extends StatelessWidget {
       fluid: fluid,
       padding: padding,
       margin: margin,
+      rowGap: gap,
+    );
+  }
+
+  /// Create an auto-fit grid that adjusts columns based on available width
+  factory FlutstrapGrid.autoFit({
+    required List<Widget> children,
+    required double minColumnWidth,
+    double gap = FSSpacing.md,
+    bool fluid = false,
+    EdgeInsetsGeometry? padding,
+    EdgeInsetsGeometry? margin,
+  }) {
+    assert(children.isNotEmpty, 'Children list cannot be empty');
+    assert(minColumnWidth > 0, 'Min column width must be positive');
+
+    return FlutstrapGrid(
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final containerWidth = constraints.maxWidth;
+            final columns = FSGridUtils.calculateOptimalColumns(
+              containerWidth,
+              minColumnWidth,
+              gap,
+            );
+
+            final rows = FSGridUtils.distributeItems(children, columns);
+
+            return Column(
+              children: rows.map((rowItems) {
+                return FlutstrapRow(
+                  children: rowItems.map((item) {
+                    return Expanded(
+                      child: item,
+                    );
+                  }).toList(),
+                  gap: gap,
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
+      fluid: fluid,
+      padding: padding,
+      margin: margin,
     );
   }
 }
 
-/// Grid layout utilities with enhanced performance
-class FSGrid {
-  // ✅ PRIVATE CONSTRUCTOR FOR UTILITY CLASS
-  const FSGrid._();
+/// Grid layout utilities with enhanced performance and type safety
+class FSGridUtils {
+  // Private constructor for utility class
+  const FSGridUtils._();
 
   /// Calculate the number of rows needed for a grid efficiently
   static int calculateRowCount(int itemCount, int columnsPerRow) {
@@ -319,6 +384,15 @@ class FSGrid {
 
     final availableWidth = containerWidth + gap;
     final columns = (availableWidth / (minColumnWidth + gap)).floor();
-    return math.max(1, columns);
+    return math.max(1, math.min(columns, 12)); // Limit to 12 columns max
+  }
+
+  /// Calculate column width based on grid parameters
+  static double calculateColumnWidth(
+      double containerWidth, int columns, double gap) {
+    if (containerWidth <= 0 || columns <= 0) return 0;
+
+    final totalGap = (columns - 1) * gap;
+    return (containerWidth - totalGap) / columns;
   }
 }

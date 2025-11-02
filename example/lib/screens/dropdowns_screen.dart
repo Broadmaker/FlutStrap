@@ -1,534 +1,780 @@
+/// Flutstrap Dropdowns Demo Screen
+///
+/// Comprehensive demonstration of Flutstrap dropdown components including:
+/// - 🎨 All dropdown variants (primary, success, danger, warning, info, etc.)
+/// - 📏 Multiple sizes (small, medium, large)
+/// - 🔍 Advanced features (search, custom items, icons, grouping)
+/// - ⚡ Interactive states (enabled, disabled, loading, error)
+/// - 🎯 Custom content (images, complex items, actions)
+///
+/// Features:
+/// - Live interactive dropdown demonstrations
+/// - Code examples for each dropdown type
+/// - State management for dynamic examples
+/// - Search and filtering demonstrations
+///
+/// {@category Demo}
+/// {@category Screens}
+/// {@category Forms}
+
 import 'package:flutter/material.dart';
 import 'package:master_flutstrap/flutstrap.dart';
 
 class DropdownsScreen extends StatefulWidget {
   const DropdownsScreen({super.key});
 
+  /// Route name for navigation
+  static const String routeName = '/dropdowns';
+
   @override
   State<DropdownsScreen> createState() => _DropdownsScreenState();
 }
 
 class _DropdownsScreenState extends State<DropdownsScreen> {
-  String? _selectedFruit;
-  String? _selectedCountry;
+  // ✅ STATE FOR INTERACTIVE EXAMPLES
+  String? _selectedBasicValue;
+  String? _selectedVariantValue;
+  String? _selectedSizeValue;
+  String? _selectedSearchValue;
+  String? _selectedCustomValue;
+  User? _selectedUser;
+  bool _dropdownEnabled = true;
 
-  // Separate state variables for each size dropdown
-  String? _selectedSmallSize;
-  String? _selectedMediumSize;
-  String? _selectedLargeSize;
-
-  // Separate state variables for each variant dropdown
-  String? _selectedPrimaryVariant;
-  String? _selectedSuccessVariant;
-  String? _selectedDangerVariant;
-  String? _selectedWarningVariant;
-  String? _selectedInfoVariant;
-  String? _selectedSecondaryVariant;
-
-  // Separate state variables for advanced features section
-  String? _selectedPrefixIcon;
-  String? _selectedErrorExample;
-  String? _selectedMixedItems;
-
-  List<String> _selectedMultiple = [];
-  String? _selectedSearch;
-
-  final List<FSDropdownItem<String>> _fruitItems = [
-    const FSDropdownItem(value: 'apple', label: 'Apple'),
-    const FSDropdownItem(value: 'banana', label: 'Banana'),
-    const FSDropdownItem(value: 'orange', label: 'Orange'),
-    const FSDropdownItem(value: 'grape', label: 'Grape'),
-    const FSDropdownItem(value: 'strawberry', label: 'Strawberry'),
-  ];
-
-  final List<FSDropdownItem<String>> _countryItems = [
-    const FSDropdownItem(
-      value: 'us',
-      label: 'United States',
-      leading: Icon(Icons.flag, size: 20),
-    ),
-    const FSDropdownItem(
-      value: 'ca',
-      label: 'Canada',
-      leading: Icon(Icons.flag, size: 20),
-    ),
-    const FSDropdownItem(
-      value: 'uk',
-      label: 'United Kingdom',
-      leading: Icon(Icons.flag, size: 20),
-    ),
-    const FSDropdownItem(
-      value: 'au',
-      label: 'Australia',
-      leading: Icon(Icons.flag, size: 20),
-    ),
-    const FSDropdownItem(
-      value: 'jp',
-      label: 'Japan',
-      leading: Icon(Icons.flag, size: 20),
-    ),
-  ];
-
-  final List<FSDropdownItem<String>> _sizeItems = [
-    const FSDropdownItem(value: 'sm', label: 'Small'),
-    const FSDropdownItem(value: 'md', label: 'Medium'),
-    const FSDropdownItem(value: 'lg', label: 'Large'),
-    const FSDropdownItem(value: 'xl', label: 'Extra Large'),
-  ];
-
-  final List<FSDropdownItem<String>> _variantItems = [
-    const FSDropdownItem(value: 'primary', label: 'Primary'),
-    const FSDropdownItem(value: 'secondary', label: 'Secondary'),
-    const FSDropdownItem(value: 'success', label: 'Success'),
-    const FSDropdownItem(value: 'danger', label: 'Danger'),
-    const FSDropdownItem(value: 'warning', label: 'Warning'),
-    const FSDropdownItem(value: 'info', label: 'Info'),
+  // ✅ SAMPLE DATA
+  final List<FSDropdownItem<String>> _basicItems = [
+    const FSDropdownItem(value: '1', label: 'Option 1'),
+    const FSDropdownItem(value: '2', label: 'Option 2'),
+    const FSDropdownItem(value: '3', label: 'Option 3'),
+    const FSDropdownItem(value: '4', label: 'Option 4'),
+    const FSDropdownItem(value: '5', label: 'Option 5'),
   ];
 
   final List<FSDropdownItem<String>> _searchItems = [
-    const FSDropdownItem(value: 'flutter', label: 'Flutter'),
-    const FSDropdownItem(value: 'dart', label: 'Dart'),
-    const FSDropdownItem(value: 'android', label: 'Android'),
-    const FSDropdownItem(value: 'ios', label: 'iOS'),
-    const FSDropdownItem(value: 'web', label: 'Web'),
-    const FSDropdownItem(value: 'desktop', label: 'Desktop'),
-    const FSDropdownItem(value: 'mobile', label: 'Mobile'),
-    const FSDropdownItem(value: 'framework', label: 'Framework'),
+    const FSDropdownItem(value: 'apple', label: 'Apple'),
+    const FSDropdownItem(value: 'banana', label: 'Banana'),
+    const FSDropdownItem(value: 'cherry', label: 'Cherry'),
+    const FSDropdownItem(value: 'date', label: 'Date'),
+    const FSDropdownItem(value: 'elderberry', label: 'Elderberry'),
+    const FSDropdownItem(value: 'fig', label: 'Fig'),
+    const FSDropdownItem(value: 'grape', label: 'Grape'),
+    const FSDropdownItem(value: 'honeydew', label: 'Honeydew'),
   ];
+
+  final List<FSDropdownItem<User>> _userItems = [
+    FSDropdownItem(
+      value: User(
+          id: '1',
+          name: 'Alice Johnson',
+          email: 'alice@example.com',
+          role: 'Admin'),
+      label: 'Alice Johnson',
+      leading: const CircleAvatar(
+        backgroundColor: Colors.blue,
+        child: Text('AJ', style: TextStyle(color: Colors.white)),
+      ),
+      trailing: const Icon(Icons.verified, color: Colors.green, size: 16),
+    ),
+    FSDropdownItem(
+      value: User(
+          id: '2', name: 'Bob Smith', email: 'bob@example.com', role: 'User'),
+      label: 'Bob Smith',
+      leading: const CircleAvatar(
+        backgroundColor: Colors.green,
+        child: Text('BS', style: TextStyle(color: Colors.white)),
+      ),
+    ),
+    FSDropdownItem(
+      value: User(
+          id: '3',
+          name: 'Carol Davis',
+          email: 'carol@example.com',
+          role: 'Editor'),
+      label: 'Carol Davis',
+      leading: const CircleAvatar(
+        backgroundColor: Colors.orange,
+        child: Text('CD', style: TextStyle(color: Colors.white)),
+      ),
+      trailing: const Icon(Icons.verified, color: Colors.green, size: 16),
+    ),
+    FSDropdownItem(
+      value: User(
+          id: '4',
+          name: 'David Wilson',
+          email: 'david@example.com',
+          role: 'User'),
+      label: 'David Wilson',
+      leading: const CircleAvatar(
+        backgroundColor: Colors.purple,
+        child: Text('DW', style: TextStyle(color: Colors.white)),
+      ),
+    ),
+  ];
+
+  final List<FSDropdownItem<String>> _customItems = [
+    const FSDropdownItem(
+      value: 'premium',
+      label: 'Premium Plan',
+      leading: Icon(Icons.star, color: Colors.amber, size: 20),
+      trailing: Text('\$29.99', style: TextStyle(fontWeight: FontWeight.bold)),
+    ),
+    const FSDropdownItem(
+      value: 'pro',
+      label: 'Pro Plan',
+      leading: Icon(Icons.workspace_premium, color: Colors.blue, size: 20),
+      trailing: Text('\$19.99', style: TextStyle(fontWeight: FontWeight.bold)),
+    ),
+    const FSDropdownItem(
+      value: 'basic',
+      label: 'Basic Plan',
+      leading: Icon(Icons.check_circle, color: Colors.green, size: 20),
+      trailing: Text('\$9.99', style: TextStyle(fontWeight: FontWeight.bold)),
+    ),
+    const FSDropdownItem(
+      value: 'free',
+      label: 'Free Plan',
+      leading: Icon(Icons.free_breakfast, color: Colors.grey, size: 20),
+      trailing: Text('Free', style: TextStyle(color: Colors.grey)),
+    ),
+  ];
+
+  // ✅ CONSTANTS FOR PERFORMANCE
+  static const EdgeInsets _screenPadding = EdgeInsets.all(16.0);
+  static const EdgeInsets _sectionPadding = EdgeInsets.only(bottom: 32.0);
+  static const EdgeInsets _cardPadding = EdgeInsets.all(16.0);
+  static const double _sectionSpacing = 24.0;
+  static const double _itemSpacing = 16.0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dropdowns'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('Dropdown Components'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Padding(
+        padding: _screenPadding,
+        child: ListView(
           children: [
-            _buildSectionTitle(context, 'Basic Dropdown'),
-            _buildBasicDropdownSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Dropdown Variants'),
-            _buildVariantDropdownsSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Dropdown Sizes'),
-            _buildSizeDropdownsSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Advanced Features'),
-            _buildAdvancedFeaturesSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'With Icons & Custom Items'),
-            _buildIconDropdownsSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Searchable Dropdown'),
-            _buildSearchableDropdownSection(context),
-            const SizedBox(height: 32),
-            _buildSectionTitle(context, 'State Display'),
-            _buildStateDisplaySection(context),
+            // ✅ INTRODUCTION SECTION
+            _buildIntroductionSection(context),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ BASIC DROPDOWNS
+            _buildBasicDropdownsSection(context),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ DROPDOWN VARIANTS
+            _buildDropdownVariantsSection(context),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ DROPDOWN SIZES
+            _buildDropdownSizesSection(context),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ SEARCH DROPDOWNS
+            _buildSearchDropdownsSection(context),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ CUSTOM CONTENT DROPDOWNS
+            _buildCustomContentDropdownsSection(context),
+            const SizedBox(height: _sectionSpacing),
+
+            // ✅ INTERACTIVE DEMO
+            _buildInteractiveDemoSection(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-    );
-  }
-
-  Widget _buildBasicDropdownSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FlutstrapDropdown<String>(
-          items: _fruitItems,
-          value: _selectedFruit,
-          onChanged: (value) {
-            setState(() {
-              _selectedFruit = value;
-            });
-          },
-          placeholder: 'Select a fruit',
-          labelText: 'Favorite Fruit',
-          helperText: 'Choose your favorite fruit from the list',
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            'Selected: ${_selectedFruit ?? 'None'}',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVariantDropdownsSection(BuildContext context) {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: [
-        SizedBox(
-          width: 200,
-          child: FlutstrapDropdown<String>(
-            items: _variantItems,
-            value: _selectedPrimaryVariant,
-            onChanged: (value) {
-              setState(() {
-                _selectedPrimaryVariant = value;
-              });
-            },
-            placeholder: 'Select variant',
-            variant: FSDropdownVariant.primary,
-          ),
-        ),
-        SizedBox(
-          width: 200,
-          child: FlutstrapDropdown<String>(
-            items: _variantItems,
-            value: _selectedSuccessVariant,
-            onChanged: (value) {
-              setState(() {
-                _selectedSuccessVariant = value;
-              });
-            },
-            placeholder: 'Select variant',
-            variant: FSDropdownVariant.success,
-          ),
-        ),
-        SizedBox(
-          width: 200,
-          child: FlutstrapDropdown<String>(
-            items: _variantItems,
-            value: _selectedDangerVariant,
-            onChanged: (value) {
-              setState(() {
-                _selectedDangerVariant = value;
-              });
-            },
-            placeholder: 'Select variant',
-            variant: FSDropdownVariant.danger,
-          ),
-        ),
-        SizedBox(
-          width: 200,
-          child: FlutstrapDropdown<String>(
-            items: _variantItems,
-            value: _selectedWarningVariant,
-            onChanged: (value) {
-              setState(() {
-                _selectedWarningVariant = value;
-              });
-            },
-            placeholder: 'Select variant',
-            variant: FSDropdownVariant.warning,
-          ),
-        ),
-        SizedBox(
-          width: 200,
-          child: FlutstrapDropdown<String>(
-            items: _variantItems,
-            value: _selectedInfoVariant,
-            onChanged: (value) {
-              setState(() {
-                _selectedInfoVariant = value;
-              });
-            },
-            placeholder: 'Select variant',
-            variant: FSDropdownVariant.info,
-          ),
-        ),
-        SizedBox(
-          width: 200,
-          child: FlutstrapDropdown<String>(
-            items: _variantItems,
-            value: _selectedSecondaryVariant,
-            onChanged: (value) {
-              setState(() {
-                _selectedSecondaryVariant = value;
-              });
-            },
-            placeholder: 'Select variant',
-            variant: FSDropdownVariant.secondary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSizeDropdownsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FlutstrapDropdown<String>(
-          items: _sizeItems,
-          value: _selectedSmallSize,
-          onChanged: (value) {
-            setState(() {
-              _selectedSmallSize = value;
-            });
-          },
-          placeholder: 'Select size',
-          labelText: 'Small Size',
-          size: FSDropdownSize.sm,
-        ),
-        const SizedBox(height: 16),
-        FlutstrapDropdown<String>(
-          items: _sizeItems,
-          value: _selectedMediumSize,
-          onChanged: (value) {
-            setState(() {
-              _selectedMediumSize = value;
-            });
-          },
-          placeholder: 'Select size',
-          labelText: 'Medium Size (Default)',
-          size: FSDropdownSize.md,
-        ),
-        const SizedBox(height: 16),
-        FlutstrapDropdown<String>(
-          items: _sizeItems,
-          value: _selectedLargeSize,
-          onChanged: (value) {
-            setState(() {
-              _selectedLargeSize = value;
-            });
-          },
-          placeholder: 'Select size',
-          labelText: 'Large Size',
-          size: FSDropdownSize.lg,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAdvancedFeaturesSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FlutstrapDropdown<String>(
-          items: _fruitItems,
-          value: _selectedPrefixIcon,
-          onChanged: (value) {
-            setState(() {
-              _selectedPrefixIcon = value;
-            });
-          },
-          placeholder: 'Select with prefix icon',
-          labelText: 'With Prefix Icon',
-          prefixIcon: const Icon(Icons.food_bank),
-        ),
-        const SizedBox(height: 16),
-        FlutstrapDropdown<String>(
-          items: _fruitItems,
-          value: _selectedErrorExample,
-          onChanged: (value) {
-            setState(() {
-              _selectedErrorExample = value;
-            });
-          },
-          placeholder: 'Select with error state',
-          labelText: 'Error State Example',
-          errorText:
-              _selectedErrorExample == null ? 'This field is required' : null,
-        ),
-        const SizedBox(height: 16),
-        FlutstrapDropdown<String>(
-          items: _fruitItems,
-          value: _selectedFruit,
-          onChanged: null, // Disabled
-          placeholder: 'Disabled dropdown',
-          labelText: 'Disabled State',
-          enabled: false,
-        ),
-        const SizedBox(height: 16),
-        FlutstrapDropdown<String>(
-          items: [
-            const FSDropdownItem(value: 'enabled', label: 'Enabled Option'),
-            const FSDropdownItem(
-                value: 'disabled', label: 'Disabled Option', enabled: false),
-            const FSDropdownItem(value: 'enabled2', label: 'Another Enabled'),
-          ],
-          value: _selectedMixedItems,
-          onChanged: (value) {
-            setState(() {
-              _selectedMixedItems = value;
-            });
-          },
-          placeholder: 'Mixed enabled/disabled',
-          labelText: 'Mixed Items',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildIconDropdownsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FlutstrapDropdown<String>(
-          items: _countryItems,
-          value: _selectedCountry,
-          onChanged: (value) {
-            setState(() {
-              _selectedCountry = value;
-            });
-          },
-          placeholder: 'Select a country',
-          labelText: 'Country with Flags',
-        ),
-        const SizedBox(height: 16),
-        FlutstrapDropdown<String>(
-          items: [
-            const FSDropdownItem(
-              value: 'profile',
-              label: 'Profile Settings',
-              leading: Icon(Icons.person),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            const FSDropdownItem(
-              value: 'security',
-              label: 'Security',
-              leading: Icon(Icons.security),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            const FSDropdownItem(
-              value: 'notifications',
-              label: 'Notifications',
-              leading: Icon(Icons.notifications),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            const FSDropdownItem(
-              value: 'help',
-              label: 'Help & Support',
-              leading: Icon(Icons.help),
-              trailing: Icon(Icons.chevron_right),
-            ),
-          ],
-          value: _selectedCountry,
-          onChanged: (value) {
-            setState(() {
-              _selectedCountry = value;
-            });
-          },
-          placeholder: 'Select menu option',
-          labelText: 'Settings Menu Style',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSearchableDropdownSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FlutstrapDropdown<String>(
-          items: _searchItems,
-          value: _selectedSearch,
-          onChanged: (value) {
-            setState(() {
-              _selectedSearch = value;
-            });
-          },
-          placeholder: 'Search for a term...',
-          labelText: 'Searchable Dropdown',
-          showSearch: true,
-          searchHint: 'Type to search...',
-          menuMaxHeight: 300,
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Selected: ${_selectedSearch ?? 'None'}',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Try typing "mobile" or "web" in the search box',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStateDisplaySection(BuildContext context) {
+  /// Build introduction section
+  Widget _buildIntroductionSection(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
+      padding: _sectionPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Current Selections:',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+            'Flutstrap Dropdowns',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
           ),
-          const SizedBox(height: 12),
-          _buildStateItem('Favorite Fruit', _selectedFruit),
-          _buildStateItem('Country', _selectedCountry),
-          _buildStateItem('Small Size', _selectedSmallSize),
-          _buildStateItem('Medium Size', _selectedMediumSize),
-          _buildStateItem('Large Size', _selectedLargeSize),
-          _buildStateItem('Primary Variant', _selectedPrimaryVariant),
-          _buildStateItem('Success Variant', _selectedSuccessVariant),
-          _buildStateItem('Danger Variant', _selectedDangerVariant),
-          _buildStateItem('Warning Variant', _selectedWarningVariant),
-          _buildStateItem('Info Variant', _selectedInfoVariant),
-          _buildStateItem('Secondary Variant', _selectedSecondaryVariant),
-          _buildStateItem('Prefix Icon Example', _selectedPrefixIcon),
-          _buildStateItem('Error Example', _selectedErrorExample),
-          _buildStateItem('Mixed Items', _selectedMixedItems),
-          _buildStateItem('Search Term', _selectedSearch),
+          const SizedBox(height: _itemSpacing),
+          Text(
+            'High-performance, customizable dropdown menus with Bootstrap-inspired styling. '
+            'Dropdowns support search functionality, custom items, icons, and comprehensive accessibility.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  height: 1.5,
+                ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStateItem(String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+  /// Build basic dropdowns section
+  Widget _buildBasicDropdownsSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$label: ',
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            'Basic Dropdowns',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
           ),
-          Text(value ?? 'Not selected'),
+          const SizedBox(height: 8),
+          Text(
+            'Simple dropdowns with text options and basic functionality',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  _buildDropdownWithCode(
+                    context,
+                    FlutstrapDropdown<String>(
+                      items: _basicItems,
+                      value: _selectedBasicValue,
+                      onChanged: _dropdownEnabled
+                          ? (value) {
+                              setState(() => _selectedBasicValue = value);
+                              _showSnackbar('Selected: $value');
+                            }
+                          : null,
+                      placeholder: 'Select an option',
+                      labelText: 'Basic Dropdown',
+                    ),
+                    'Basic dropdown with label and placeholder',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdownWithCode(
+                    context,
+                    FlutstrapDropdown<String>(
+                      items: _basicItems,
+                      value: _selectedBasicValue,
+                      onChanged: _dropdownEnabled
+                          ? (value) {
+                              setState(() => _selectedBasicValue = value);
+                            }
+                          : null,
+                      helperText: 'This is helper text for the dropdown',
+                    ),
+                    'With helper text',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdownWithCode(
+                    context,
+                    FlutstrapDropdown<String>(
+                      items: _basicItems,
+                      value: _selectedBasicValue,
+                      onChanged: null, // Disabled
+                      placeholder: 'Disabled dropdown',
+                      errorText: 'This field is currently disabled',
+                    ),
+                    'Disabled state (onChanged: null)',
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+
+  /// Build dropdown variants section
+  Widget _buildDropdownVariantsSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dropdown Variants',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Different visual styles for various contexts and semantic meanings',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  _buildVariantDropdown('Primary', FSDropdownVariant.primary),
+                  _buildVariantDropdown('Success', FSDropdownVariant.success),
+                  _buildVariantDropdown('Danger', FSDropdownVariant.danger),
+                  _buildVariantDropdown('Warning', FSDropdownVariant.warning),
+                  _buildVariantDropdown('Info', FSDropdownVariant.info),
+                  _buildVariantDropdown('Light', FSDropdownVariant.light),
+                  _buildVariantDropdown('Dark', FSDropdownVariant.dark),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build dropdown sizes section
+  Widget _buildDropdownSizesSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dropdown Sizes',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Different sizes for various UI contexts and content density',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  _buildSizeDropdown('Small Dropdown', FSDropdownSize.sm),
+                  const SizedBox(height: 16),
+                  _buildSizeDropdown('Medium Dropdown', FSDropdownSize.md),
+                  const SizedBox(height: 16),
+                  _buildSizeDropdown('Large Dropdown', FSDropdownSize.lg),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build search dropdowns section
+  Widget _buildSearchDropdownsSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Search Dropdowns',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Dropdowns with built-in search functionality for large option sets',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  _buildDropdownWithCode(
+                    context,
+                    FlutstrapDropdown<String>(
+                      items: _searchItems,
+                      value: _selectedSearchValue,
+                      onChanged: (value) {
+                        setState(() => _selectedSearchValue = value);
+                        _showSnackbar('Selected: $value');
+                      },
+                      placeholder: 'Search fruits...',
+                      showSearch: true,
+                      searchHint: 'Type to filter fruits',
+                      labelText: 'Fruit Search Dropdown',
+                    ),
+                    'showSearch: true',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdownWithCode(
+                    context,
+                    FlutstrapDropdown<String>(
+                      items: _searchItems,
+                      value: _selectedSearchValue,
+                      onChanged: (value) =>
+                          setState(() => _selectedSearchValue = value),
+                      placeholder: 'Search with prefix icon',
+                      showSearch: true,
+                      prefixIcon: const Icon(Icons.search),
+                    ),
+                    'With custom prefix icon',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build custom content dropdowns section
+  Widget _buildCustomContentDropdownsSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Custom Content Dropdowns',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Dropdowns with custom items, icons, images, and complex content',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  // User dropdown with avatars
+                  _buildDropdownWithCode(
+                    context,
+                    FlutstrapDropdown<User>(
+                      items: _userItems,
+                      value: _selectedUser,
+                      onChanged: (user) {
+                        setState(() => _selectedUser = user);
+                        if (user != null) {
+                          _showSnackbar('Selected: ${user.name}');
+                        }
+                      },
+                      placeholder: 'Select a user',
+                      labelText: 'User Dropdown',
+                    ),
+                    'Custom objects with avatars and icons',
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Custom content dropdown
+                  _buildDropdownWithCode(
+                    context,
+                    FlutstrapDropdown<String>(
+                      items: _customItems,
+                      value: _selectedCustomValue,
+                      onChanged: (value) {
+                        setState(() => _selectedCustomValue = value);
+                        _showSnackbar('Selected plan: $value');
+                      },
+                      placeholder: 'Choose a plan',
+                      labelText: 'Pricing Plans',
+                    ),
+                    'Complex items with leading/trailing widgets',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build interactive demo section
+  Widget _buildInteractiveDemoSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Interactive Demo',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Dynamic dropdown demonstrations with state management',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  // Current selections display
+                  _buildSelectionsDisplay(),
+                  const SizedBox(height: 16),
+
+                  // Control buttons
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FlutstrapButton(
+                        onPressed: _toggleDropdownState,
+                        text: _dropdownEnabled ? 'Disable All' : 'Enable All',
+                        variant: _dropdownEnabled
+                            ? FSButtonVariant.warning
+                            : FSButtonVariant.success,
+                        size: FSButtonSize.sm,
+                      ),
+                      FlutstrapButton(
+                        onPressed: _clearAllSelections,
+                        text: 'Clear All',
+                        variant: FSButtonVariant.outlineDanger,
+                        size: FSButtonSize.sm,
+                      ),
+                      FlutstrapButton(
+                        onPressed: _setRandomSelections,
+                        text: 'Randomize',
+                        variant: FSButtonVariant.outlinePrimary,
+                        size: FSButtonSize.sm,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Demo dropdown
+                  _buildDropdownWithCode(
+                    context,
+                    FlutstrapDropdown<String>(
+                      items: _basicItems,
+                      value: _selectedBasicValue,
+                      onChanged: _dropdownEnabled
+                          ? (value) {
+                              setState(() => _selectedBasicValue = value);
+                              _showSnackbar('Demo selection: $value');
+                            }
+                          : null,
+                      placeholder: 'Interactive demo dropdown',
+                      helperText: _dropdownEnabled
+                          ? 'This dropdown is enabled'
+                          : 'This dropdown is disabled',
+                      errorText: !_dropdownEnabled
+                          ? 'Dropdown functionality is currently disabled'
+                          : null,
+                    ),
+                    'Interactive state demonstration',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ HELPER METHODS
+
+  /// Build dropdown with code example
+  Widget _buildDropdownWithCode(
+      BuildContext context, Widget dropdown, String description) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        dropdown,
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            description,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build variant dropdown
+  Widget _buildVariantDropdown(String label, FSDropdownVariant variant) {
+    return SizedBox(
+      width: 200,
+      child: FlutstrapDropdown<String>(
+        items: _basicItems,
+        value: _selectedVariantValue,
+        onChanged: (value) => setState(() => _selectedVariantValue = value),
+        placeholder: label,
+        variant: variant,
+      ),
+    );
+  }
+
+  /// Build size dropdown
+  Widget _buildSizeDropdown(String label, FSDropdownSize size) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ),
+        Expanded(
+          child: FlutstrapDropdown<String>(
+            items: _basicItems,
+            value: _selectedSizeValue,
+            onChanged: (value) => setState(() => _selectedSizeValue = value),
+            placeholder: 'Select option',
+            size: size,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build selections display
+  Widget _buildSelectionsDisplay() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Current Selections:',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Text('Basic: ${_selectedBasicValue ?? 'None'}'),
+          Text('Variant: ${_selectedVariantValue ?? 'None'}'),
+          Text('Size: ${_selectedSizeValue ?? 'None'}'),
+          Text('Search: ${_selectedSearchValue ?? 'None'}'),
+          Text('Custom: ${_selectedCustomValue ?? 'None'}'),
+          Text('User: ${_selectedUser?.name ?? 'None'}'),
+          Text('Status: ${_dropdownEnabled ? 'Enabled' : 'Disabled'}'),
+        ],
+      ),
+    );
+  }
+
+  // ✅ INTERACTION HANDLERS
+
+  void _toggleDropdownState() {
+    setState(() {
+      _dropdownEnabled = !_dropdownEnabled;
+    });
+    _showSnackbar(
+        _dropdownEnabled ? 'Dropdowns enabled' : 'Dropdowns disabled');
+  }
+
+  void _clearAllSelections() {
+    setState(() {
+      _selectedBasicValue = null;
+      _selectedVariantValue = null;
+      _selectedSizeValue = null;
+      _selectedSearchValue = null;
+      _selectedCustomValue = null;
+      _selectedUser = null;
+    });
+    _showSnackbar('All selections cleared');
+  }
+
+  void _setRandomSelections() {
+    setState(() {
+      _selectedBasicValue =
+          _basicItems[DateTime.now().millisecond % _basicItems.length].value;
+      _selectedVariantValue =
+          _basicItems[DateTime.now().second % _basicItems.length].value;
+      _selectedSizeValue =
+          _basicItems[DateTime.now().millisecond % _basicItems.length].value;
+      _selectedSearchValue =
+          _searchItems[DateTime.now().second % _searchItems.length].value;
+      _selectedCustomValue =
+          _customItems[DateTime.now().millisecond % _customItems.length].value;
+      _selectedUser =
+          _userItems[DateTime.now().second % _userItems.length].value;
+    });
+    _showSnackbar('Random selections applied');
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+// ✅ DATA MODELS
+
+class User {
+  final String id;
+  final String name;
+  final String email;
+  final String role;
+
+  const User({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.role,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is User && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() => name;
 }

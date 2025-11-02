@@ -3,43 +3,19 @@
 /// A responsive column component for creating flexible grid columns
 /// with breakpoint-based sizing.
 ///
-/// ## Usage Examples
-///
-/// ```dart
-/// // Responsive column that adapts to screen size
-/// FlutstrapCol(
-///   size: FSColSize(xs: 12, sm: 6, md: 4, lg: 3),
-///   child: Card(child: Text('Responsive Card')),
-/// )
-///
-/// // Full width column on all screens
-/// FlutstrapCol(
-///   size: FSColSize.all(12),
-///   child: Container(color: Colors.blue, height: 100),
-/// ).fullWidth()
-///
-/// // Using copyWith for modifications
-/// FlutstrapCol(
-///   child: Text('Original'),
-///   padding: EdgeInsets.all(16),
-/// ).copyWith(
-///   size: FSColSize(xs: 6, md: 4),
-///   margin: EdgeInsets.only(bottom: 16),
-/// )
-/// ```
-///
 /// {@category Layout}
 /// {@category Components}
 
 import 'package:flutter/material.dart';
 import '../core/breakpoints.dart';
 import '../core/responsive.dart';
-import '../core/theme.dart';
-import '../core/spacing.dart';
 
 /// Flutstrap Column Sizes
 ///
-/// Defines the column sizes for different breakpoints
+/// {@template flutstrap_col_size.important_notes}
+/// Uses a 12-column grid system. Each size represents how many columns
+/// the component should span out of 12.
+/// {@endtemplate}
 class FSColSize {
   final int xs;
   final int? sm;
@@ -67,8 +43,8 @@ class FSColSize {
         xxl = size,
         assert(size >= 1 && size <= 12, 'Column size must be between 1 and 12');
 
-  /// Get the size for a specific breakpoint
-  int? getSize(FSBreakpoint breakpoint) {
+  /// Get the size for a specific breakpoint with proper fallback
+  int getSize(FSBreakpoint breakpoint) {
     switch (breakpoint) {
       case FSBreakpoint.xs:
         return xs;
@@ -85,7 +61,11 @@ class FSColSize {
     }
   }
 
-  // ✅ EQUALITY AND HASHCODE FOR BETTER PERFORMANCE
+  /// Gets the flex value for this column size
+  int getFlex(FSBreakpoint breakpoint) {
+    return getSize(breakpoint);
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -108,14 +88,20 @@ class FSColSize {
 
 /// Flutstrap Column Component
 ///
-/// A flexible grid column that adapts its width based on breakpoints
-/// and column size definitions.
+/// {@template flutstrap_col.important_notes}
+/// Important Notes:
+/// - Must be used within a [FlutstrapRow] or [FlutstrapGrid] for proper layout
+/// - The parent row/grid will wrap this column with [Expanded] and proper flex
+/// - Uses a 12-column grid system (similar to Bootstrap)
+/// {@endtemplate}
 class FlutstrapCol extends StatelessWidget {
   final Widget child;
   final FSColSize size;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final AlignmentGeometry? alignment;
+  final Color? color;
+  final Decoration? decoration;
 
   const FlutstrapCol({
     super.key,
@@ -124,26 +110,26 @@ class FlutstrapCol extends StatelessWidget {
     this.padding,
     this.margin,
     this.alignment,
-  });
+    this.color,
+    this.decoration,
+  }) : assert(color == null || decoration == null,
+            'Cannot provide both color and decoration');
+
+  /// Gets the flex value for the current breakpoint
+  int getFlex(double containerWidth) {
+    final responsive = FSResponsive.of(containerWidth);
+    return size.getFlex(responsive.breakpoint);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      // ✅ USE LAYOUTBUILDER FOR EFFICIENT RESPONSIVE CALCULATIONS
-      builder: (context, constraints) {
-        final responsive = FSResponsive.of(constraints.maxWidth);
-        final currentSize = size.getSize(responsive.breakpoint) ?? 12;
-
-        return Container(
-          padding: padding,
-          margin: margin,
-          alignment: alignment,
-          child: FractionallySizedBox(
-            widthFactor: currentSize / 12, // 12-column grid system
-            child: child,
-          ),
-        );
-      },
+    return Container(
+      padding: padding,
+      margin: margin,
+      alignment: alignment,
+      color: color,
+      decoration: decoration,
+      child: child,
     );
   }
 
@@ -155,6 +141,8 @@ class FlutstrapCol extends StatelessWidget {
     EdgeInsetsGeometry? padding,
     EdgeInsetsGeometry? margin,
     AlignmentGeometry? alignment,
+    Color? color,
+    Decoration? decoration,
   }) {
     return FlutstrapCol(
       key: key ?? this.key,
@@ -163,6 +151,8 @@ class FlutstrapCol extends StatelessWidget {
       padding: padding ?? this.padding,
       margin: margin ?? this.margin,
       alignment: alignment ?? this.alignment,
+      color: color ?? this.color,
+      decoration: decoration ?? this.decoration,
     );
   }
 
@@ -176,14 +166,15 @@ class FlutstrapCol extends StatelessWidget {
     int? xxl,
   }) {
     return copyWith(
-        size: FSColSize(
-      xs: xs,
-      sm: sm,
-      md: md,
-      lg: lg,
-      xl: xl,
-      xxl: xxl,
-    ));
+      size: FSColSize(
+        xs: xs,
+        sm: sm,
+        md: md,
+        lg: lg,
+        xl: xl,
+        xxl: xxl,
+      ),
+    );
   }
 
   FlutstrapCol fullWidth() => copyWith(size: const FSColSize.all(12));
@@ -199,12 +190,17 @@ class FlutstrapCol extends StatelessWidget {
       copyWith(margin: customMargin);
   FlutstrapCol withAlignment(AlignmentGeometry customAlignment) =>
       copyWith(alignment: customAlignment);
+  FlutstrapCol withColor(Color newColor) => copyWith(color: newColor);
+  FlutstrapCol withDecoration(Decoration newDecoration) =>
+      copyWith(decoration: newDecoration);
 
   // ✅ MOBILE-FIRST RESPONSIVE CONVENIENCE METHODS
   FlutstrapCol responsiveHalf() =>
-      copyWith(size: FSColSize(xs: 12, sm: 6, md: 6, lg: 6));
+      copyWith(size: const FSColSize(xs: 12, sm: 6, md: 6, lg: 6));
   FlutstrapCol responsiveThird() =>
-      copyWith(size: FSColSize(xs: 12, sm: 6, md: 4, lg: 4));
+      copyWith(size: const FSColSize(xs: 12, sm: 6, md: 4, lg: 4));
   FlutstrapCol responsiveFourth() =>
-      copyWith(size: FSColSize(xs: 12, sm: 6, md: 3, lg: 3));
+      copyWith(size: const FSColSize(xs: 12, sm: 6, md: 3, lg: 3));
+  FlutstrapCol responsiveAuto() =>
+      copyWith(size: const FSColSize(xs: 12, sm: 12, md: 12, lg: 12));
 }

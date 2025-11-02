@@ -3,40 +3,20 @@
 /// A responsive row component that creates horizontal layout containers
 /// for organizing columns with consistent spacing and alignment.
 ///
-/// ## Usage Examples
-///
-/// ```dart
-/// // Basic row with default gap
-/// FlutstrapRow(
-///   children: [Text('Item 1'), Text('Item 2'), Text('Item 3')],
-///   gap: 16,
-/// )
-///
-/// // Centered row with custom alignment
-/// FlutstrapRow(
-///   children: [Icon(Icons.star), Text('Rating: 4.5')],
-///   mainAxisAlignment: MainAxisAlignment.center,
-///   crossAxisAlignment: CrossAxisAlignment.center,
-///   gap: 8,
-/// ).center()
-///
-/// // Using copyWith for modifications
-/// FlutstrapRow(
-///   children: [/* items */],
-/// ).copyWith(gap: 20, mainAxisAlignment: MainAxisAlignment.spaceBetween)
-/// ```
-///
 /// {@category Layout}
 /// {@category Components}
 
 import 'package:flutter/material.dart';
-import '../core/theme.dart';
 import '../core/spacing.dart';
 
 /// Flutstrap Row Component
 ///
-/// A horizontal layout container that arranges its children in a row
-/// with consistent spacing and alignment options.
+/// {@template flutstrap_row.important_notes}
+/// Important Notes:
+/// - Uses Flutter's [Row] widget with [SizedBox] for proper gap implementation
+/// - Maintains all [Row] functionality including flex behavior
+/// - More performant than using [Wrap] for simple horizontal layouts
+/// {@endtemplate}
 class FlutstrapRow extends StatelessWidget {
   final List<Widget> children;
   final MainAxisAlignment mainAxisAlignment;
@@ -57,16 +37,15 @@ class FlutstrapRow extends StatelessWidget {
     this.verticalDirection = VerticalDirection.down,
     this.textBaseline,
     this.gap,
-  }) : super(); // ✅ REMOVE ASSERT FROM INITIALIZER LIST
+  });
 
   @override
   Widget build(BuildContext context) {
-    // ✅ MOVE ASSERT TO BUILD METHOD
-    assert(children.isNotEmpty, 'Row must have at least one child');
+    assert(children.isNotEmpty, 'FlutstrapRow must have at least one child');
 
     final rowGap = gap ?? FSSpacing.md;
 
-    // Use regular Row for better performance when no gap is needed
+    // Use regular Row when no gap is needed for better performance
     if (rowGap == 0) {
       return Row(
         mainAxisAlignment: mainAxisAlignment,
@@ -79,47 +58,31 @@ class FlutstrapRow extends StatelessWidget {
       );
     }
 
-    // Use Wrap with spacing for gap support
-    return Wrap(
-      direction: Axis.horizontal,
-      spacing: rowGap,
-      runSpacing: rowGap,
-      alignment: _wrapAlignment(mainAxisAlignment),
-      crossAxisAlignment: _wrapCrossAlignment(crossAxisAlignment),
-      children: children,
+    return Row(
+      mainAxisAlignment: mainAxisAlignment,
+      crossAxisAlignment: crossAxisAlignment,
+      mainAxisSize: mainAxisSize,
+      textDirection: textDirection,
+      verticalDirection: verticalDirection,
+      textBaseline: textBaseline,
+      children: _buildChildrenWithGap(children, rowGap),
     );
   }
 
-  WrapAlignment _wrapAlignment(MainAxisAlignment alignment) {
-    switch (alignment) {
-      case MainAxisAlignment.start:
-        return WrapAlignment.start;
-      case MainAxisAlignment.end:
-        return WrapAlignment.end;
-      case MainAxisAlignment.center:
-        return WrapAlignment.center;
-      case MainAxisAlignment.spaceBetween:
-        return WrapAlignment.spaceBetween;
-      case MainAxisAlignment.spaceAround:
-        return WrapAlignment.spaceAround;
-      case MainAxisAlignment.spaceEvenly:
-        return WrapAlignment.spaceEvenly;
-    }
-  }
+  /// Builds children with proper gap implementation using SizedBox
+  List<Widget> _buildChildrenWithGap(List<Widget> children, double gap) {
+    if (children.length <= 1) return children;
 
-  WrapCrossAlignment _wrapCrossAlignment(CrossAxisAlignment alignment) {
-    switch (alignment) {
-      case CrossAxisAlignment.start:
-        return WrapCrossAlignment.start;
-      case CrossAxisAlignment.end:
-        return WrapCrossAlignment.end;
-      case CrossAxisAlignment.center:
-        return WrapCrossAlignment.center;
-      case CrossAxisAlignment.stretch:
-        return WrapCrossAlignment.center; // Wrap doesn't support stretch
-      case CrossAxisAlignment.baseline:
-        return WrapCrossAlignment.center; // Wrap doesn't support baseline
+    final result = <Widget>[];
+    for (int i = 0; i < children.length; i++) {
+      result.add(children[i]);
+
+      // Add gap between children, but not after the last one
+      if (i < children.length - 1) {
+        result.add(SizedBox(width: gap));
+      }
     }
+    return result;
   }
 
   // ✅ CONSISTENT COPYWITH PATTERN
@@ -181,4 +144,16 @@ class FlutstrapRow extends StatelessWidget {
   FlutstrapRow stretch() => copyWith(
         crossAxisAlignment: CrossAxisAlignment.stretch,
       );
+
+  /// Creates a row specifically designed for grid columns
+  FlutstrapRow gridRow({
+    double gap = 0,
+    MainAxisAlignment mainAxisAlignment = MainAxisAlignment.start,
+  }) {
+    return copyWith(
+      gap: gap,
+      mainAxisAlignment: mainAxisAlignment,
+      crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
 }

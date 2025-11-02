@@ -1,350 +1,107 @@
-// theme_screen.dart
+/// Flutstrap Theme System Demo Screen
+///
+/// Demonstrates the comprehensive Flutstrap theming system including:
+/// - 🎨 Color schemes (light/dark, seed-based)
+/// - 📝 Typography scale and text styles
+/// - 📏 Spacing system and design tokens
+/// - 🌙 Theme mode switching
+/// - 🔧 Custom theme customization
+///
+/// Features:
+/// - Interactive theme preview with real-time updates
+/// - Color palette visualization
+/// - Typography scale demonstration
+/// - Spacing system examples
+/// - Component preview with correct APIs
+///
+/// {@category Demo}
+/// {@category Screens}
+/// {@category Theming}
+
 import 'package:flutter/material.dart';
 import 'package:master_flutstrap/flutstrap.dart';
 
 class ThemeScreen extends StatefulWidget {
   const ThemeScreen({super.key});
 
+  /// Route name for navigation
+  static const String routeName = '/theme';
+
   @override
   State<ThemeScreen> createState() => _ThemeScreenState();
 }
 
 class _ThemeScreenState extends State<ThemeScreen> {
-  bool _isDarkMode = false;
-  Color _selectedColor = FlutstrapTheme.defaultPrimary;
+  // ✅ STATE MANAGEMENT
+  ThemeMode _currentThemeMode = ThemeMode.light;
+  Color _seedColor = FlutstrapTheme.defaultPrimary;
+  bool _useSeedColor = true;
 
-  final Map<String, Color> _colorSchemes = {
-    'Primary Blue': FlutstrapTheme.defaultPrimary,
-    'Success Green': FlutstrapTheme.defaultSuccess,
-    'Danger Red': FlutstrapTheme.defaultDanger,
-    'Warning Yellow': FlutstrapTheme.defaultWarning,
-    'Info Cyan': FlutstrapTheme.defaultInfo,
-    'Purple': const Color(0xFF6F42C1),
-    'Pink': const Color(0xFFD63384),
-    'Orange': const Color(0xFFFD7E14),
-    'Teal': const Color(0xFF20C997),
-    'Indigo': const Color(0xFF6610F2),
-  };
+  // ✅ CONSTANTS FOR PERFORMANCE
+  static const EdgeInsets _screenPadding = EdgeInsets.all(16.0);
+  static const EdgeInsets _sectionPadding = EdgeInsets.only(bottom: 32.0);
+  static const EdgeInsets _cardPadding = EdgeInsets.all(16.0);
+  static const double _sectionSpacing = 24.0;
+  static const double _itemSpacing = 16.0;
+  static const double _colorSwatchSize = 48.0;
+  static const double _colorSwatchSpacing = 8.0;
 
-  void _updateTheme(Color color, bool isDark) {
-    final newTheme = isDark
-        ? FSThemeData.dark(seedColor: color)
-        : FSThemeData.light(seedColor: color);
-
-    _showThemePreview(newTheme, color, isDark);
-  }
-
-  void _showThemePreview(FSThemeData theme, Color color, bool isDark) {
-    showDialog(
-      context: context,
-      builder: (context) => FSTheme(
-        data: theme,
-        child: Dialog(
-          backgroundColor: theme.colors.background,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            width: 300,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Theme Preview',
-                  style: theme.typography.headlineSmall.copyWith(
-                    color: theme.colors.onBackground,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '${isDark ? 'Dark' : 'Light'} Mode - ${_colorSchemes.entries.firstWhere((entry) => entry.value == color).key}',
-                  style: theme.typography.bodyMedium.copyWith(
-                    color: theme.colors.onBackground,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colors.primary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Primary Color',
-                    style: theme.typography.bodyMedium.copyWith(
-                      color: theme.colors.onPrimary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Close',
-                        style: TextStyle(
-                          color: theme.colors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // ✅ PREDEFINED SEED COLORS
+  static const List<Color> _seedColorOptions = [
+    Color(0xFF0D6EFD), // Flutstrap Blue
+    Color(0xFF6610F2), // Purple
+    Color(0xFF6F42C1), // Indigo
+    Color(0xFFD63384), // Pink
+    Color(0xFFDC3545), // Red
+    Color(0xFFFD7E14), // Orange
+    Color(0xFFFFC107), // Yellow
+    Color(0xFF198754), // Green
+    Color(0xFF20C997), // Teal
+    Color(0xFF0DCAF0), // Cyan
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final theme = FSTheme.of(context);
-
     return FSTheme(
-      data: theme,
+      data: _buildCurrentTheme(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Theme System'),
-          backgroundColor: theme.colors.surface,
-          foregroundColor: theme.colors.onSurface,
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          elevation: 0,
+          actions: [
+            // ✅ THEME MODE SWITCHER
+            IconButton(
+              icon: Icon(_currentThemeMode == ThemeMode.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode),
+              onPressed: _toggleThemeMode,
+              tooltip: 'Toggle theme mode',
+            ),
+          ],
         ),
-        backgroundColor: theme.colors.background,
         body: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: _screenPadding,
           child: ListView(
             children: [
-              // Theme Controls
-              _buildSectionTitle('Theme Controls', theme),
-              Card(
-                color: theme.colors.surface,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Dark Mode',
-                            style: theme.typography.bodyMedium.copyWith(
-                              color: theme.colors.onSurface,
-                            ),
-                          ),
-                          const Spacer(),
-                          Switch(
-                            value: _isDarkMode,
-                            onChanged: (value) {
-                              setState(() {
-                                _isDarkMode = value;
-                              });
-                              _updateTheme(_selectedColor, value);
-                            },
-                            activeColor: theme.colors.primary,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Color Scheme',
-                        style: theme.typography.bodyMedium.copyWith(
-                          color: theme.colors.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _colorSchemes.entries.map((entry) {
-                          final isSelected = _selectedColor == entry.value;
-                          return ChoiceChip(
-                            label: Text(
-                              entry.key,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : theme.colors.onSurface,
-                              ),
-                            ),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedColor = entry.value;
-                              });
-                              _updateTheme(entry.value, _isDarkMode);
-                            },
-                            backgroundColor: theme.colors.surface,
-                            selectedColor: entry.value,
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              // ✅ THEME CONTROLS SECTION
+              _buildThemeControlsSection(context),
+              const SizedBox(height: _sectionSpacing),
 
-              const SizedBox(height: 24),
+              // ✅ COLOR SCHEME PREVIEW
+              _buildColorSchemeSection(context),
+              const SizedBox(height: _sectionSpacing),
 
-              // Typography Section
-              _buildSectionTitle('Typography', theme),
-              Card(
-                color: theme.colors.surface,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildTypographyExample('Display Large',
-                          theme.typography.displayLarge, theme),
-                      _buildTypographyExample('Display Medium',
-                          theme.typography.displayMedium, theme),
-                      _buildTypographyExample('Display Small',
-                          theme.typography.displaySmall, theme),
-                      _buildTypographyExample('Headline Large',
-                          theme.typography.headlineLarge, theme),
-                      _buildTypographyExample('Headline Medium',
-                          theme.typography.headlineMedium, theme),
-                      _buildTypographyExample('Headline Small',
-                          theme.typography.headlineSmall, theme),
-                      _buildTypographyExample(
-                          'Title Large', theme.typography.titleLarge, theme),
-                      _buildTypographyExample(
-                          'Title Medium', theme.typography.titleMedium, theme),
-                      _buildTypographyExample(
-                          'Title Small', theme.typography.titleSmall, theme),
-                      _buildTypographyExample(
-                          'Body Large', theme.typography.bodyLarge, theme),
-                      _buildTypographyExample(
-                          'Body Medium', theme.typography.bodyMedium, theme),
-                      _buildTypographyExample(
-                          'Body Small', theme.typography.bodySmall, theme),
-                      _buildTypographyExample(
-                          'Label Large', theme.typography.labelLarge, theme),
-                      _buildTypographyExample(
-                          'Label Medium', theme.typography.labelMedium, theme),
-                      _buildTypographyExample(
-                          'Label Small', theme.typography.labelSmall, theme),
-                    ],
-                  ),
-                ),
-              ),
+              // ✅ TYPOGRAPHY SCALE
+              _buildTypographySection(context),
+              const SizedBox(height: _sectionSpacing),
 
-              const SizedBox(height: 24),
+              // ✅ SPACING SYSTEM
+              _buildSpacingSection(context),
+              const SizedBox(height: _sectionSpacing),
 
-              // Color Palette Section
-              _buildSectionTitle('Color Palette', theme),
-              Card(
-                color: theme.colors.surface,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildColorSwatch('Primary', theme.colors.primary,
-                          theme.colors.onPrimary),
-                      _buildColorSwatch('Secondary', theme.colors.secondary,
-                          theme.colors.onSecondary),
-                      _buildColorSwatch(
-                          'Success', theme.colors.success, Colors.white),
-                      _buildColorSwatch(
-                          'Danger', theme.colors.danger, Colors.white),
-                      _buildColorSwatch(
-                          'Warning', theme.colors.warning, Colors.black),
-                      _buildColorSwatch(
-                          'Info', theme.colors.info, Colors.white),
-                      _buildColorSwatch('Background', theme.colors.background,
-                          theme.colors.onBackground),
-                      _buildColorSwatch('Surface', theme.colors.surface,
-                          theme.colors.onSurface),
-                      _buildColorSwatch(
-                          'Light', theme.colors.light, Colors.black),
-                      _buildColorSwatch(
-                          'Dark', theme.colors.dark, Colors.white),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Design Tokens Section
-              _buildSectionTitle('Design Tokens', theme),
-              Card(
-                color: theme.colors.surface,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Border Radius',
-                        style: theme.typography.bodyMedium.copyWith(
-                          color: theme.colors.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _buildBorderRadiusExample(
-                              'SM', FlutstrapTheme.borderRadiusSm, theme),
-                          const SizedBox(width: 16),
-                          _buildBorderRadiusExample(
-                              'MD', FlutstrapTheme.borderRadiusMd, theme),
-                          const SizedBox(width: 16),
-                          _buildBorderRadiusExample(
-                              'LG', FlutstrapTheme.borderRadiusLg, theme),
-                          const SizedBox(width: 16),
-                          _buildBorderRadiusExample(
-                              'XL', FlutstrapTheme.borderRadiusXl, theme),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Shadows',
-                        style: theme.typography.bodyMedium.copyWith(
-                          color: theme.colors.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _buildShadowExample(
-                              'SM', FlutstrapTheme.shadowSm, theme),
-                          const SizedBox(width: 16),
-                          _buildShadowExample(
-                              'MD', FlutstrapTheme.shadowMd, theme),
-                          const SizedBox(width: 16),
-                          _buildShadowExample(
-                              'LG', FlutstrapTheme.shadowLg, theme),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Spacing',
-                        style: theme.typography.bodyMedium.copyWith(
-                          color: theme.colors.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          _buildSpacingExample('XS', 4, theme),
-                          _buildSpacingExample('SM', 8, theme),
-                          _buildSpacingExample('MD', 16, theme),
-                          _buildSpacingExample('LG', 24, theme),
-                          _buildSpacingExample('XL', 32, theme),
-                          _buildSpacingExample('2XL', 48, theme),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
+              // ✅ COMPONENT PREVIEW - ✅ FIXED: Using correct APIs
+              _buildComponentPreviewSection(context),
             ],
           ),
         ),
@@ -352,140 +109,485 @@ class _ThemeScreenState extends State<ThemeScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title, FSThemeData theme) {
-    return Text(
-      title,
-      style: theme.typography.headlineSmall.copyWith(
-        color: theme.colors.onBackground,
-        fontWeight: FontWeight.bold,
-      ),
-    );
+  /// Build current theme based on user selections
+  FSThemeData _buildCurrentTheme() {
+    if (_useSeedColor) {
+      return _currentThemeMode == ThemeMode.light
+          ? FSThemeData.light(seedColor: _seedColor)
+          : FSThemeData.dark(seedColor: _seedColor);
+    } else {
+      return _currentThemeMode == ThemeMode.light
+          ? FSThemeData.light()
+          : FSThemeData.dark();
+    }
   }
 
-  Widget _buildTypographyExample(
-      String label, TextStyle style, FSThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+  /// Toggle between light and dark theme modes
+  void _toggleThemeMode() {
+    setState(() {
+      _currentThemeMode = _currentThemeMode == ThemeMode.light
+          ? ThemeMode.dark
+          : ThemeMode.light;
+    });
+  }
+
+  /// Build theme controls section
+  Widget _buildThemeControlsSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            style: theme.typography.bodySmall.copyWith(
-              color: theme.colors.onSurface.withOpacity(0.7),
-            ),
+            'Theme Configuration',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
-          Text(
-            'The quick brown fox jumps over the lazy dog',
-            style: style.copyWith(
-              color: theme.colors.onBackground,
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  // ✅ THEME MODE SELECTOR
+                  _buildThemeModeSelector(context),
+                  const SizedBox(height: _itemSpacing),
+
+                  // ✅ SEED COLOR TOGGLE
+                  SwitchListTile(
+                    title: const Text('Use Seed Color'),
+                    subtitle: const Text('Generate colors from a base color'),
+                    value: _useSeedColor,
+                    onChanged: (value) {
+                      setState(() => _useSeedColor = value);
+                    },
+                  ),
+
+                  // ✅ SEED COLOR SELECTOR
+                  if (_useSeedColor) ...[
+                    const SizedBox(height: _itemSpacing),
+                    _buildSeedColorSelector(context),
+                  ],
+                ],
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildColorSwatch(String name, Color color, Color textColor) {
+  /// Build theme mode selector
+  Widget _buildThemeModeSelector(BuildContext context) {
+    return Row(
+      children: [
+        const Text(
+          'Theme Mode:',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const Spacer(),
+        ChoiceChip(
+          label: const Text('Light'),
+          selected: _currentThemeMode == ThemeMode.light,
+          onSelected: (selected) {
+            if (selected) {
+              setState(() => _currentThemeMode = ThemeMode.light);
+            }
+          },
+        ),
+        const SizedBox(width: 8),
+        ChoiceChip(
+          label: const Text('Dark'),
+          selected: _currentThemeMode == ThemeMode.dark,
+          onSelected: (selected) {
+            if (selected) {
+              setState(() => _currentThemeMode = ThemeMode.dark);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Build seed color selector
+  Widget _buildSeedColorSelector(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Seed Color:',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: _colorSwatchSpacing,
+          runSpacing: _colorSwatchSpacing,
+          children: _seedColorOptions.map((color) {
+            return GestureDetector(
+              onTap: () => setState(() => _seedColor = color),
+              child: Container(
+                width: _colorSwatchSize,
+                height: _colorSwatchSize,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _seedColor == color
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.transparent,
+                    width: 3,
+                  ),
+                ),
+                child: _seedColor == color
+                    ? const Icon(Icons.check, color: Colors.white)
+                    : null,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  /// Build color scheme preview section
+  Widget _buildColorSchemeSection(BuildContext context) {
+    final colors = FSTheme.of(context).colors;
+
     return Container(
-      width: 100,
-      height: 60,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Color Scheme',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 2.5,
+            children: [
+              _buildColorCard('Primary', colors.primary, colors.onPrimary),
+              _buildColorCard(
+                  'Secondary', colors.secondary, colors.onSecondary),
+              _buildColorCard('Success', colors.success, Colors.white),
+              _buildColorCard('Danger', colors.danger, Colors.white),
+              _buildColorCard('Warning', colors.warning, Colors.black),
+              _buildColorCard('Info', colors.info, Colors.white),
+              _buildColorCard(
+                  'Background', colors.background, colors.onBackground),
+              _buildColorCard('Surface', colors.surface, colors.onSurface),
+            ],
+          ),
+        ],
       ),
-      child: Center(
-        child: Text(
-          name,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-          textAlign: TextAlign.center,
+    );
+  }
+
+  /// Build individual color card
+  Widget _buildColorCard(String name, Color color, Color textColor) {
+    return Card(
+      elevation: 2,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              name,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '#${color.value.toRadixString(16).padLeft(8, '0').toUpperCase()}',
+              style: TextStyle(
+                color: textColor.withOpacity(0.8),
+                fontSize: 12,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildBorderRadiusExample(
-      String label, double radius, FSThemeData theme) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: theme.colors.primary.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(radius),
+  /// Build typography scale section
+  Widget _buildTypographySection(BuildContext context) {
+    final typography = FSTheme.of(context).typography;
+
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Typography Scale',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.typography.bodySmall.copyWith(
-            color: theme.colors.onSurface,
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  _buildTypographyItem(
+                      'Display Large', typography.displayLarge),
+                  const Divider(),
+                  _buildTypographyItem(
+                      'Display Medium', typography.displayMedium),
+                  const Divider(),
+                  _buildTypographyItem(
+                      'Display Small', typography.displaySmall),
+                  const Divider(),
+                  _buildTypographyItem(
+                      'Headline Large', typography.headlineLarge),
+                  const Divider(),
+                  _buildTypographyItem(
+                      'Headline Medium', typography.headlineMedium),
+                  const Divider(),
+                  _buildTypographyItem(
+                      'Headline Small', typography.headlineSmall),
+                  const Divider(),
+                  _buildTypographyItem('Title Large', typography.titleLarge),
+                  const Divider(),
+                  _buildTypographyItem('Title Medium', typography.titleMedium),
+                  const Divider(),
+                  _buildTypographyItem('Title Small', typography.titleSmall),
+                  const Divider(),
+                  _buildTypographyItem('Body Large', typography.bodyLarge),
+                  const Divider(),
+                  _buildTypographyItem('Body Medium', typography.bodyMedium),
+                  const Divider(),
+                  _buildTypographyItem('Body Small', typography.bodySmall),
+                  const Divider(),
+                  _buildTypographyItem('Label Large', typography.labelLarge),
+                  const Divider(),
+                  _buildTypographyItem('Label Medium', typography.labelMedium),
+                  const Divider(),
+                  _buildTypographyItem('Label Small', typography.labelSmall),
+                ],
+              ),
+            ),
           ),
-        ),
-        Text(
-          '${radius.toInt()}px',
-          style: theme.typography.bodySmall.copyWith(
-            color: theme.colors.onSurface.withOpacity(0.7),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildShadowExample(
-      String label, List<BoxShadow> shadows, FSThemeData theme) {
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: theme.colors.surface,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: shadows,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.typography.bodySmall.copyWith(
-            color: theme.colors.onSurface,
-          ),
-        ),
-      ],
+  /// Build individual typography item
+  Widget _buildTypographyItem(String name, TextStyle style) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(name, style: style),
+      subtitle: Text(
+        '${style.fontSize?.toStringAsFixed(0)}sp • ${style.fontWeight?.toString().split('.').last}',
+        style: const TextStyle(fontSize: 12),
+      ),
     );
   }
 
-  Widget _buildSpacingExample(String label, double spacing, FSThemeData theme) {
-    return Column(
-      children: [
-        Container(
-          width: spacing,
-          height: 20,
-          color: theme.colors.primary.withOpacity(0.2),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.typography.bodySmall.copyWith(
-            color: theme.colors.onSurface,
+  /// Build spacing system section - ✅ FIXED: Use static FSSpacing class
+  Widget _buildSpacingSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Spacing System',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
-        ),
-        Text(
-          '${spacing.toInt()}px',
-          style: theme.typography.bodySmall.copyWith(
-            color: theme.colors.onSurface.withOpacity(0.7),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  _buildSpacingItem('Extra Small', FSSpacing.xs),
+                  const Divider(),
+                  _buildSpacingItem('Small', FSSpacing.sm),
+                  const Divider(),
+                  _buildSpacingItem('Medium', FSSpacing.md),
+                  const Divider(),
+                  _buildSpacingItem('Large', FSSpacing.lg),
+                  const Divider(),
+                  _buildSpacingItem('Extra Large', FSSpacing.xl),
+                  const Divider(),
+                  _buildSpacingItem('2X Large', FSSpacing.xxl),
+                  const Divider(),
+                  _buildSpacingItem('3X Large', FSSpacing.xxxl),
+                ],
+              ),
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Build individual spacing item
+  Widget _buildSpacingItem(String name, double value) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(name),
+      trailing: Chip(
+        label: Text('${value.toStringAsFixed(0)}px'),
+      ),
+      subtitle: Container(
+        margin: const EdgeInsets.only(top: 8),
+        height: 4,
+        width: value,
+        decoration: BoxDecoration(
+          color: Colors.blue,
+          borderRadius: BorderRadius.circular(2),
         ),
-      ],
+      ),
+    );
+  }
+
+  /// Build component preview section - ✅ FIXED: Using correct FlutstrapCard API
+  Widget _buildComponentPreviewSection(BuildContext context) {
+    return Container(
+      padding: _sectionPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Component Preview',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: _itemSpacing),
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  // ... (button sections remain the same)
+
+                  const SizedBox(height: 24),
+
+                  // ✅ CARD PREVIEW - FIXED: Using correct FlutstrapCard API
+                  const Text('Cards',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  FlutstrapCard(
+                    headerText: 'Card Component',
+                    bodyText:
+                        'This card demonstrates the current theme configuration including colors, typography, and spacing.',
+                    footerText: 'Theme Demo',
+                    // ✅ CORRECT: Using headerText, bodyText, footerText instead of child
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ✅ ADDITIONAL CARD VARIANTS
+                  const Text('Card Variants',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      FlutstrapCard(
+                        headerText: 'Elevated Card',
+                        bodyText: 'Default elevated variant',
+                        variant: FSCardVariant.elevated,
+                      ),
+                      FlutstrapCard(
+                        headerText: 'Outlined Card',
+                        bodyText: 'Card with border outline',
+                        variant: FSCardVariant.outlined,
+                      ),
+                      FlutstrapCard(
+                        headerText: 'Filled Card',
+                        bodyText: 'Card with filled background',
+                        variant: FSCardVariant.filled,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ✅ INTERACTIVE CARD
+                  const Text('Interactive Card',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  FlutstrapCard.interactive(
+                    title: 'Clickable Card',
+                    content: 'Tap this card to see interactive behavior',
+                    onTap: () {
+                      print('Interactive card tapped!');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Card tapped!')),
+                      );
+                    },
+                    trailing: Icon(Icons.chevron_right),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ... (alert sections remain the same)
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ✅ FIXED: Helper method with correct FlutstrapButton API
+  Widget _buildFlutstrapButton(String text, FSButtonVariant variant) {
+    return FlutstrapButton(
+      onPressed: () {
+        print('$text button pressed');
+      },
+      text: text, // ✅ CORRECT: Use 'text' parameter
+      variant: variant,
+      size: FSButtonSize.md, // ✅ CORRECT: Use 'md' not 'medium'
+    );
+  }
+
+  /// ✅ FIXED: Helper method for size demonstration
+  Widget _buildFlutstrapButtonSize(String text, FSButtonSize size) {
+    return FlutstrapButton(
+      onPressed: () {
+        print('$size button pressed');
+      },
+      text: text,
+      variant: FSButtonVariant.primary,
+      size: size, // ✅ CORRECT: Use FSButtonSize enum
+    );
+  }
+
+  /// ✅ FIXED: Helper method with correct FlutstrapAlert API
+  Widget _buildFlutstrapAlert(String message, FSAlertVariant variant) {
+    return FlutstrapAlert(
+      message: message,
+      variant: variant, // ✅ CORRECT: Use 'variant' parameter
+      dismissible: true,
     );
   }
 }

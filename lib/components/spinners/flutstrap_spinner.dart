@@ -4,41 +4,49 @@
 ///
 /// {@macro flutstrap_spinner.usage}
 /// {@macro flutstrap_spinner.accessibility}
+/// {@macro flutstrap_spinner.performance}
+/// {@macro flutstrap_spinner.troubleshooting}
 ///
 /// {@template flutstrap_spinner.usage}
-/// ## Usage Examples
+/// ## Comprehensive Usage Examples
 ///
 /// ```dart
-/// // Basic border spinner
+/// // Border spinner with custom duration
 /// FlutstrapSpinner(
 ///   variant: FSSpinnerVariant.primary,
-///   size: FSSpinnerSize.md,
+///   type: FSSpinnerType.border,
+///   animationDuration: Duration(milliseconds: 800),
+///   strokeWidth: 3.0,
 /// )
 ///
-/// // Growing spinner with label
+/// // Growing spinner with semantic label
 /// FlutstrapSpinner(
 ///   variant: FSSpinnerVariant.success,
 ///   type: FSSpinnerType.growing,
-///   label: 'Loading...',
+///   label: 'Processing payment...',
 ///   centered: true,
 /// )
 ///
 /// // Dots spinner with custom color
 /// FlutstrapSpinner(
 ///   type: FSSpinnerType.dots,
-///   color: Colors.blue,
+///   color: Colors.purple,
 ///   size: FSSpinnerSize.lg,
 /// )
 ///
-/// // Spinner button
+/// // Spinner button with error handling
 /// FlutstrapSpinnerButton(
 ///   isLoading: isSubmitting,
 ///   onPressed: submitForm,
-///   child: Text('Submit'),
+///   child: Text('Save Changes'),
 ///   spinner: FlutstrapSpinner(
 ///     variant: FSSpinnerVariant.light,
 ///     size: FSSpinnerSize.sm,
 ///   ),
+///   loadingLabel: 'Saving...',
+///   onAnimationError: (error) {
+///     print('Spinner animation error: $error');
+///   },
 /// )
 /// ```
 /// {@endtemplate}
@@ -50,6 +58,36 @@
 /// - Live region updates for loading states
 /// - High contrast support for all variants
 /// - Clear visual indicators for different spinner types
+/// - ARIA compliant attributes for screen readers
+/// {@endtemplate}
+///
+/// {@template flutstrap_spinner.performance}
+/// ## Performance Guidelines
+///
+/// - Use `animationDuration: Duration.zero` for static spinners
+/// - Avoid using multiple animated spinners simultaneously
+/// - Use `FSSpinnerType.border` for best performance
+/// - Consider using `fallbackWidget` for animation errors
+/// - Use appropriate spinner sizes for your context
+/// {@endtemplate}
+///
+/// {@template flutstrap_spinner.troubleshooting}
+/// ## Troubleshooting
+///
+/// ### Animation not working
+/// - Check animation duration is greater than zero
+/// - Verify the widget is visible in the viewport
+/// - Ensure proper state management for spinner visibility
+///
+/// ### Performance issues
+/// - Reduce number of simultaneous animated spinners
+/// - Use simpler spinner types (border > growing > dots)
+/// - Consider using static spinners for repeated elements
+///
+/// ### Accessibility concerns
+/// - Provide meaningful labels for screen readers
+/// - Ensure sufficient color contrast for all variants
+/// - Test with different animation preferences
 /// {@endtemplate}
 ///
 /// {@category Components}
@@ -105,6 +143,8 @@ class FlutstrapSpinner extends StatefulWidget {
   final double? strokeWidth;
   final Duration animationDuration;
   final bool centered;
+  final void Function(Object error)? onAnimationError;
+  final Widget? fallbackWidget;
 
   const FlutstrapSpinner({
     super.key,
@@ -117,6 +157,8 @@ class FlutstrapSpinner extends StatefulWidget {
     this.strokeWidth,
     this.animationDuration = const Duration(milliseconds: 1000),
     this.centered = false,
+    this.onAnimationError,
+    this.fallbackWidget,
   });
 
   /// Creates a copy of this spinner with the given properties replaced
@@ -131,6 +173,8 @@ class FlutstrapSpinner extends StatefulWidget {
     double? strokeWidth,
     Duration? animationDuration,
     bool? centered,
+    void Function(Object error)? onAnimationError,
+    Widget? fallbackWidget,
   }) {
     return FlutstrapSpinner(
       key: key ?? this.key,
@@ -143,6 +187,8 @@ class FlutstrapSpinner extends StatefulWidget {
       strokeWidth: strokeWidth ?? this.strokeWidth,
       animationDuration: animationDuration ?? this.animationDuration,
       centered: centered ?? this.centered,
+      onAnimationError: onAnimationError ?? this.onAnimationError,
+      fallbackWidget: fallbackWidget ?? this.fallbackWidget,
     );
   }
 
@@ -197,6 +243,10 @@ class FlutstrapSpinner extends StatefulWidget {
   /// Creates a spinner with custom color
   FlutstrapSpinner withColor(Color newColor) => copyWith(color: newColor);
 
+  /// Creates a spinner with error handling
+  FlutstrapSpinner withErrorHandler(void Function(Object error) handler) =>
+      copyWith(onAnimationError: handler);
+
   @override
   State<FlutstrapSpinner> createState() => _FlutstrapSpinnerState();
 }
@@ -204,6 +254,10 @@ class FlutstrapSpinner extends StatefulWidget {
 class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
+  bool _animationError = false;
+
+  // ✅ OPTIMIZE: Animation optimization flags
+  bool get _shouldAnimate => widget.animationDuration > Duration.zero;
 
   @override
   void initState() {
@@ -211,25 +265,77 @@ class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
     _animationController = AnimationController(
       duration: widget.animationDuration,
       vsync: this,
-    )..repeat();
+    )..addStatusListener(_handleAnimationStatus);
+
+    _startAnimationSafely();
+  }
+
+  void _handleAnimationStatus(AnimationStatus status) {
+    // ✅ ADD: Handle animation errors and completion
+    if (status == AnimationStatus.completed && _shouldAnimate) {
+      try {
+        _animationController.repeat();
+      } catch (e) {
+        _handleAnimationError(e);
+      }
+    }
+  }
+
+  void _startAnimationSafely() {
+    try {
+      if (_shouldAnimate) {
+        _animationController.repeat();
+      }
+    } catch (e) {
+      _handleAnimationError(e);
+    }
+  }
+
+  void _handleAnimationError(Object error) {
+    setState(() {
+      _animationError = true;
+    });
+
+    if (widget.onAnimationError != null) {
+      widget.onAnimationError!(error);
+    } else {
+      // ✅ FALLBACK: Default error handling
+      debugPrint('FlutstrapSpinner animation error: $error');
+    }
   }
 
   @override
   void didUpdateWidget(FlutstrapSpinner oldWidget) {
     super.didUpdateWidget(oldWidget);
+
     if (widget.animationDuration != oldWidget.animationDuration) {
       _animationController.duration = widget.animationDuration;
+    }
+
+    // ✅ RESET: Error state when widget updates
+    if (_animationError && widget.fallbackWidget != oldWidget.fallbackWidget) {
+      setState(() {
+        _animationError = false;
+      });
+      _startAnimationSafely();
     }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _animationController
+      ..removeStatusListener(_handleAnimationStatus)
+      ..dispose(); // ✅ ENHANCE: Proper cleanup
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // ✅ HANDLE: Animation errors with fallback
+    if (_animationError && widget.fallbackWidget != null) {
+      return widget.fallbackWidget!;
+    }
+
     final theme = FSTheme.of(context);
     final spinnerStyle = _SpinnerStyle(theme, widget.variant, widget.size);
 
@@ -238,7 +344,8 @@ class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
 
     Widget content = Semantics(
       liveRegion: true,
-      label: 'Loading',
+      label: _getAccessibilityLabel(),
+      value: 'Loading indicator',
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -259,27 +366,54 @@ class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
   }
 
   Widget _buildSpinnerContent(_SpinnerStyle spinnerStyle) {
-    switch (widget.type) {
-      case FSSpinnerType.border:
-        return _BorderSpinner(
-          animationController: _animationController,
-          size: spinnerStyle.spinnerSize,
-          color: widget.color ?? spinnerStyle.color,
-          strokeWidth: widget.strokeWidth ?? spinnerStyle.strokeWidth,
-        );
-      case FSSpinnerType.growing:
-        return _GrowingSpinner(
-          animationController: _animationController,
-          size: spinnerStyle.spinnerSize,
-          color: widget.color ?? spinnerStyle.color,
-        );
-      case FSSpinnerType.dots:
-        return _DotsSpinner(
-          animationController: _animationController,
-          size: spinnerStyle.spinnerSize,
-          color: widget.color ?? spinnerStyle.color,
-        );
+    if (_animationError) {
+      // ✅ FALLBACK: Static spinner when animation fails
+      return _buildStaticSpinner(spinnerStyle);
     }
+
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        switch (widget.type) {
+          case FSSpinnerType.border:
+            return _BorderSpinner(
+              animationController: _animationController,
+              size: spinnerStyle.spinnerSize,
+              color: widget.color ?? spinnerStyle.color,
+              strokeWidth: widget.strokeWidth ?? spinnerStyle.strokeWidth,
+            );
+          case FSSpinnerType.growing:
+            return _GrowingSpinner(
+              animationController: _animationController,
+              size: spinnerStyle.spinnerSize,
+              color: widget.color ?? spinnerStyle.color,
+            );
+          case FSSpinnerType.dots:
+            return _DotsSpinner(
+              animationController: _animationController,
+              size: spinnerStyle.spinnerSize,
+              color: widget.color ?? spinnerStyle.color,
+            );
+        }
+      },
+      child: _buildLabel(spinnerStyle), // ✅ OPTIMIZE: Cache label
+    );
+  }
+
+  Widget _buildStaticSpinner(_SpinnerStyle spinnerStyle) {
+    // ✅ FALLBACK: Simple static circle when animation fails
+    return Container(
+      width: spinnerStyle.spinnerSize,
+      height: spinnerStyle.spinnerSize,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(spinnerStyle.spinnerSize / 2),
+        border: Border.all(
+          color: (widget.color ?? spinnerStyle.color).withOpacity(0.5),
+          width: widget.strokeWidth ?? spinnerStyle.strokeWidth,
+        ),
+      ),
+    );
   }
 
   Widget _buildLabel(_SpinnerStyle spinnerStyle) {
@@ -292,6 +426,17 @@ class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
       style: spinnerStyle.labelTextStyle,
       textAlign: TextAlign.center,
     );
+  }
+
+  String _getAccessibilityLabel() {
+    switch (widget.type) {
+      case FSSpinnerType.border:
+        return widget.label ?? 'Rotating loading indicator';
+      case FSSpinnerType.growing:
+        return widget.label ?? 'Pulsing loading indicator';
+      case FSSpinnerType.dots:
+        return widget.label ?? 'Bouncing dots loading indicator';
+    }
   }
 }
 
@@ -360,15 +505,14 @@ class _SpinnerArcPainter extends CustomPainter {
       ..color = color
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true; // ✅ ADD: Better rendering
 
-    final rect = Rect.fromCircle(
-      center: Offset(size.width / 2, size.height / 2),
-      radius: size.width / 2 - strokeWidth / 2,
-    );
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - strokeWidth / 2;
 
     canvas.drawArc(
-      rect,
+      Rect.fromCircle(center: center, radius: radius),
       _SpinnerConstants.arcStartAngle,
       _SpinnerConstants.arcSweepAngle,
       false,
@@ -377,7 +521,12 @@ class _SpinnerArcPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    // ✅ OPTIMIZE: Only repaint when properties change
+    return oldDelegate is! _SpinnerArcPainter ||
+        oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth;
+  }
 }
 
 /// Growing spinner (pulsing circle)
@@ -434,6 +583,13 @@ class _DotsSpinner extends AnimatedWidget {
     required this.color,
   }) : super(listenable: animationController);
 
+  // ✅ OPTIMIZE: Pre-calculate dot animations
+  static final List<Interval> _dotIntervals = const [
+    Interval(0.0, 0.6, curve: Curves.easeInOut),
+    Interval(0.2, 0.8, curve: Curves.easeInOut),
+    Interval(0.4, 1.0, curve: Curves.easeInOut),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -447,11 +603,7 @@ class _DotsSpinner extends AnimatedWidget {
             end: 1.0,
           ).animate(CurvedAnimation(
             parent: listenable as AnimationController,
-            curve: Interval(
-              index * 0.2,
-              1.0,
-              curve: Curves.easeInOut,
-            ),
+            curve: _dotIntervals[index], // ✅ USE: Pre-defined intervals
           ));
 
           return ScaleTransition(
@@ -479,6 +631,8 @@ class FlutstrapSpinnerButton extends StatelessWidget {
   final Widget child;
   final FlutstrapSpinner spinner;
   final EdgeInsetsGeometry padding;
+  final Size? minimumSize;
+  final String loadingLabel;
 
   const FlutstrapSpinnerButton({
     super.key,
@@ -487,13 +641,24 @@ class FlutstrapSpinnerButton extends StatelessWidget {
     required this.child,
     this.spinner = const FlutstrapSpinner(size: FSSpinnerSize.sm),
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    this.minimumSize = const Size(64, 36),
+    this.loadingLabel = 'Loading...',
   });
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
-      child: isLoading ? spinner : child,
+      style: ElevatedButton.styleFrom(
+        minimumSize: minimumSize,
+        padding: padding,
+      ),
+      child: isLoading
+          ? Semantics(
+              label: loadingLabel,
+              child: spinner,
+            )
+          : child,
     );
   }
 }

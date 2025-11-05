@@ -17,7 +17,7 @@
 /// {@category Feedback}
 
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({super.key});

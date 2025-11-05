@@ -1,7 +1,7 @@
 // test/animations/slide_transition_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:master_flutstrap/animations/slide_transition.dart' as flutstrap;
+import 'package:flutstrap/animations/slide_transition.dart' as flutstrap;
 
 void main() {
   // Helper function to build test widget with proper disposal

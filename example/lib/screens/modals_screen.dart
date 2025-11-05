@@ -18,7 +18,7 @@
 /// {@category Overlays}
 
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 class ModalsScreen extends StatefulWidget {
   const ModalsScreen({super.key});

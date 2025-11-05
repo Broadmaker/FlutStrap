@@ -19,7 +19,7 @@
 /// {@category Theming}
 
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 class ThemeScreen extends StatefulWidget {
   const ThemeScreen({super.key});

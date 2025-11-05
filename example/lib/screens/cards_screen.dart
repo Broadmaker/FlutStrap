@@ -17,7 +17,7 @@
 /// {@category Cards}
 
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 class CardsScreen extends StatefulWidget {
   const CardsScreen({super.key});

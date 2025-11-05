@@ -18,7 +18,7 @@
 /// {@category Overlays}
 
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 class TooltipsScreen extends StatefulWidget {
   const TooltipsScreen({super.key});

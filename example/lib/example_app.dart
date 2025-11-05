@@ -19,7 +19,7 @@
 /// {@category Demo}
 /// {@category Application}
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 import 'screens/home_screen.dart';
 import 'screens/animation_screen.dart';
 import 'screens/buttons_screen.dart';

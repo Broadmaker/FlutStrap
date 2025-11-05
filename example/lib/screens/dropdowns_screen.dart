@@ -18,7 +18,7 @@
 /// {@category Forms}
 
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 class DropdownsScreen extends StatefulWidget {
   const DropdownsScreen({super.key});

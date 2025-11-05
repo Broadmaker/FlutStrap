@@ -19,7 +19,7 @@
 /// {@category Layout}
 
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 class LayoutScreen extends StatefulWidget {
   const LayoutScreen({super.key});

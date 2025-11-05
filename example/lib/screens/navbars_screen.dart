@@ -18,7 +18,7 @@
 /// {@category Navigation}
 
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 class NavbarsScreen extends StatefulWidget {
   const NavbarsScreen({super.key});

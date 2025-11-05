@@ -1,7 +1,7 @@
 // test/animations/fade_in_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:master_flutstrap/animations/fade_in.dart';
+import 'package:flutstrap/animations/fade_in.dart';
 
 void main() {
   // Helper function to build test widget with proper disposal

@@ -19,7 +19,7 @@
 /// {@category Typography}
 
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/flutstrap.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 class TypographyScreen extends StatefulWidget {
   const TypographyScreen({super.key});

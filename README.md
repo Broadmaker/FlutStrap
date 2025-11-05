@@ -1,7 +1,3 @@
-Sure! Here's a friendly and approachable `README.md` that will guide users through the key features of your project and direct them to the relevant component documentation. This will help them understand how to use the package effectively:
-
----
-
 # 🌟 FlutStrap
 
 FlutStrap is a **Flutter UI library inspired by Bootstrap**. It provides **ready-to-use UI components**, **responsive layouts**, and **light/dark theming** to help you build Flutter apps quickly and easily.

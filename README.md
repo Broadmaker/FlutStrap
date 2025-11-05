@@ -30,7 +30,7 @@ flutter pub get
 
 FlutStrap includes a variety of UI components that make it easy to build beautiful Flutter applications. Below is a list of the key components available in this package.
 
-- **[Alerts](docs/components/alerts/alerts.md)**: Show important messages or notifications to the user.
+- **[Alerts](docs/components/alerts.md)**: Show important messages or notifications to the user.
 - **[Badges](docs/components/badges.md)**: Display labels or counts for items, often used in navigation or statuses.
 - **[Buttons](docs/components/buttons.md)**: Different button styles, including primary, secondary, and disabled states.
 - **[Cards](docs/components/cards.md)**: Container widgets that can be used to display information with headers, footers, and images.

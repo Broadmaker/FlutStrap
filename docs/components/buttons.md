@@ -1,59 +1,51 @@
-Perfect! Now I have a solid understanding of the Flutstrap button component. I can see the design patterns, theming system, and how components are structured. Let me create the comprehensive user guide for the Flutstrap Button component.
-
 # Flutstrap Button Component Guide
 
 ## Introduction
 
-The **FlutstrapButton** is a versatile, high-performance button component with Bootstrap-inspired variants, sizes, and states. It provides a comprehensive button solution that integrates seamlessly with the Flutstrap design system while maintaining Flutter's Material Design principles.
+Flutstrap Button is a versatile button component with Bootstrap-inspired variants, sizes, and states. It provides a robust button solution for Flutter applications with enterprise-grade performance and accessibility features.
 
-### What the Component Does
+**This comprehensive guide covers all aspects of using the Flutstrap Button component. The button system is designed to be highly flexible, performant, and accessible while providing a robust solution for user interactions across various contexts, states, and design requirements.**
 
-FlutstrapButton offers:
+### What It Does
 
-- 18 visual variants (filled, outline, link styles)
-- 3 size options (sm, md, lg)
-- Loading states with automatic styling
-- Comprehensive disabled states
-- Performance-optimized style caching
-- Full accessibility support
-- Flexible content arrangement (leading/trailing icons)
+- Provides customizable buttons with multiple visual variants and sizes
+- Supports loading states, icons, and accessibility features
+- Offers outline and filled button styles
+- Includes performance optimizations with style caching
 
-### When and Why to Use It
+### When to Use
 
-Use FlutstrapButton when you need:
-
-- Consistent button styling across your app
-- Bootstrap-inspired design language
-- Performance-optimized buttons in lists
-- Complex button states (loading, disabled, etc.)
-- Outline and link-style buttons
-- Buttons that work with Flutstrap's theming system
+- Primary actions in forms, dialogs, and workflows
+- Secondary actions and alternative options
+- Destructive actions requiring user confirmation
+- Navigation and link-style interactions
+- Loading states for asynchronous operations
 
 ### Prerequisites
 
 - Flutter 3.0 or higher
-- Flutstrap theme package
-- Material Design Icons
+- Flutstrap theme system (`FSTheme`)
 
 ## Installation & Setup
 
 ### Required Dependencies
 
 ```dart
-import 'package:flutter/material.dart';
-import 'package:flutstrap/core/theme.dart';
-import 'package:flutstrap/core/spacing.dart';
-import 'package:flutstrap/components/buttons/flutstrap_button.dart';
+import 'package:flutstrap/flutstrap.dart';
 ```
 
-### Theme Configuration
+### Basic Project Setup
+
+Ensure your app is wrapped with the Flutstrap theme:
 
 ```dart
 void main() {
   runApp(
-    FSTheme(
-      data: FSThemeData.light(), // or FSThemeData.dark()
-      child: MyApp(),
+    MaterialApp(
+      home: FSTheme(
+        data: FSThemeData.light(), // or FSThemeData.dark()
+        child: MyApp(),
+      ),
     ),
   );
 }
@@ -61,15 +53,26 @@ void main() {
 
 ## Basic Usage
 
-### Simple Button Example
+### Basic Button
 
 ```dart
 FlutstrapButton(
-  onPressed: () {
-    print('Button pressed!');
-  },
-  text: 'Click Me',
+  onPressed: () {},
+  text: 'Primary Button',
   variant: FSButtonVariant.primary,
+)
+```
+
+### Button with Icon and Loading State
+
+```dart
+FlutstrapButton(
+  onPressed: _submitForm,
+  text: 'Submit',
+  variant: FSButtonVariant.success,
+  leading: Icon(Icons.check),
+  loading: _isSubmitting,
+  expanded: true,
 )
 ```
 
@@ -77,130 +80,197 @@ FlutstrapButton(
 
 ```dart
 const FlutstrapButton.primary(
-  onPressed: _handleAction,
-  text: 'Primary Action',
+  onPressed: _handlePress,
+  text: 'Primary Button',
 )
 ```
 
-### Button with Loading State
+### Disabled Outline Button
 
 ```dart
 FlutstrapButton(
-  onPressed: _submitForm,
-  text: 'Submit',
-  variant: FSButtonVariant.success,
-  loading: _isSubmitting,
-  expanded: true,
+  onPressed: null,
+  text: 'Disabled',
+  variant: FSButtonVariant.outlinePrimary,
 )
 ```
 
 ## Component Variants
 
-FlutstrapButton offers 18 visual variants across three categories:
-
 ### Filled Variants
 
 ```dart
-// Primary - Main brand color
-FlutstrapButton.primary(
-  onPressed: () {},
+// Primary - main actions
+FlutstrapButton(
+  variant: FSButtonVariant.primary,
   text: 'Primary',
 )
 
-// Secondary - Secondary brand color
+// Secondary - secondary actions
 FlutstrapButton(
-  onPressed: () {},
-  text: 'Secondary',
   variant: FSButtonVariant.secondary,
+  text: 'Secondary',
 )
 
-// Semantic variants
-FlutstrapButton.success(onPressed: () {}, text: 'Success')
-FlutstrapButton.danger(onPressed: () {}, text: 'Danger')
-FlutstrapButton.warning(onPressed: () {}, text: 'Warning')
-FlutstrapButton.info(onPressed: () {}, text: 'Info')
+// Success - positive actions
+FlutstrapButton(
+  variant: FSButtonVariant.success,
+  text: 'Success',
+)
 
-// Background variants
-FlutstrapButton.light(onPressed: () {}, text: 'Light')
-FlutstrapButton.dark(onPressed: () {}, text: 'Dark')
+// Danger - destructive actions
+FlutstrapButton(
+  variant: FSButtonVariant.danger,
+  text: 'Danger',
+)
 
-// Link style
-FlutstrapButton.link(onPressed: () {}, text: 'Link')
+// Warning - cautionary actions
+FlutstrapButton(
+  variant: FSButtonVariant.warning,
+  text: 'Warning',
+)
+
+// Info - informational actions
+FlutstrapButton(
+  variant: FSButtonVariant.info,
+  text: 'Info',
+)
+
+// Light - subtle actions
+FlutstrapButton(
+  variant: FSButtonVariant.light,
+  text: 'Light',
+)
+
+// Dark - high contrast actions
+FlutstrapButton(
+  variant: FSButtonVariant.dark,
+  text: 'Dark',
+)
+
+// Link - navigation actions
+FlutstrapButton(
+  variant: FSButtonVariant.link,
+  text: 'Link',
+)
 ```
 
 ### Outline Variants
 
 ```dart
-FlutstrapButton.outlinePrimary(onPressed: () {}, text: 'Outline Primary')
-FlutstrapButton.outlineSecondary(onPressed: () {}, text: 'Outline Secondary')
-FlutstrapButton.outlineSuccess(onPressed: () {}, text: 'Outline Success')
-FlutstrapButton.outlineDanger(onPressed: () {}, text: 'Outline Danger')
-FlutstrapButton.outlineWarning(onPressed: () {}, text: 'Outline Warning')
-FlutstrapButton.outlineInfo(onPressed: () {}, text: 'Outline Info')
-FlutstrapButton.outlineLight(onPressed: () {}, text: 'Outline Light')
-FlutstrapButton.outlineDark(onPressed: () {}, text: 'Outline Dark')
+// Outline Primary
+FlutstrapButton(
+  variant: FSButtonVariant.outlinePrimary,
+  text: 'Outline Primary',
+)
+
+// Outline Secondary
+FlutstrapButton(
+  variant: FSButtonVariant.outlineSecondary,
+  text: 'Outline Secondary',
+)
+
+// Outline Success
+FlutstrapButton(
+  variant: FSButtonVariant.outlineSuccess,
+  text: 'Outline Success',
+)
+
+// Outline Danger
+FlutstrapButton(
+  variant: FSButtonVariant.outlineDanger,
+  text: 'Outline Danger',
+)
+
+// Outline Warning
+FlutstrapButton(
+  variant: FSButtonVariant.outlineWarning,
+  text: 'Outline Warning',
+)
+
+// Outline Info
+FlutstrapButton(
+  variant: FSButtonVariant.outlineInfo,
+  text: 'Outline Info',
+)
+
+// Outline Light
+FlutstrapButton(
+  variant: FSButtonVariant.outlineLight,
+  text: 'Outline Light',
+)
+
+// Outline Dark
+FlutstrapButton(
+  variant: FSButtonVariant.outlineDark,
+  text: 'Outline Dark',
+)
 ```
 
-## Button Sizes
-
-### Size Examples
+### Size Variants
 
 ```dart
-// Small buttons
+// Small - compact buttons
 FlutstrapButton(
-  onPressed: () {},
-  text: 'Small',
   size: FSButtonSize.sm,
+  text: 'Small Button',
 )
 
-// Medium buttons (default)
+// Medium - standard buttons (default)
 FlutstrapButton(
-  onPressed: () {},
-  text: 'Medium',
   size: FSButtonSize.md,
+  text: 'Medium Button',
 )
 
-// Large buttons
+// Large - prominent buttons
 FlutstrapButton(
-  onPressed: () {},
-  text: 'Large',
   size: FSButtonSize.lg,
+  text: 'Large Button',
 )
-
-// Using convenience methods
-FlutstrapButton.primary(onPressed: () {}, text: 'Small').small()
-FlutstrapButton.primary(onPressed: () {}, text: 'Large').large()
 ```
 
 ## Properties & Parameters
 
 ### Parameter Reference Table
 
-| Parameter      | Type              | Default   | Description                          |
-| -------------- | ----------------- | --------- | ------------------------------------ |
-| `onPressed`    | `VoidCallback?`   | `null`    | Callback when button is pressed      |
-| `onLongPress`  | `VoidCallback?`   | `null`    | Callback for long press gesture      |
-| `variant`      | `FSButtonVariant` | `primary` | Visual style variant                 |
-| `size`         | `FSButtonSize`    | `md`      | Button size (sm, md, lg)             |
-| `disabled`     | `bool`            | `false`   | Whether button is disabled           |
-| `loading`      | `bool`            | `false`   | Shows loading spinner                |
-| `text`         | `String?`         | `null`    | Button text (alternative to child)   |
-| `child`        | `Widget?`         | `null`    | Custom child widget                  |
-| `leading`      | `Widget?`         | `null`    | Leading icon/widget                  |
-| `trailing`     | `Widget?`         | `null`    | Trailing icon/widget                 |
-| `expanded`     | `bool`            | `false`   | Whether button expands to fill width |
-| `style`        | `ButtonStyle?`    | `null`    | Custom button style                  |
-| `focusNode`    | `FocusNode?`      | `null`    | Focus node for keyboard navigation   |
-| `autofocus`    | `bool`            | `false`   | Whether to autofocus                 |
-| `clipBehavior` | `Clip`            | `none`    | Content clipping behavior            |
+| Parameter     | Type              | Default   | Description                    |
+| ------------- | ----------------- | --------- | ------------------------------ |
+| `onPressed`   | `VoidCallback?`   | `null`    | Button press callback          |
+| `onLongPress` | `VoidCallback?`   | `null`    | Long press callback            |
+| `variant`     | `FSButtonVariant` | `primary` | Visual style variant           |
+| `size`        | `FSButtonSize`    | `md`      | Button size (sm, md, lg)       |
+| `disabled`    | `bool`            | `false`   | Disable the button             |
+| `loading`     | `bool`            | `false`   | Show loading indicator         |
+| `text`        | `String?`         | `null`    | Button text content            |
+| `child`       | `Widget?`         | `null`    | Custom button content          |
+| `leading`     | `Widget?`         | `null`    | Leading icon/widget            |
+| `trailing`    | `Widget?`         | `null`    | Trailing icon/widget           |
+| `expanded`    | `bool`            | `false`   | Expand to fill available width |
+| `focusNode`   | `FocusNode?`      | `null`    | Focus management               |
+| `autofocus`   | `bool`            | `false`   | Auto-focus the button          |
+| `style`       | `ButtonStyle?`    | `null`    | Custom button style            |
 
 ### FSButtonVariant Enum
 
 ```dart
 enum FSButtonVariant {
-  primary, secondary, success, danger, warning, info, light, dark, link,
-  outlinePrimary, outlineSecondary, outlineSuccess, outlineDanger,
-  outlineWarning, outlineInfo, outlineLight, outlineDark
+  primary,           // Filled primary button
+  secondary,         // Filled secondary button
+  success,           // Filled success button
+  danger,            // Filled danger button
+  warning,           // Filled warning button
+  info,              // Filled info button
+  light,             // Filled light button
+  dark,              // Filled dark button
+  link,              // Link-style button
+  outlinePrimary,    // Outline primary button
+  outlineSecondary,  // Outline secondary button
+  outlineSuccess,    // Outline success button
+  outlineDanger,     // Outline danger button
+  outlineWarning,    // Outline warning button
+  outlineInfo,       // Outline info button
+  outlineLight,      // Outline light button
+  outlineDark,       // Outline dark button
 }
 ```
 
@@ -208,34 +278,35 @@ enum FSButtonVariant {
 
 ```dart
 enum FSButtonSize {
-  sm,  // Small: 32px height, compact padding
-  md,  // Medium: 40px height, standard padding
-  lg   // Large: 48px height, generous padding
+  sm,  // Small - compact (32px height)
+  md,  // Medium - standard (40px height)
+  lg,  // Large - prominent (48px height)
 }
 ```
 
 ## Customization
 
-### Icons and Custom Content
+### Button with Icons
 
 ```dart
-// Button with leading icon
 FlutstrapButton(
   onPressed: () {},
   text: 'Download',
-  leading: Icon(Icons.download, size: 20),
+  leading: Icon(Icons.download, size: 16),
   variant: FSButtonVariant.primary,
 )
 
-// Button with trailing icon
 FlutstrapButton(
   onPressed: () {},
-  text: 'Next',
-  trailing: Icon(Icons.arrow_forward, size: 20),
-  variant: FSButtonVariant.success,
+  text: 'Settings',
+  trailing: Icon(Icons.arrow_forward, size: 16),
+  variant: FSButtonVariant.outlineSecondary,
 )
+```
 
-// Custom child widget
+### Custom Button Content
+
+```dart
 FlutstrapButton(
   onPressed: () {},
   child: Row(
@@ -244,6 +315,11 @@ FlutstrapButton(
       Icon(Icons.star, color: Colors.amber),
       SizedBox(width: 8),
       Text('Custom Content'),
+      SizedBox(width: 8),
+      Badge(
+        label: Text('3'),
+        backgroundColor: Colors.red,
+      ),
     ],
   ),
 )
@@ -252,48 +328,34 @@ FlutstrapButton(
 ### Expanded Buttons
 
 ```dart
-// Full-width button
-FlutstrapButton(
-  onPressed: () {},
-  text: 'Full Width Button',
-  expanded: true,
-)
-
-// In a row with other buttons
-Row(
+Column(
   children: [
-    Expanded(
-      child: FlutstrapButton(
-        onPressed: () {},
-        text: 'Cancel',
-        variant: FSButtonVariant.outlineSecondary,
-      ),
+    FlutstrapButton(
+      onPressed: () {},
+      text: 'Full Width Button',
+      expanded: true,
     ),
-    SizedBox(width: 12),
-    Expanded(
-      child: FlutstrapButton(
-        onPressed: () {},
-        text: 'Confirm',
-        variant: FSButtonVariant.primary,
-      ),
+    SizedBox(height: 16),
+    Row(
+      children: [
+        Expanded(
+          child: FlutstrapButton(
+            onPressed: () {},
+            text: 'Left',
+            variant: FSButtonVariant.primary,
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: FlutstrapButton(
+            onPressed: () {},
+            text: 'Right',
+            variant: FSButtonVariant.secondary,
+          ),
+        ),
+      ],
     ),
   ],
-)
-```
-
-### Custom Styling
-
-```dart
-FlutstrapButton(
-  onPressed: () {},
-  text: 'Custom Style',
-  style: ButtonStyle(
-    shape: MaterialStateProperty.all(
-      RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-    ),
-  ),
 )
 ```
 
@@ -302,171 +364,46 @@ FlutstrapButton(
 ### Loading States
 
 ```dart
-bool _isLoading = false;
-
-FlutstrapButton(
-  onPressed: _isLoading ? null : _startOperation,
-  text: 'Process Data',
-  variant: FSButtonVariant.primary,
-  loading: _isLoading,
-)
-
-void _startOperation() async {
-  setState(() => _isLoading = true);
-  await _performLongOperation();
-  setState(() => _isLoading = false);
-}
-```
-
-### Disabled States
-
-```dart
-FlutstrapButton(
-  onPressed: _isFormValid ? _submitForm : null,
-  text: 'Submit',
-  variant: FSButtonVariant.primary,
-  // Automatically disabled when onPressed is null
-)
-
-// Explicit disabled state
-FlutstrapButton(
-  onPressed: _submitForm,
-  text: 'Submit',
-  variant: FSButtonVariant.primary,
-  disabled: !_isFormValid,
-)
-```
-
-### Using copyWith for State Management
-
-```dart
-class MyButtonState extends StatefulWidget {
+class FormWithLoading extends StatefulWidget {
   @override
-  _MyButtonStateState createState() => _MyButtonStateState();
+  _FormWithLoadingState createState() => _FormWithLoadingState();
 }
 
-class _MyButtonStateState extends State<MyButtonState> {
-  bool _isActive = true;
+class _FormWithLoadingState extends State<FormWithLoading> {
+  bool _isSubmitting = false;
+
+  void _submitForm() async {
+    setState(() => _isSubmitting = true);
+
+    // Simulate API call
+    await Future.delayed(Duration(seconds: 2));
+
+    setState(() => _isSubmitting = false);
+    // Handle form submission result
+  }
 
   @override
   Widget build(BuildContext context) {
-    final baseButton = FlutstrapButton.primary(
-      onPressed: _isActive ? _handlePress : null,
-      text: 'Dynamic Button',
-    );
-
     return Column(
       children: [
-        _isActive
-            ? baseButton.success()
-            : baseButton.danger().asDisabled(),
+        FlutstrapButton(
+          onPressed: _isSubmitting ? null : _submitForm,
+          text: 'Submit Form',
+          variant: FSButtonVariant.primary,
+          loading: _isSubmitting,
+          expanded: true,
+        ),
+
+        SizedBox(height: 16),
 
         FlutstrapButton(
-          onPressed: _toggleState,
-          text: 'Toggle State',
+          onPressed: _isSubmitting ? null : () {},
+          text: 'Secondary Action',
+          variant: FSButtonVariant.outlineSecondary,
+          disabled: _isSubmitting,
         ),
       ],
     );
-  }
-
-  void _toggleState() {
-    setState(() => _isActive = !_isActive);
-  }
-}
-```
-
-## Accessibility Notes
-
-FlutstrapButton includes comprehensive accessibility features:
-
-- **Screen Reader Support**: Uses `Semantics` widget with proper labels
-- **Loading States**: Announces "Loading" when in loading state
-- **Disabled States**: Properly communicates disabled state to screen readers
-- **Keyboard Navigation**: Full support for focus and keyboard interaction
-- **Touch Targets**: Meets Material Design minimum touch target sizes
-
-```dart
-// Screen readers will announce the button text and state
-FlutstrapButton(
-  onPressed: () {},
-  text: 'Save Changes', // Used as semantic label
-  loading: true, // Announces "Loading"
-)
-```
-
-## Integration Examples
-
-### With Flutstrap Alerts
-
-```dart
-FlutstrapAlert(
-  message: 'Are you sure you want to delete this item?',
-  variant: FSAlertVariant.warning,
-  trailing: Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      FlutstrapButton(
-        onPressed: () => Navigator.pop(context),
-        text: 'Cancel',
-        variant: FSButtonVariant.outlineSecondary,
-        size: FSButtonSize.sm,
-      ),
-      SizedBox(width: 8),
-      FlutstrapButton(
-        onPressed: _confirmDelete,
-        text: 'Delete',
-        variant: FSButtonVariant.danger,
-        size: FSButtonSize.sm,
-      ),
-    ],
-  ),
-)
-```
-
-### Form Submission Pattern
-
-```dart
-class MyForm extends StatefulWidget {
-  @override
-  _MyFormState createState() => _MyFormState();
-}
-
-class _MyFormState extends State<MyForm> {
-  final _formKey = GlobalKey<FormState>();
-  bool _isSubmitting = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          // Form fields here...
-          FlutstrapInput(
-            label: 'Email',
-            onChanged: (value) {},
-          ),
-
-          SizedBox(height: 20),
-
-          FlutstrapButton(
-            onPressed: _isSubmitting ? null : _submitForm,
-            text: 'Submit Form',
-            variant: FSButtonVariant.primary,
-            loading: _isSubmitting,
-            expanded: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isSubmitting = true);
-      await _apiCall();
-      setState(() => _isSubmitting = false);
-    }
   }
 }
 ```
@@ -478,79 +415,487 @@ Row(
   children: [
     FlutstrapButton(
       onPressed: () {},
-      text: 'First',
-      variant: FSButtonVariant.outlinePrimary,
+      text: 'Save',
+      variant: FSButtonVariant.primary,
+      leading: Icon(Icons.save, size: 16),
     ),
+
+    SizedBox(width: 8),
+
     FlutstrapButton(
       onPressed: () {},
-      text: 'Second',
-      variant: FSButtonVariant.outlinePrimary,
+      text: 'Cancel',
+      variant: FSButtonVariant.outlineSecondary,
     ),
+
+    Spacer(),
+
     FlutstrapButton(
       onPressed: () {},
-      text: 'Third',
-      variant: FSButtonVariant.outlinePrimary,
+      text: 'Delete',
+      variant: FSButtonVariant.danger,
+      leading: Icon(Icons.delete, size: 16),
     ),
   ],
 )
 ```
 
-## Best Practices
-
-### Performance Recommendations
-
-- **Style Caching**: The component automatically caches styles - multiple buttons with same configuration reuse computed styles
-- **Use Const Constructors**: When possible, use `const FlutstrapButton.primary()` for compile-time constants
-- **Avoid Frequent Rebuilds**: Use `copyWith()` for state changes instead of creating new widgets
-- **Monitor Cache Size**: Use `FlutstrapButton.cacheSize` in debug mode to monitor caching
+### Using CopyWith for State Management
 
 ```dart
-// ✅ Good - Uses style caching
-final baseButton = FlutstrapButton.primary(onPressed: () {}, text: 'Base');
-var modifiedButton = baseButton.success(); // Reuses cached styles
+class DynamicButton extends StatefulWidget {
+  @override
+  _DynamicButtonState createState() => _DynamicButtonState();
+}
 
-// ❌ Avoid - Creates new style computations each time
-var button1 = FlutstrapButton(onPressed: () {}, text: '1', variant: FSButtonVariant.primary);
-var button2 = FlutstrapButton(onPressed: () {}, text: '2', variant: FSButtonVariant.primary);
+class _DynamicButtonState extends State<DynamicButton> {
+  var _button = FlutstrapButton(
+    onPressed: () {},
+    text: 'Initial State',
+    variant: FSButtonVariant.primary,
+  );
+
+  void _makeSuccess() {
+    setState(() {
+      _button = _button.success().withLoading(true);
+    });
+
+    // Simulate async operation
+    Future.delayed(Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _button = _button.success().withLoading(false);
+        });
+      }
+    });
+  }
+
+  void _makeDanger() {
+    setState(() {
+      _button = _button.danger().expand();
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _button = FlutstrapButton(
+        onPressed: () {},
+        text: 'Reset',
+        variant: FSButtonVariant.primary,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _button,
+
+        SizedBox(height: 16),
+
+        Row(
+          children: [
+            FlutstrapButton(
+              onPressed: _makeSuccess,
+              text: 'Make Success',
+              size: FSButtonSize.sm,
+            ),
+
+            SizedBox(width: 8),
+
+            FlutstrapButton(
+              onPressed: _makeDanger,
+              text: 'Make Danger',
+              size: FSButtonSize.sm,
+              variant: FSButtonVariant.outlineSecondary,
+            ),
+
+            SizedBox(width: 8),
+
+            FlutstrapButton(
+              onPressed: _reset,
+              text: 'Reset',
+              size: FSButtonSize.sm,
+              variant: FSButtonVariant.outlineDanger,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
 ```
 
-### UX Design Tips
+## Accessibility Notes
 
-- **Button Text**: Use action-oriented text ("Save", "Delete", "Continue")
-- **Loading States**: Always provide loading feedback for async operations
-- **Disabled States**: Use disabled states to prevent invalid actions
-- **Size Guidelines**:
-  - `sm`: For dense interfaces, tables
-  - `md`: Standard button size (default)
-  - `lg`: For prominent calls-to-action
+Flutstrap Button includes comprehensive accessibility features:
 
-### Content Guidelines
+- **Screen Reader Support**: Full semantic labels for button text and states
+- **Loading State Announcements**: Screen readers announce when buttons are loading
+- **Focus Management**: Proper focus indicators and keyboard navigation
+- **Disabled State Semantics**: Clear communication of disabled state to assistive technologies
+- **High Contrast Support**: Meets WCAG contrast guidelines for all variants
 
 ```dart
-// ✅ Good - Clear, action-oriented
-FlutstrapButton.primary(
-  onPressed: _saveDocument,
+FlutstrapButton(
+  onPressed: () {},
   text: 'Save Changes',
+  semanticLabel: 'Save changes to document',
+  loading: _isSaving,
+  // Screen readers will announce "Loading" when loading is true
+)
+```
+
+## Integration Examples
+
+### Complete Action Bar
+
+```dart
+class ActionBar extends StatelessWidget {
+  final bool hasChanges;
+  final bool isSaving;
+  final VoidCallback onSave;
+  final VoidCallback onCancel;
+  final VoidCallback onDelete;
+
+  const ActionBar({
+    super.key,
+    required this.hasChanges,
+    required this.isSaving,
+    required this.onSave,
+    required this.onCancel,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        border: Border(
+          top: BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+      child: Row(
+        children: [
+          FlutstrapButton(
+            onPressed: hasChanges && !isSaving ? onSave : null,
+            text: 'Save Changes',
+            variant: FSButtonVariant.primary,
+            leading: isSaving ? null : Icon(Icons.save, size: 16),
+            loading: isSaving,
+          ),
+
+          SizedBox(width: 12),
+
+          FlutstrapButton(
+            onPressed: isSaving ? null : onCancel,
+            text: 'Cancel',
+            variant: FSButtonVariant.outlineSecondary,
+          ),
+
+          Spacer(),
+
+          FlutstrapButton(
+            onPressed: isSaving ? null : onDelete,
+            text: 'Delete',
+            variant: FSButtonVariant.outlineDanger,
+            leading: Icon(Icons.delete_outline, size: 16),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### Multi-step Form Navigation
+
+```dart
+class FormNavigation extends StatelessWidget {
+  final int currentStep;
+  final int totalSteps;
+  final bool isValid;
+  final bool isSubmitting;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onSubmit;
+
+  const FormNavigation({
+    super.key,
+    required this.currentStep,
+    required this.totalSteps,
+    required this.isValid,
+    required this.isSubmitting,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isFirstStep = currentStep == 1;
+    final isLastStep = currentStep == totalSteps;
+
+    return Row(
+      children: [
+        // Previous Button
+        if (!isFirstStep)
+          FlutstrapButton(
+            onPressed: isSubmitting ? null : onPrevious,
+            text: 'Previous',
+            variant: FSButtonVariant.outlineSecondary,
+            leading: Icon(Icons.arrow_back, size: 16),
+          ),
+
+        Spacer(),
+
+        // Next/Submit Button
+        if (!isLastStep)
+          FlutstrapButton(
+            onPressed: isValid && !isSubmitting ? onNext : null,
+            text: 'Next',
+            variant: FSButtonVariant.primary,
+            trailing: Icon(Icons.arrow_forward, size: 16),
+          )
+        else
+          FlutstrapButton(
+            onPressed: isValid && !isSubmitting ? onSubmit : null,
+            text: 'Submit',
+            variant: FSButtonVariant.success,
+            leading: isSubmitting ? null : Icon(Icons.check, size: 16),
+            loading: isSubmitting,
+          ),
+      ],
+    );
+  }
+}
+```
+
+### Toolbar with Multiple Button Types
+
+```dart
+class EditorToolbar extends StatelessWidget {
+  final bool isEditing;
+  final bool hasSelection;
+  final VoidCallback onBold;
+  final VoidCallback onItalic;
+  final VoidCallback onLink;
+  final VoidCallback onImage;
+
+  const EditorToolbar({
+    super.key,
+    required this.isEditing,
+    required this.hasSelection,
+    required this.onBold,
+    required this.onItalic,
+    required this.onLink,
+    required this.onImage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          // Formatting Buttons
+          FlutstrapButton(
+            onPressed: isEditing && hasSelection ? onBold : null,
+            child: Text('B', style: TextStyle(fontWeight: FontWeight.bold)),
+            variant: FSButtonVariant.outlineSecondary,
+            size: FSButtonSize.sm,
+          ),
+
+          SizedBox(width: 8),
+
+          FlutstrapButton(
+            onPressed: isEditing && hasSelection ? onItalic : null,
+            child: Text('I', style: TextStyle(fontStyle: FontStyle.italic)),
+            variant: FSButtonVariant.outlineSecondary,
+            size: FSButtonSize.sm,
+          ),
+
+          SizedBox(width: 16),
+
+          // Insert Buttons
+          FlutstrapButton(
+            onPressed: isEditing ? onLink : null,
+            text: 'Link',
+            leading: Icon(Icons.link, size: 14),
+            variant: FSButtonVariant.outlineInfo,
+            size: FSButtonSize.sm,
+          ),
+
+          SizedBox(width: 8),
+
+          FlutstrapButton(
+            onPressed: isEditing ? onImage : null,
+            text: 'Image',
+            leading: Icon(Icons.image, size: 14),
+            variant: FSButtonVariant.outlineInfo,
+            size: FSButtonSize.sm,
+          ),
+
+          Spacer(),
+
+          // Status Indicator
+          FlutstrapButton(
+            onPressed: null,
+            text: isEditing ? 'Editing' : 'Read Only',
+            variant: isEditing ? FSButtonVariant.outlineSuccess : FSButtonVariant.outlineSecondary,
+            size: FSButtonSize.sm,
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+## Performance Optimization
+
+### Style Caching Benefits
+
+```dart
+// ✅ GOOD: Multiple buttons with same configuration reuse cached styles
+Column(
+  children: [
+    FlutstrapButton(
+      onPressed: () {},
+      text: 'Button 1',
+      variant: FSButtonVariant.primary,
+      size: FSButtonSize.md,
+    ),
+    FlutstrapButton(
+      onPressed: () {},
+      text: 'Button 2',
+      variant: FSButtonVariant.primary, // Same variant and size
+      size: FSButtonSize.md,           // Styles are cached and reused
+    ),
+  ],
 )
 
-// ❌ Avoid - Vague or passive
-FlutstrapButton.primary(
-  onPressed: _saveDocument,
-  text: 'Click Here',
+// ✅ BETTER: Using const constructors when possible
+const FlutstrapButton.primary(
+  onPressed: _handleAction,
+  text: 'Const Button',
+)
+```
+
+### Efficient State Updates
+
+```dart
+// ✅ GOOD: Using copyWith for state modifications
+class EfficientButtonManager extends StatefulWidget {
+  @override
+  _EfficientButtonManagerState createState() => _EfficientButtonManagerState();
+}
+
+class _EfficientButtonManagerState extends State<EfficientButtonManager> {
+  var _button = FlutstrapButton(
+    onPressed: () {},
+    text: 'Initial',
+    variant: FSButtonVariant.primary,
+  );
+
+  void _updateButton() {
+    setState(() {
+      _button = _button
+          .success()          // Changes variant
+          .withLoading(true)  // Sets loading state
+          .expand();          // Makes button expanded
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _button;
+  }
+}
+```
+
+## Best Practices
+
+### Button Usage Guidelines
+
+```dart
+// ✅ PRIMARY: Main action in a view
+FlutstrapButton(
+  onPressed: _submitForm,
+  text: 'Save Changes',
+  variant: FSButtonVariant.primary,
+  expanded: true,
 )
 
-// ✅ Good - Icons enhance meaning
-FlutstrapButton.success(
-  onPressed: _confirm,
+// ✅ SECONDARY: Alternative actions
+FlutstrapButton(
+  onPressed: _cancel,
+  text: 'Cancel',
+  variant: FSButtonVariant.outlineSecondary,
+)
+
+// ✅ DANGER: Destructive actions
+FlutstrapButton(
+  onPressed: _deleteItem,
+  text: 'Delete',
+  variant: FSButtonVariant.danger,
+  leading: Icon(Icons.delete),
+)
+
+// ✅ SUCCESS: Positive confirmation actions
+FlutstrapButton(
+  onPressed: _confirmSuccess,
   text: 'Confirm',
+  variant: FSButtonVariant.success,
   leading: Icon(Icons.check),
 )
 
-// ❌ Avoid - Redundant icons
+// ✅ LINK: Navigation actions
 FlutstrapButton(
-  onPressed: _save,
-  text: 'Save',
-  leading: Icon(Icons.save), // Icon repeats text meaning
+  onPressed: _navigate,
+  text: 'Learn More',
+  variant: FSButtonVariant.link,
+)
+```
+
+### Loading State Patterns
+
+```dart
+// ✅ GOOD: Disable related actions during loading
+Row(
+  children: [
+    FlutstrapButton(
+      onPressed: _isLoading ? null : _primaryAction,
+      text: 'Primary',
+      variant: FSButtonVariant.primary,
+      loading: _isLoading,
+    ),
+
+    SizedBox(width: 12),
+
+    FlutstrapButton(
+      onPressed: _isLoading ? null : _secondaryAction,
+      text: 'Secondary',
+      variant: FSButtonVariant.outlineSecondary,
+      disabled: _isLoading, // Visual disabled state
+    ),
+  ],
+)
+
+// ✅ BETTER: Provide loading feedback for all async operations
+FlutstrapButton(
+  onPressed: _asyncOperation,
+  text: 'Process Data',
+  loading: _isProcessing,
+  // Always show loading state for async operations
 )
 ```
 
@@ -558,290 +903,77 @@ FlutstrapButton(
 
 ### Common Issues and Solutions
 
-**Button Not Responding to Press**
+**Button Not Responding**
 
 ```dart
-// Check if button is disabled or loading
+// ❌ onPressed is null or disabled is true
 FlutstrapButton(
-  onPressed: _isAllowed ? _action : null, // null disables button
-  text: 'Action',
-  disabled: !_isAllowed, // explicit disabled state
-  loading: _isLoading, // loading also prevents presses
+  onPressed: null, // Button won't respond
+  text: 'Click Me',
+)
+
+// ✅ Ensure onPressed is provided and disabled is false
+FlutstrapButton(
+  onPressed: () => print('Clicked'),
+  text: 'Click Me',
+)
+
+// ✅ Or manage state properly
+FlutstrapButton(
+  onPressed: _isLoading ? null : _handleClick,
+  text: 'Click Me',
+  disabled: _isLoading,
 )
 ```
 
-**Style Not Applying Correctly**
+**Loading State Not Showing**
 
 ```dart
-// Ensure theme is properly set up
-FSTheme(
-  data: FSThemeData.light(), // or dark theme
-  child: MyApp(),
-)
-
-// Custom style might be overriding variants
+// ❌ Loading state but button is still enabled
 FlutstrapButton(
-  onPressed: () {},
-  text: 'Button',
-  variant: FSButtonVariant.primary,
-  style: ButtonStyle(), // This overrides variant styles
-)
-```
-
-**Loading Spinner Color Issues**
-
-```dart
-// Loading color is automatically calculated based on variant
-FlutstrapButton(
-  onPressed: () {},
-  text: 'Loading',
-  variant: FSButtonVariant.dark, // Spinner will be light-colored
+  onPressed: _handleAction, // Still callable
   loading: true,
+  text: 'Loading...',
+)
+
+// ✅ Correct: Disable button when loading
+FlutstrapButton(
+  onPressed: _isLoading ? null : _handleAction,
+  loading: _isLoading,
+  text: _isLoading ? 'Loading...' : 'Action',
 )
 ```
 
-**Performance Issues in Lists**
+**Style Not Applying**
 
 ```dart
-// Use const constructors when possible
-ListView.builder(
-  itemCount: items.length,
-  itemBuilder: (context, index) {
-    return const FlutstrapButton.primary(
-      onPressed: _handleItemClick,
-      text: 'Action',
-    );
-  },
+// ❌ Custom style overriding variant styles
+FlutstrapButton(
+  style: ButtonStyle(
+    backgroundColor: MaterialStateProperty.all(Colors.red),
+  ), // Overrides variant colors
+  variant: FSButtonVariant.primary, // This won't apply
+  text: 'Button',
 )
 
-// Clear cache if needed (rarely necessary)
-FlutstrapButton.clearCache();
+// ✅ Better: Use variant for color, custom style for layout
+FlutstrapButton(
+  variant: FSButtonVariant.primary, // Handles colors
+  style: ButtonStyle(
+    padding: MaterialStateProperty.all(EdgeInsets.all(20)),
+  ), // Only override non-color properties
+  text: 'Button',
+)
 ```
 
-## Full Example
+### Debugging Tips
 
-### Complete Application Integration
+1. **Check Button State**: Verify `onPressed`, `disabled`, and `loading` states
+2. **Monitor Performance**: Use `FlutstrapButton.cacheSize` to monitor style caching
+3. **Test Accessibility**: Use screen readers to verify semantic labels
+4. **Verify Focus**: Test keyboard navigation and focus indicators
+5. **Check Constraints**: Ensure parent widgets provide adequate space for expanded buttons
 
-```dart
-import 'package:flutter/material.dart';
-import 'package:flutstrap/core/theme.dart';
-import 'package:flutstrap/components/buttons/flutstrap_button.dart';
-import 'package:flutstrap/components/alerts/flutstrap_alert.dart';
+---
 
-void main() {
-  runApp(
-    FSTheme(
-      data: FSThemeData.light(),
-      child: ButtonDemoApp(),
-    ),
-  );
-}
-
-class ButtonDemoApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutstrap Button Demo',
-      theme: ThemeData.light(),
-      home: ButtonDemoPage(),
-    );
-  }
-}
-
-class ButtonDemoPage extends StatefulWidget {
-  @override
-  _ButtonDemoPageState createState() => _ButtonDemoPageState();
-}
-
-class _ButtonDemoPageState extends State<ButtonDemoPage> {
-  bool _isLoading = false;
-  int _counter = 0;
-
-  void _simulateAsyncOperation() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(Duration(seconds: 2));
-    setState(() {
-      _isLoading = false;
-      _counter++;
-    });
-  }
-
-  void _showAlert(String message, FSAlertVariant variant) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: FlutstrapAlert(
-          message: message,
-          variant: variant,
-          dismissible: true,
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Flutstrap Button Demo'),
-        actions: [
-          FlutstrapButton.link(
-            onPressed: () => _showAlert('Info button clicked', FSAlertVariant.info),
-            text: 'Info',
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Basic variants
-            Text('Filled Variants', style: Theme.of(context).textTheme.titleMedium),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FlutstrapButton.primary(
-                  onPressed: () => _showAlert('Primary clicked', FSAlertVariant.primary),
-                  text: 'Primary',
-                ),
-                FlutstrapButton.secondary(
-                  onPressed: () => _showAlert('Secondary clicked', FSAlertVariant.secondary),
-                  text: 'Secondary',
-                ),
-                FlutstrapButton.success(
-                  onPressed: () => _showAlert('Success!', FSAlertVariant.success),
-                  text: 'Success',
-                ),
-                FlutstrapButton.danger(
-                  onPressed: () => _showAlert('Danger action', FSAlertVariant.danger),
-                  text: 'Danger',
-                ),
-                FlutstrapButton.warning(
-                  onPressed: () => _showAlert('Warning shown', FSAlertVariant.warning),
-                  text: 'Warning',
-                ),
-                FlutstrapButton.info(
-                  onPressed: () => _showAlert('Information', FSAlertVariant.info),
-                  text: 'Info',
-                ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // Outline variants
-            Text('Outline Variants', style: Theme.of(context).textTheme.titleMedium),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FlutstrapButton.outlinePrimary(
-                  onPressed: () {},
-                  text: 'Outline',
-                ),
-                FlutstrapButton.outlineSuccess(
-                  onPressed: () {},
-                  text: 'Success',
-                ),
-                FlutstrapButton.outlineDanger(
-                  onPressed: () {},
-                  text: 'Danger',
-                ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // Sizes
-            Text('Button Sizes', style: Theme.of(context).textTheme.titleMedium),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FlutstrapButton.primary(onPressed: () {}, text: 'Small').small(),
-                FlutstrapButton.success(onPressed: () {}, text: 'Medium').medium(),
-                FlutstrapButton.danger(onPressed: () {}, text: 'Large').large(),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // With icons
-            Text('With Icons', style: Theme.of(context).textTheme.titleMedium),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FlutstrapButton(
-                  onPressed: () {},
-                  text: 'Download',
-                  leading: Icon(Icons.download, size: 18),
-                  variant: FSButtonVariant.primary,
-                ),
-                FlutstrapButton(
-                  onPressed: () {},
-                  text: 'Upload',
-                  trailing: Icon(Icons.upload, size: 18),
-                  variant: FSButtonVariant.success,
-                ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // Loading and state demo
-            Text('Interactive Demo', style: Theme.of(context).textTheme.titleMedium),
-            Column(
-              children: [
-                FlutstrapButton(
-                  onPressed: _isLoading ? null : _simulateAsyncOperation,
-                  text: 'Async Operation ($_counter)',
-                  variant: FSButtonVariant.primary,
-                  loading: _isLoading,
-                  expanded: true,
-                ),
-                SizedBox(height: 8),
-                FlutstrapButton(
-                  onPressed: _isLoading ? null : () => _showAlert('Secondary action', FSAlertVariant.info),
-                  text: 'Secondary Action',
-                  variant: FSButtonVariant.outlineSecondary,
-                  expanded: true,
-                  disabled: _isLoading,
-                ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // Expanded buttons
-            Text('Expanded Buttons', style: Theme.of(context).textTheme.titleMedium),
-            Row(
-              children: [
-                Expanded(
-                  child: FlutstrapButton(
-                    onPressed: () {},
-                    text: 'Cancel',
-                    variant: FSButtonVariant.outlineSecondary,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: FlutstrapButton(
-                    onPressed: () {},
-                    text: 'Confirm',
-                    variant: FSButtonVariant.primary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-```
+**This comprehensive guide covers all aspects of using the Flutstrap Button component. The button system is designed to be highly flexible, performant, and accessible while providing a robust solution for user interactions across various contexts, states, and design requirements. With features like style caching, multiple variants, and comprehensive accessibility, Flutstrap Button offers enterprise-grade button capabilities for modern Flutter applications.**

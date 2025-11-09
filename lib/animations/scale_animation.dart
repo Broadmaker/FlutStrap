@@ -2,81 +2,11 @@
 //
 // A high-performance widget that scales its child with smooth animations,
 // theme integration, and flexible configuration options.
-//
-// ## Usage Examples
-//
-// ```dart
-// // Basic scale in animation
-// FSScaleAnimation(
-//   child: MyWidget(),
-// )
-//
-// // Custom scale with bounce effect
-// FSScaleAnimation(
-//   child: MyButton(),
-//   beginScale: 0.5,
-//   endScale: 1.2,
-//   curve: Curves.bounceOut,
-//   duration: Duration(milliseconds: 600),
-// )
-//
-// // Scale from top left
-// FSScaleAnimation(
-//   child: MyCard(),
-//   alignment: Alignment.topLeft,
-//   beginScale: 0.0,
-//   endScale: 1.0,
-// )
-//
-// // Using theme configuration
-// FSScaleAnimation.themed(
-//   context: context,
-//   child: MyWidget(),
-// )
-//
-// // Manual control
-// final scaleKey = GlobalKey<FSScaleAnimationState>();
-// FSScaleAnimation(
-//   key: scaleKey,
-//   child: MyWidget(),
-//   autoPlay: false,
-// )
-// // Later...
-// scaleKey.currentState?.play();
-// ```
-//
-// {@template flutstrap_scale_animation.performance}
-// ## Performance Features
-//
-// - **Memory Optimized**: Proper controller disposal and timer cleanup
-// - **Efficient Rebuilds**: Uses `AnimatedBuilder` for minimal rebuilds
-// - **State Management**: Configurable state maintenance for scaled-down widgets
-// - **Frame Rate Aware**: Smooth 60fps animations with proper timing
-//
-// ### Best Practices
-//
-// - Use `maintainState: false` for large lists to improve performance
-// - Set `autoPlay: false` for manually triggered animations
-// - Use pre-configured variations for consistent timing
-// - Consider using `respectSystemPreferences: true` for accessibility
-// {@endtemplate}
-//
-// {@template flutstrap_scale_animation.accessibility}
-// ## Accessibility
-//
-// - Respects system animation preferences when `respectSystemPreferences` is true
-// - Maintains semantic focus order during scale animations
-// - Screen reader compatible animation states
-// - Reduced motion consideration for users with vestibular disorders
-// {@endtemplate}
-//
-// {@category Animations}
-// {@category Components}
 
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../core/error_boundary.dart'; // ✅ ADDED: Error boundary import
+import '../../core/error_boundary.dart';
 
 /// Scale animation widget with performance optimizations and theme integration
 class FSScaleAnimation extends StatefulWidget {
@@ -130,7 +60,7 @@ class FSScaleAnimation extends StatefulWidget {
     this.onComplete,
     this.onCancel,
     this.maintainState = true,
-    this.respectSystemPreferences = true, // ✅ ADDED: Accessibility
+    this.respectSystemPreferences = true,
   })  : assert(beginScale >= 0.0, 'Begin scale must be non-negative'),
         assert(endScale >= 0.0, 'End scale must be non-negative');
 
@@ -180,11 +110,15 @@ class FSScaleAnimationState extends State<FSScaleAnimation>
   late AnimationController _controller;
   late Animation<double> _animation;
   Timer? _delayTimer;
-  bool _isDisposed = false; // ✅ ADDED: Memory management
+  bool _isDisposed = false;
+  bool _isInitialized = false; // ✅ ADDED: Track initialization state
 
-  /// Whether animations should play based on system preferences
-  bool get _shouldAnimate {
+  /// ✅ FIXED: Safe context access with mounted check
+  bool _shouldAnimate(BuildContext context) {
+    if (!widget.autoPlay) return false;
     if (!widget.respectSystemPreferences) return true;
+    if (!mounted) return false;
+
     final mediaQuery = MediaQuery.maybeOf(context);
     return mediaQuery?.disableAnimations != true;
   }
@@ -203,10 +137,17 @@ class FSScaleAnimationState extends State<FSScaleAnimation>
     super.initState();
     _initializeAnimation();
 
-    if (widget.autoPlay && _shouldAnimate) {
-      // ✅ CHECK: System preferences
-      _startAnimation();
-    }
+    // ✅ FIXED: Delay context access until after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isInitialized = true;
+        });
+        if (widget.autoPlay && _shouldAnimate(context)) {
+          _startAnimation();
+        }
+      }
+    });
   }
 
   void _initializeAnimation() {
@@ -230,7 +171,7 @@ class FSScaleAnimationState extends State<FSScaleAnimation>
   }
 
   void _handleStatusChange(AnimationStatus status) {
-    if (_isDisposed) return; // ✅ ADDED: Safety check
+    if (_isDisposed) return;
 
     if (status == AnimationStatus.completed) {
       widget.onComplete?.call();
@@ -240,7 +181,7 @@ class FSScaleAnimationState extends State<FSScaleAnimation>
   }
 
   Future<void> _startAnimation() async {
-    if (!mounted || _isDisposed) return;
+    if (!mounted || _isDisposed || !_isInitialized) return;
 
     if (widget.delay > Duration.zero) {
       _delayTimer = Timer(widget.delay, _executeAnimation);
@@ -264,40 +205,42 @@ class FSScaleAnimationState extends State<FSScaleAnimation>
 
   /// Manually start the scale animation
   Future<void> play() async {
-    if (!mounted || _controller.isAnimating || !_shouldAnimate) return;
+    if (!mounted || _controller.isAnimating || !_isInitialized) return;
+    if (!_shouldAnimate(context)) return;
     await _controller.forward().orCancel;
   }
 
   /// Manually reverse the animation (scale down)
   Future<void> reverse() async {
-    if (!mounted || _controller.isAnimating) return;
+    if (!mounted || _controller.isAnimating || !_isInitialized) return;
     await _controller.reverse().orCancel;
   }
 
   /// Manually reset the animation to its initial state
   void reset() {
-    if (mounted && !_isDisposed && !_controller.isAnimating) {
+    if (mounted && !_isDisposed && !_controller.isAnimating && _isInitialized) {
       _controller.reset();
     }
   }
 
   /// Manually stop the animation
   void stop() {
-    if (mounted && !_isDisposed) {
+    if (mounted && !_isDisposed && _isInitialized) {
       _controller.stop();
     }
   }
 
   /// Set the animation to a specific scale value
   void setScale(double value) {
-    if (mounted && !_isDisposed) {
+    if (mounted && !_isDisposed && _isInitialized) {
       _controller.value = value.clamp(0.0, 1.0);
     }
   }
 
   /// Pulse animation - scale up and down
   Future<void> pulse({int count = 1, double pulseScale = 1.1}) async {
-    if (!mounted || _controller.isAnimating || !_shouldAnimate) return;
+    if (!mounted || _controller.isAnimating || !_isInitialized) return;
+    if (!_shouldAnimate(context)) return;
 
     for (int i = 0; i < count; i++) {
       await _controller.forward().orCancel;
@@ -334,7 +277,7 @@ class FSScaleAnimationState extends State<FSScaleAnimation>
     }
 
     // Restart animation if autoPlay changed to true and should animate
-    if (widget.autoPlay && !oldWidget.autoPlay && _shouldAnimate) {
+    if (widget.autoPlay && !oldWidget.autoPlay && _shouldAnimate(context)) {
       _startAnimation();
     }
   }
@@ -343,7 +286,7 @@ class FSScaleAnimationState extends State<FSScaleAnimation>
   void dispose() {
     _isDisposed = true;
     _delayTimer?.cancel();
-    _delayTimer = null; // ✅ ADDED: Explicit null assignment
+    _delayTimer = null;
     _controller.removeStatusListener(_handleStatusChange);
     _controller.dispose();
     super.dispose();
@@ -352,31 +295,41 @@ class FSScaleAnimationState extends State<FSScaleAnimation>
   @override
   Widget build(BuildContext context) {
     return ErrorBoundary(
-      // ✅ ADDED: Error boundary
       componentName: 'FSScaleAnimation',
       fallbackBuilder: (context) => widget.child,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          // ✅ OPTIMIZED: Pre-calculate scale once
-          final currentScale = _animation.value.clamp(0.0, double.maxFinite);
-          return Transform.scale(
-            scale: currentScale,
-            alignment: widget.alignment,
-            child: widget.maintainState
-                ? child
-                : _buildVisibilityWrapper(child!, currentScale),
-          );
-        },
-        child: widget.child,
-      ),
+      child: _isInitialized
+          ? _buildAnimatedContent(context)
+          : _buildStaticContent(),
+    );
+  }
+
+  Widget _buildAnimatedContent(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        final currentScale = _animation.value.clamp(0.0, double.maxFinite);
+        return Transform.scale(
+          scale: currentScale,
+          alignment: widget.alignment,
+          child: widget.maintainState
+              ? child
+              : _buildVisibilityWrapper(child!, currentScale),
+        );
+      },
+      child: widget.child,
+    );
+  }
+
+  Widget _buildStaticContent() {
+    return Transform.scale(
+      scale: widget.beginScale,
+      alignment: widget.alignment,
+      child: widget.child,
     );
   }
 
   Widget _buildVisibilityWrapper(Widget child, double scale) {
-    // Only render when scale is above a minimal visible threshold
     final isVisible = scale > 0.01;
-
     return Visibility(
       visible: isVisible,
       maintainState: widget.maintainState,
@@ -403,7 +356,6 @@ class FSScaleAnimationQuick extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSScaleAnimationQuick({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.beginScale = 0.0,
@@ -450,7 +402,6 @@ class FSScaleAnimationStandard extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSScaleAnimationStandard({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.beginScale = 0.0,
@@ -497,7 +448,6 @@ class FSScaleAnimationSlow extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSScaleAnimationSlow({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.beginScale = 0.0,
@@ -545,7 +495,6 @@ class FSScaleAnimationBounce extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSScaleAnimationBounce({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.beginScale = 0.0,
@@ -595,7 +544,6 @@ class FSScaleAnimationElastic extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSScaleAnimationElastic({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.beginScale = 0.0,
@@ -662,12 +610,17 @@ class _FSScaleAnimationPopState extends State<FSScaleAnimationPop>
   late AnimationController _controller;
   late Animation<double> _animation;
   Timer? _delayTimer;
-  bool _isDisposed = false; // ✅ ADDED: Memory management
+  bool _isDisposed = false;
+  bool _isInitialized = false; // ✅ ADDED: Track initialization state
 
-  /// Whether animations should play based on system preferences
-  bool get _shouldAnimate {
+  /// ✅ FIXED: Safe context access with mounted check
+  bool _shouldAnimate(BuildContext context) {
+    if (!widget.autoPlay) return false;
+    if (!widget.respectSystemPreferences) return true;
+    if (!mounted) return false;
+
     final mediaQuery = MediaQuery.maybeOf(context);
-    return widget.autoPlay && (mediaQuery?.disableAnimations != true);
+    return mediaQuery?.disableAnimations != true;
   }
 
   @override
@@ -675,10 +628,17 @@ class _FSScaleAnimationPopState extends State<FSScaleAnimationPop>
     super.initState();
     _initializeAnimation();
 
-    if (widget.autoPlay && _shouldAnimate) {
-      // ✅ CHECK: System preferences
-      _startAnimation();
-    }
+    // ✅ FIXED: Delay context access until after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isInitialized = true;
+        });
+        if (widget.autoPlay && _shouldAnimate(context)) {
+          _startAnimation();
+        }
+      }
+    });
   }
 
   void _initializeAnimation() {
@@ -700,7 +660,7 @@ class _FSScaleAnimationPopState extends State<FSScaleAnimationPop>
   }
 
   Future<void> _startAnimation() async {
-    if (!mounted || _isDisposed) return;
+    if (!mounted || _isDisposed || !_isInitialized) return;
 
     if (widget.delay > Duration.zero) {
       _delayTimer = Timer(widget.delay, _executeAnimation);
@@ -713,7 +673,6 @@ class _FSScaleAnimationPopState extends State<FSScaleAnimationPop>
     if (!mounted || _isDisposed) return;
 
     try {
-      // ✅ ADDED: Error handling
       await _controller.forward().orCancel;
       if (!_isDisposed) {
         widget.onComplete?.call();
@@ -727,7 +686,7 @@ class _FSScaleAnimationPopState extends State<FSScaleAnimationPop>
   void dispose() {
     _isDisposed = true;
     _delayTimer?.cancel();
-    _delayTimer = null; // ✅ ADDED: Explicit null assignment
+    _delayTimer = null;
     _controller.dispose();
     super.dispose();
   }
@@ -735,27 +694,40 @@ class _FSScaleAnimationPopState extends State<FSScaleAnimationPop>
   @override
   Widget build(BuildContext context) {
     return ErrorBoundary(
-      // ✅ ADDED: Error boundary
       componentName: 'FSScaleAnimationPop',
       fallbackBuilder: (context) => widget.child,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          final currentScale = _animation.value.clamp(0.0, double.maxFinite);
-          return Transform.scale(
-            scale: currentScale,
-            alignment: widget.alignment,
-            child: widget.maintainState
-                ? child
-                : Visibility(
-                    visible: currentScale > 0.01,
-                    maintainState: widget.maintainState,
-                    child: child!,
-                  ),
-          );
-        },
-        child: widget.child,
-      ),
+      child: _isInitialized
+          ? _buildAnimatedContent(context)
+          : _buildStaticContent(),
+    );
+  }
+
+  Widget _buildAnimatedContent(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        final currentScale = _animation.value.clamp(0.0, double.maxFinite);
+        return Transform.scale(
+          scale: currentScale,
+          alignment: widget.alignment,
+          child: widget.maintainState
+              ? child
+              : Visibility(
+                  visible: currentScale > 0.01,
+                  maintainState: widget.maintainState,
+                  child: child!,
+                ),
+        );
+      },
+      child: widget.child,
+    );
+  }
+
+  Widget _buildStaticContent() {
+    return Transform.scale(
+      scale: 0.0,
+      alignment: widget.alignment,
+      child: widget.child,
     );
   }
 }

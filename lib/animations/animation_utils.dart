@@ -23,7 +23,8 @@ class FSAnimationUtils {
 
   /// Check if animations should play based on system preferences
   static bool _shouldAnimate(BuildContext context) {
-    return MediaQuery.of(context).disableAnimations != true;
+    final mediaQuery = MediaQuery.maybeOf(context);
+    return mediaQuery?.disableAnimations != true;
   }
 
   /// Creates a staggered animation builder for lists
@@ -247,6 +248,7 @@ class __FadeOutState extends State<_FadeOut>
   late AnimationController _controller;
   late Animation<double> _animation;
   Timer? _delayTimer;
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -273,7 +275,7 @@ class __FadeOutState extends State<_FadeOut>
   }
 
   Future<void> _startAnimation() async {
-    if (!mounted) return;
+    if (!mounted || _isDisposed) return;
 
     if (widget.delay > Duration.zero) {
       _delayTimer = Timer(widget.delay, _executeAnimation);
@@ -283,13 +285,20 @@ class __FadeOutState extends State<_FadeOut>
   }
 
   Future<void> _executeAnimation() async {
-    if (!mounted) return;
-    await _controller.forward().orCancel;
+    if (!mounted || _isDisposed) return;
+    try {
+      await _controller.forward().orCancel;
+    } catch (e) {
+      // Animation cancelled or disposed
+      debugPrint('FadeOut animation error: $e');
+    }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _delayTimer?.cancel();
+    _delayTimer = null;
     _controller.dispose();
     super.dispose();
   }

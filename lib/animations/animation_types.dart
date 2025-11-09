@@ -21,13 +21,25 @@ abstract class FSAnimationBase {
     required this.duration,
     required this.curve,
   });
+
+  /// ✅ ADDED: Equality and hashcode for better state management
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSAnimationBase &&
+          runtimeType == other.runtimeType &&
+          duration == other.duration &&
+          curve == other.curve;
+
+  @override
+  int get hashCode => duration.hashCode ^ curve.hashCode;
 }
 
 /// Standard animation configuration for single animations
 class FSAnimation extends FSAnimationBase {
   const FSAnimation({
     required super.duration,
-    super.curve = Curves.linear,
+    super.curve = Curves.easeOut, // ✅ CHANGED: Better default than linear
   });
 
   /// Create a copy with modified parameters
@@ -41,19 +53,59 @@ class FSAnimation extends FSAnimationBase {
     );
   }
 
+  /// ✅ ADDED: Convenience constructor for quick animations
+  const FSAnimation.quick()
+      : super(
+          duration: FSAnimationPreset.quick,
+          curve: FSAnimationPreset.easeOut,
+        );
+
+  /// ✅ ADDED: Convenience constructor for standard animations
+  const FSAnimation.standard()
+      : super(
+          duration: FSAnimationPreset.standard,
+          curve: FSAnimationPreset.easeOut,
+        );
+
   @override
   String toString() => 'FSAnimation(duration: $duration, curve: $curve)';
+
+  // ✅ ADDED: Enhanced equality check
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is FSAnimation &&
+          runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => super.hashCode;
 }
 
 /// Animation sequence configuration for complex multi-step animations
 class FSAnimationSequence extends FSAnimationBase {
   final List<FSAnimationStep> steps;
 
+  // ✅ FIXED: Removed assert from const constructor, moved validation to factory
   const FSAnimationSequence({
     required super.duration,
     required super.curve,
     required this.steps,
   });
+
+  /// ✅ ADDED: Factory constructor with validation
+  factory FSAnimationSequence.validated({
+    required Duration duration,
+    required Curve curve,
+    required List<FSAnimationStep> steps,
+  }) {
+    assert(steps.isNotEmpty, 'Animation sequence must have at least one step');
+    return FSAnimationSequence(
+      duration: duration,
+      curve: curve,
+      steps: steps,
+    );
+  }
 
   /// Total duration including all steps and delays
   Duration get totalDuration {
@@ -63,9 +115,27 @@ class FSAnimationSequence extends FSAnimationBase {
     );
   }
 
+  /// ✅ ADDED: Validate that sequence duration matches calculated total
+  bool get isValidDuration => duration == totalDuration;
+
+  /// ✅ ADDED: Validate steps are not empty
+  bool get hasSteps => steps.isNotEmpty;
+
   @override
   String toString() =>
-      'FSAnimationSequence(steps: $steps, totalDuration: $totalDuration)';
+      'FSAnimationSequence(steps: $steps, totalDuration: $totalDuration, isValid: $isValidDuration)';
+
+  // ✅ ADDED: Equality check
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is FSAnimationSequence &&
+          runtimeType == other.runtimeType &&
+          steps == other.steps;
+
+  @override
+  int get hashCode => super.hashCode ^ steps.hashCode;
 }
 
 /// Individual step in an animation sequence
@@ -73,16 +143,48 @@ class FSAnimationStep {
   final FSAnimation animation;
   final Duration delay;
 
+  // ✅ FIXED: Removed assert from const constructor
   const FSAnimationStep({
     required this.animation,
     this.delay = Duration.zero,
   });
 
+  /// ✅ ADDED: Factory constructor with validation
+  factory FSAnimationStep.validated({
+    required FSAnimation animation,
+    Duration delay = Duration.zero,
+  }) {
+    assert(delay >= Duration.zero, 'Delay cannot be negative');
+    return FSAnimationStep(
+      animation: animation,
+      delay: delay,
+    );
+  }
+
   /// Get effective curve (handles null case)
   Curve get effectiveCurve => animation.curve;
 
+  /// ✅ ADDED: Total duration for this step
+  Duration get totalDuration => animation.duration + delay;
+
+  /// ✅ ADDED: Validate delay is not negative
+  bool get isValidDelay => delay >= Duration.zero;
+
   @override
-  String toString() => 'FSAnimationStep(animation: $animation, delay: $delay)';
+  String toString() =>
+      'FSAnimationStep(animation: $animation, delay: $delay, total: $totalDuration)';
+
+  // ✅ ADDED: Equality check
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FSAnimationStep &&
+          runtimeType == other.runtimeType &&
+          animation == other.animation &&
+          delay == other.delay;
+
+  @override
+  int get hashCode => animation.hashCode ^ delay.hashCode;
 }
 
 // =============================================================================
@@ -102,8 +204,15 @@ enum FSAnimationType {
   spin,
   flip;
 
+  /// ✅ ADDED: Better string representation for debugging
   @override
-  String toString() => 'FSAnimationType.$name';
+  String toString() => name;
+
+  /// ✅ ADDED: Check if this is an entrance animation
+  bool get isEntrance => this == fadeIn || this == slideIn || this == scale;
+
+  /// ✅ ADDED: Check if this is an exit animation
+  bool get isExit => this == fadeOut || this == slideOut;
 }
 
 /// Animation directions for directional animations
@@ -118,8 +227,20 @@ enum FSAnimationDirection {
   bottomRight,
   center;
 
+  /// ✅ ADDED: Better string representation
   @override
-  String toString() => 'FSAnimationDirection.$name';
+  String toString() => name;
+
+  /// ✅ ADDED: Check if this is a diagonal direction
+  bool get isDiagonal =>
+      this == topLeft ||
+      this == topRight ||
+      this == bottomLeft ||
+      this == bottomRight;
+
+  /// ✅ ADDED: Check if this is a cardinal direction
+  bool get isCardinal =>
+      this == top || this == bottom || this == left || this == right;
 }
 
 /// Animation states for component lifecycle
@@ -130,8 +251,15 @@ enum FSAnimationState {
   active,
   disabled;
 
+  /// ✅ ADDED: Better string representation
   @override
-  String toString() => 'FSAnimationState.$name';
+  String toString() => name;
+
+  /// ✅ ADDED: Check if animation is currently running
+  bool get isAnimating => this == entering || this == exiting;
+
+  /// ✅ ADDED: Check if component is visible
+  bool get isVisible => this == entering || this == active;
 }
 
 // =============================================================================
@@ -140,6 +268,9 @@ enum FSAnimationState {
 
 /// Pre-configured animation settings for common UI patterns
 class FSAnimationPreset {
+  // ✅ ADDED: Private constructor to prevent instantiation
+  const FSAnimationPreset._();
+
   // Duration presets
   static const Duration instant = Duration(milliseconds: 100);
   static const Duration quick = Duration(milliseconds: 200);
@@ -183,6 +314,18 @@ class FSAnimationPreset {
     duration: standard,
     curve: easeOut,
   );
+
+  /// ✅ ADDED: Quick fade animation preset
+  static const FSAnimation quickFade = FSAnimation(
+    duration: quick,
+    curve: easeOut,
+  );
+
+  /// ✅ ADDED: Bounce animation preset
+  static const FSAnimation bounceAnimation = FSAnimation(
+    duration: slow,
+    curve: bounce,
+  );
 }
 
 // =============================================================================
@@ -221,8 +364,43 @@ extension FSAnimationTypeExtension on FSAnimationType {
         return FSAnimationPreset.bounce;
       case FSAnimationType.shake:
         return FSAnimationPreset.sharp;
+      case FSAnimationType.pulse:
+        return FSAnimationPreset.ease;
       default:
         return FSAnimationPreset.easeOut;
+    }
+  }
+
+  /// ✅ ADDED: Get complete animation configuration
+  FSAnimation get defaultAnimation => FSAnimation(
+        duration: defaultDuration,
+        curve: defaultCurve,
+      );
+}
+
+/// ✅ ADDED: Extension for FSAnimationDirection for slide calculations
+extension FSAnimationDirectionExtension on FSAnimationDirection {
+  /// Get offset for slide animations
+  (double, double) get slideOffset {
+    switch (this) {
+      case FSAnimationDirection.top:
+        return (0.0, -1.0);
+      case FSAnimationDirection.bottom:
+        return (0.0, 1.0);
+      case FSAnimationDirection.left:
+        return (-1.0, 0.0);
+      case FSAnimationDirection.right:
+        return (1.0, 0.0);
+      case FSAnimationDirection.topLeft:
+        return (-1.0, -1.0);
+      case FSAnimationDirection.topRight:
+        return (1.0, -1.0);
+      case FSAnimationDirection.bottomLeft:
+        return (-1.0, 1.0);
+      case FSAnimationDirection.bottomRight:
+        return (1.0, 1.0);
+      case FSAnimationDirection.center:
+        return (0.0, 0.0);
     }
   }
 }

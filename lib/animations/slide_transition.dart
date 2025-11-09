@@ -2,74 +2,11 @@
 //
 // A high-performance widget that slides its child into position with
 // theme integration, memory optimization, and flexible configuration.
-//
-// ## Usage Examples
-//
-// ```dart
-// // Basic usage - slides from bottom
-// FSSlideTransition(
-//   child: Text('Hello World'),
-// )
-//
-// // Custom direction and duration
-// FSSlideTransition(
-//   child: MyWidget(),
-//   direction: FSSlideDirection.fromRight,
-//   duration: Duration(milliseconds: 1000),
-//   curve: Curves.easeInOut,
-//   delay: Duration(milliseconds: 200),
-// )
-//
-// // Using theme configuration
-// FSSlideTransition.themed(
-//   context: context,
-//   child: MyWidget(),
-//   direction: FSSlideDirection.fromTop,
-// )
-//
-// // Manual control
-// final slideKey = GlobalKey<FSSlideTransitionState>();
-// FSSlideTransition(
-//   key: slideKey,
-//   child: MyWidget(),
-//   autoPlay: false,
-// )
-// // Later...
-// slideKey.currentState?.play();
-// ```
-//
-// {@template flutstrap_slide_transition.performance}
-// ## Performance Features
-//
-// - **Memory Optimized**: Proper controller disposal and timer cleanup
-// - **Efficient Rebuilds**: Uses `AnimatedBuilder` for minimal rebuilds
-// - **State Management**: Configurable state maintenance for off-screen widgets
-// - **Frame Rate Aware**: Smooth 60fps animations with proper timing
-//
-// ### Best Practices
-//
-// - Use `maintainState: false` for large lists to improve performance
-// - Set `autoPlay: false` for manually triggered animations
-// - Use pre-configured variations for consistent timing
-// - Consider using `respectSystemPreferences: true` for accessibility
-// {@endtemplate}
-//
-// {@template flutstrap_slide_transition.accessibility}
-// ## Accessibility
-//
-// - Respects system animation preferences when `respectSystemPreferences` is true
-// - Maintains semantic focus order during slide animations
-// - Screen reader compatible animation states
-// - Reduced motion consideration for users with vestibular disorders
-// {@endtemplate}
-//
-// {@category Animations}
-// {@category Components}
 
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../core/error_boundary.dart'; // ✅ ADDED: Error boundary import
+import '../../core/error_boundary.dart';
 
 /// Slide Direction for FSSlideTransition
 enum FSSlideDirection {
@@ -135,7 +72,7 @@ class FSSlideTransition extends StatefulWidget {
     this.onCancel,
     this.offsetFraction = 1.0,
     this.maintainState = true,
-    this.respectSystemPreferences = true, // ✅ ADDED: Accessibility
+    this.respectSystemPreferences = true,
   }) : assert(offsetFraction >= 0.0 && offsetFraction <= 2.0,
             'offsetFraction must be between 0.0 and 2.0');
 
@@ -185,11 +122,15 @@ class FSSlideTransitionState extends State<FSSlideTransition>
   late AnimationController _controller;
   late Animation<Offset> _animation;
   Timer? _delayTimer;
-  bool _isDisposed = false; // ✅ ADDED: Memory management
+  bool _isDisposed = false;
+  bool _isInitialized = false; // ✅ ADDED: Track initialization state
 
-  /// Whether animations should play based on system preferences
-  bool get _shouldAnimate {
+  /// ✅ FIXED: Safe context access with mounted check
+  bool _shouldAnimate(BuildContext context) {
+    if (!widget.autoPlay) return false;
     if (!widget.respectSystemPreferences) return true;
+    if (!mounted) return false;
+
     final mediaQuery = MediaQuery.maybeOf(context);
     return mediaQuery?.disableAnimations != true;
   }
@@ -208,10 +149,17 @@ class FSSlideTransitionState extends State<FSSlideTransition>
     super.initState();
     _initializeAnimation();
 
-    if (widget.autoPlay && _shouldAnimate) {
-      // ✅ CHECK: System preferences
-      _startAnimation();
-    }
+    // ✅ FIXED: Delay context access until after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isInitialized = true;
+        });
+        if (widget.autoPlay && _shouldAnimate(context)) {
+          _startAnimation();
+        }
+      }
+    });
   }
 
   void _initializeAnimation() {
@@ -235,7 +183,7 @@ class FSSlideTransitionState extends State<FSSlideTransition>
   }
 
   void _handleStatusChange(AnimationStatus status) {
-    if (_isDisposed) return; // ✅ ADDED: Safety check
+    if (_isDisposed) return;
 
     if (status == AnimationStatus.completed) {
       widget.onComplete?.call();
@@ -268,7 +216,7 @@ class FSSlideTransitionState extends State<FSSlideTransition>
   }
 
   Future<void> _startAnimation() async {
-    if (!mounted || _isDisposed) return;
+    if (!mounted || _isDisposed || !_isInitialized) return;
 
     if (widget.delay > Duration.zero) {
       _delayTimer = Timer(widget.delay, _executeAnimation);
@@ -292,33 +240,34 @@ class FSSlideTransitionState extends State<FSSlideTransition>
 
   /// Manually start the slide animation
   Future<void> play() async {
-    if (!mounted || _controller.isAnimating || !_shouldAnimate) return;
+    if (!mounted || _controller.isAnimating || !_isInitialized) return;
+    if (!_shouldAnimate(context)) return;
     await _controller.forward().orCancel;
   }
 
   /// Manually reverse the animation (slide out)
   Future<void> reverse() async {
-    if (!mounted || _controller.isAnimating) return;
+    if (!mounted || _controller.isAnimating || !_isInitialized) return;
     await _controller.reverse().orCancel;
   }
 
   /// Manually reset the animation to its initial state
   void reset() {
-    if (mounted && !_isDisposed && !_controller.isAnimating) {
+    if (mounted && !_isDisposed && !_controller.isAnimating && _isInitialized) {
       _controller.reset();
     }
   }
 
   /// Manually stop the animation
   void stop() {
-    if (mounted && !_isDisposed) {
+    if (mounted && !_isDisposed && _isInitialized) {
       _controller.stop();
     }
   }
 
   /// Set the animation to a specific value (0.0 to 1.0)
   void setValue(double value) {
-    if (mounted && !_isDisposed) {
+    if (mounted && !_isDisposed && _isInitialized) {
       _controller.value = value.clamp(0.0, 1.0);
     }
   }
@@ -351,7 +300,7 @@ class FSSlideTransitionState extends State<FSSlideTransition>
     }
 
     // Restart animation if autoPlay changed to true and should animate
-    if (widget.autoPlay && !oldWidget.autoPlay && _shouldAnimate) {
+    if (widget.autoPlay && !oldWidget.autoPlay && _shouldAnimate(context)) {
       _startAnimation();
     }
   }
@@ -360,7 +309,7 @@ class FSSlideTransitionState extends State<FSSlideTransition>
   void dispose() {
     _isDisposed = true;
     _delayTimer?.cancel();
-    _delayTimer = null; // ✅ ADDED: Explicit null assignment
+    _delayTimer = null;
     _controller.removeStatusListener(_handleStatusChange);
     _controller.dispose();
     super.dispose();
@@ -369,32 +318,42 @@ class FSSlideTransitionState extends State<FSSlideTransition>
   @override
   Widget build(BuildContext context) {
     return ErrorBoundary(
-      // ✅ ADDED: Error boundary
       componentName: 'FSSlideTransition',
       fallbackBuilder: (context) => widget.child,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          // ✅ OPTIMIZED: Pre-calculate visibility
-          final currentOffset = _animation.value;
-          final isVisible = _calculateVisibility(currentOffset);
+      child: _isInitialized
+          ? _buildAnimatedContent(context)
+          : _buildStaticContent(),
+    );
+  }
 
-          return Transform.translate(
-            offset: currentOffset,
-            child: widget.maintainState
-                ? child
-                : _buildVisibilityWrapper(child!, isVisible),
-          );
-        },
-        child: widget.child,
-      ),
+  Widget _buildAnimatedContent(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        final currentOffset = _animation.value;
+        final isVisible = _calculateVisibility(currentOffset);
+
+        return Transform.translate(
+          offset: currentOffset,
+          child: widget.maintainState
+              ? child
+              : _buildVisibilityWrapper(child!, isVisible),
+        );
+      },
+      child: widget.child,
+    );
+  }
+
+  Widget _buildStaticContent() {
+    return Transform.translate(
+      offset: _getBeginOffset(),
+      child: widget.child,
     );
   }
 
   /// Calculate if widget should be visible based on current offset
   bool _calculateVisibility(Offset offset) {
-    // ✅ IMPROVED: More precise visibility calculation
-    const visibilityThreshold = 1.5; // Reasonable threshold for most screens
+    const visibilityThreshold = 1.5;
     return offset.dx.abs() < visibilityThreshold &&
         offset.dy.abs() < visibilityThreshold;
   }
@@ -403,9 +362,9 @@ class FSSlideTransitionState extends State<FSSlideTransition>
     return Visibility(
       visible: isVisible,
       maintainState: widget.maintainState,
-      maintainAnimation: true, // ✅ ADDED: Maintain animation state
-      maintainSize: false, // ✅ ADDED: Don't maintain size when invisible
-      maintainInteractivity: false, // ✅ ADDED: No interaction when invisible
+      maintainAnimation: true,
+      maintainSize: false,
+      maintainInteractivity: false,
       child: child,
     );
   }
@@ -428,7 +387,6 @@ class FSSlideTransitionQuick extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSSlideTransitionQuick({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.direction = FSSlideDirection.fromBottom,
@@ -472,7 +430,6 @@ class FSSlideTransitionStandard extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSSlideTransitionStandard({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.direction = FSSlideDirection.fromBottom,
@@ -516,7 +473,6 @@ class FSSlideTransitionSlow extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSSlideTransitionSlow({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.direction = FSSlideDirection.fromBottom,
@@ -560,7 +516,6 @@ class FSSlideTransitionBounce extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSSlideTransitionBounce({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 600),
@@ -605,7 +560,6 @@ class FSSlideTransitionElastic extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSSlideTransitionElastic({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 800),
@@ -649,7 +603,6 @@ class FSSlideTransitionPage extends StatelessWidget {
   final bool respectSystemPreferences;
 
   const FSSlideTransitionPage({
-    // ✅ CONST: Better performance
     super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 400),

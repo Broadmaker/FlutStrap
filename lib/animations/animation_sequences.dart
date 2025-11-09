@@ -2,72 +2,6 @@
 //
 // Pre-configured animation sequences and complex animation patterns
 // for sophisticated UI interactions.
-//
-// {@tool snippet}
-// ### Staggered Fade-In Example
-//
-// ```dart
-// FSStaggeredFadeIn(
-//   children: [
-//     Text('Item 1'),
-//     Text('Item 2'),
-//     Text('Item 3'),
-//   ],
-//   staggerDelay: Duration(milliseconds: 150),
-// )
-// ```
-//
-// ### Sequential Animation Example
-//
-// ```dart
-// FSSequentialAnimation(
-//   sequence: FSAnimationSequence(
-//     duration: Duration(milliseconds: 1000),
-//     curve: Curves.easeOut,
-//     steps: [
-//       FSAnimationStep(
-//         animation: FSAnimation(
-//           duration: Duration(milliseconds: 400),
-//           curve: Curves.easeOut,
-//         ),
-//         delay: Duration(milliseconds: 200),
-//       ),
-//       FSAnimationStep(
-//         animation: FSAnimation(
-//           duration: Duration(milliseconds: 300),
-//           curve: Curves.easeInOut,
-//         ),
-//       ),
-//     ],
-//   ),
-//   children: [
-//     FadeIn(child: Text('First')),
-//     SlideTransition(child: Text('Second')),
-//   ],
-// )
-// ```
-// {@end-tool}
-//
-// {@template flutstrap_animation_sequences.performance}
-// ## Performance Features
-//
-// - **Memory Management**: Proper controller disposal and timer cleanup
-// - **Efficient Builds**: Minimal rebuilds with optimized animation controllers
-// - **Resource Optimization**: Automatic cleanup of unused animations
-// - **Frame Rate Aware**: Smooth 60fps animations with proper timing
-// {@endtemplate}
-//
-// {@template flutstrap_animation_sequences.accessibility}
-// ## Accessibility
-//
-// - Respects system animation preferences
-// - Provides semantic labels for animated content
-// - Maintains focus order during animations
-// - Screen reader compatible animation states
-// {@endtemplate}
-//
-// {@category Animations}
-// {@category Components}
 
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -136,13 +70,17 @@ class FSStaggeredFadeIn extends StatelessWidget {
 
   /// Check if animations should play based on system preferences
   bool _shouldAnimate(BuildContext context) {
-    return autoPlay &&
-        respectSystemPreferences &&
-        MediaQuery.of(context).disableAnimations != true;
+    if (!autoPlay) return false;
+    if (!respectSystemPreferences) return true;
+
+    final mediaQuery = MediaQuery.maybeOf(context);
+    return mediaQuery?.disableAnimations != true;
   }
 
   @override
   Widget build(BuildContext context) {
+    final shouldAnimate = _shouldAnimate(context);
+
     return ErrorBoundary(
       componentName: 'FSStaggeredFadeIn',
       fallbackBuilder: (context) => _buildFallback(context),
@@ -152,21 +90,25 @@ class FSStaggeredFadeIn extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             for (int i = 0; i < children.length; i++)
-              FadeIn(
-                key: ValueKey('fade_in_$i'),
-                child: children[i],
-                duration: duration,
-                delay: _shouldAnimate(context)
-                    ? Duration(milliseconds: staggerDelay.inMilliseconds * i)
-                    : Duration.zero,
-                curve: curve,
-                autoPlay: _shouldAnimate(context),
-                maintainState: maintainState,
-                respectSystemPreferences: respectSystemPreferences,
-              ),
+              _buildFadeInItem(i, shouldAnimate),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFadeInItem(int index, bool shouldAnimate) {
+    return FadeIn(
+      key: ValueKey('fade_in_$index'),
+      child: children[index],
+      duration: duration,
+      delay: shouldAnimate
+          ? Duration(milliseconds: staggerDelay.inMilliseconds * index)
+          : Duration.zero,
+      curve: curve,
+      autoPlay: shouldAnimate,
+      maintainState: maintainState,
+      respectSystemPreferences: respectSystemPreferences,
     );
   }
 
@@ -275,13 +217,17 @@ class FSStaggeredSlideIn extends StatelessWidget {
 
   /// Check if animations should play based on system preferences
   bool _shouldAnimate(BuildContext context) {
-    return autoPlay &&
-        respectSystemPreferences &&
-        MediaQuery.of(context).disableAnimations != true;
+    if (!autoPlay) return false;
+    if (!respectSystemPreferences) return true;
+
+    final mediaQuery = MediaQuery.maybeOf(context);
+    return mediaQuery?.disableAnimations != true;
   }
 
   @override
   Widget build(BuildContext context) {
+    final shouldAnimate = _shouldAnimate(context);
+
     return ErrorBoundary(
       componentName: 'FSStaggeredSlideIn',
       fallbackBuilder: (context) => _buildFallback(context),
@@ -291,23 +237,27 @@ class FSStaggeredSlideIn extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             for (int i = 0; i < children.length; i++)
-              FSSlideTransition(
-                key: ValueKey('slide_in_$i'),
-                child: children[i],
-                direction: direction,
-                duration: duration,
-                delay: _shouldAnimate(context)
-                    ? Duration(milliseconds: staggerDelay.inMilliseconds * i)
-                    : Duration.zero,
-                curve: curve,
-                autoPlay: _shouldAnimate(context),
-                offsetFraction: offsetFraction,
-                maintainState: maintainState,
-                respectSystemPreferences: respectSystemPreferences,
-              ),
+              _buildSlideInItem(i, shouldAnimate),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSlideInItem(int index, bool shouldAnimate) {
+    return FSSlideTransition(
+      key: ValueKey('slide_in_$index'),
+      child: children[index],
+      direction: direction,
+      duration: duration,
+      delay: shouldAnimate
+          ? Duration(milliseconds: staggerDelay.inMilliseconds * index)
+          : Duration.zero,
+      curve: curve,
+      autoPlay: shouldAnimate,
+      offsetFraction: offsetFraction,
+      maintainState: maintainState,
+      respectSystemPreferences: respectSystemPreferences,
     );
   }
 
@@ -472,24 +422,32 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
   bool _isDisposed = false;
   bool _isPlaying = false;
   bool _isComplete = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-
-    // ✅ Runtime validation
-    _validateInputs();
-
-    _initializeAnimations();
-
-    if (widget.autoPlay && _shouldAnimate()) {
-      _startAnimations();
-    }
+    _initializeAsync();
   }
 
-  /// Check if animations should play based on system preferences
+  /// ✅ FIXED: Initialize animations asynchronously to avoid context access during initState
+  void _initializeAsync() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isDisposed) {
+        _initializeAnimations();
+        if (widget.autoPlay && _shouldAnimate()) {
+          _startAnimations();
+        }
+      }
+    });
+  }
+
+  /// ✅ FIXED: Safe context access with mounted check
   bool _shouldAnimate() {
+    if (!widget.autoPlay) return false;
     if (!widget.respectSystemPreferences) return true;
+    if (!mounted) return false;
+
     final mediaQuery = MediaQuery.maybeOf(context);
     return mediaQuery?.disableAnimations != true;
   }
@@ -502,9 +460,13 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
   }
 
   void _initializeAnimations() {
+    if (!mounted || _isDisposed) return;
+
     final stopwatch = Stopwatch()..start();
 
     try {
+      _validateInputs();
+
       // ✅ Handle case where children count < steps count
       final effectiveStepCount = widget.children.length;
 
@@ -516,7 +478,6 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
             duration: step.animation.duration,
             vsync: this,
           )..addStatusListener((status) {
-              // ✅ Monitor animation performance
               if (status == AnimationStatus.completed) {
                 _AnimationPerformance.logAnimationTime(
                     'step_$index', step.animation.duration.inMilliseconds);
@@ -537,9 +498,13 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
           );
         },
       );
+
+      setState(() {
+        _isInitialized = true;
+      });
     } catch (e) {
       debugPrint('Error initializing animations: $e');
-      rethrow;
+      // Don't rethrow - use fallback UI
     } finally {
       stopwatch.stop();
       _AnimationPerformance.logAnimationTime(
@@ -548,7 +513,7 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
   }
 
   Future<void> _startAnimations() async {
-    if (!mounted || _isDisposed || _isPlaying) return;
+    if (!mounted || _isDisposed || _isPlaying || !_isInitialized) return;
 
     _isPlaying = true;
     widget.onStart?.call();
@@ -569,7 +534,7 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
           await _controllers[i].forward().orCancel;
         }
 
-        if (!mounted || _isDisposed) break; // Exit if widget was disposed
+        if (!mounted || _isDisposed) break;
       }
     } catch (e) {
       debugPrint('Error during animation sequence: $e');
@@ -590,14 +555,18 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
 
   /// Manually start the sequence
   Future<void> play() async {
-    if (mounted && !_isDisposed && !_isPlaying && _shouldAnimate()) {
+    if (mounted &&
+        !_isDisposed &&
+        !_isPlaying &&
+        _shouldAnimate() &&
+        _isInitialized) {
       await _startAnimations();
     }
   }
 
   /// Reset all animations
   void reset() {
-    if (mounted && !_isDisposed) {
+    if (mounted && !_isDisposed && _isInitialized) {
       for (final controller in _controllers) {
         if (!controller.isAnimating) {
           controller.reset();
@@ -612,7 +581,7 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
 
   /// Stop all animations
   void stop() {
-    if (mounted && !_isDisposed) {
+    if (mounted && !_isDisposed && _isInitialized) {
       for (final controller in _controllers) {
         if (controller.isAnimating) {
           controller.stop();
@@ -628,13 +597,13 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
   void dispose() {
     _isDisposed = true;
     _startTimer?.cancel();
-    _startTimer = null; // ✅ Explicit null assignment
+    _startTimer = null;
 
-    for (final controller in _controllers) {
-      controller.dispose();
+    if (_isInitialized) {
+      for (final controller in _controllers) {
+        controller.dispose();
+      }
     }
-    _controllers.clear(); // ✅ Clear the list
-
     super.dispose();
   }
 
@@ -645,26 +614,37 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
       fallbackBuilder: (context) => _buildFallback(context),
       child: Semantics(
         label: widget.semanticLabel,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(
-            widget.children.length,
-            (index) => AnimatedBuilder(
-              animation: _animations[index],
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _animations[index].value.clamp(0.0, 1.0),
-                  child: Transform.translate(
-                    offset: Offset(0.0, (1 - _animations[index].value) * 20),
-                    child: child,
-                  ),
-                );
-              },
-              child: widget.children[index],
-            ),
-          ),
+        child: _isInitialized ? _buildAnimatedContent() : _buildStaticContent(),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        widget.children.length,
+        (index) => AnimatedBuilder(
+          animation: _animations[index],
+          builder: (context, child) {
+            return Opacity(
+              opacity: _animations[index].value.clamp(0.0, 1.0),
+              child: Transform.translate(
+                offset: Offset(0.0, (1 - _animations[index].value) * 20),
+                child: child,
+              ),
+            );
+          },
+          child: widget.children[index],
         ),
       ),
+    );
+  }
+
+  Widget _buildStaticContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: widget.children,
     );
   }
 

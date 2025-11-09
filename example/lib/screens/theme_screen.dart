@@ -32,9 +32,9 @@ class ThemeScreen extends StatefulWidget {
 }
 
 class _ThemeScreenState extends State<ThemeScreen> {
-  // ✅ STATE MANAGEMENT
-  ThemeMode _currentThemeMode = ThemeMode.light;
-  Color _seedColor = FlutstrapTheme.defaultPrimary;
+  // ✅ STATE MANAGEMENT - FIXED: Use Brightness instead of ThemeMode
+  Brightness _currentBrightness = Brightness.light;
+  Color _seedColor = const Color(0xFF0D6EFD); // ✅ FIXED: Default Flutstrap blue
   bool _useSeedColor = true;
 
   // ✅ CONSTANTS FOR PERFORMANCE
@@ -62,17 +62,18 @@ class _ThemeScreenState extends State<ThemeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FSTheme(
-      data: _buildCurrentTheme(),
+    // ✅ FIXED: Use Theme widget to override theme for this screen only
+    return Theme(
+      data: _buildMaterialTheme(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Theme System'),
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           elevation: 0,
           actions: [
-            // ✅ THEME MODE SWITCHER
+            // ✅ THEME MODE SWITCHER - FIXED: Use Brightness
             IconButton(
-              icon: Icon(_currentThemeMode == ThemeMode.dark
+              icon: Icon(_currentBrightness == Brightness.dark
                   ? Icons.light_mode
                   : Icons.dark_mode),
               onPressed: _toggleThemeMode,
@@ -100,7 +101,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
               _buildSpacingSection(context),
               const SizedBox(height: _sectionSpacing),
 
-              // ✅ COMPONENT PREVIEW - ✅ FIXED: Using correct APIs
+              // ✅ COMPONENT PREVIEW
               _buildComponentPreviewSection(context),
             ],
           ),
@@ -109,14 +110,55 @@ class _ThemeScreenState extends State<ThemeScreen> {
     );
   }
 
+  /// ✅ FIXED: Build Material Theme that syncs with FSThemeData
+  ThemeData _buildMaterialTheme() {
+    final fsTheme = _buildCurrentTheme();
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: fsTheme.brightness,
+      colorScheme: ColorScheme(
+        primary: fsTheme.colors.primary,
+        secondary: fsTheme.colors.secondary,
+        surface: fsTheme.colors.surface,
+        background: fsTheme.colors.background,
+        error: fsTheme.colors.danger,
+        onPrimary: fsTheme.colors.onPrimary,
+        onSecondary: fsTheme.colors.onSecondary,
+        onSurface: fsTheme.colors.onSurface,
+        onBackground: fsTheme.colors.onBackground,
+        onError: fsTheme.colors.onPrimary,
+        brightness: fsTheme.brightness,
+      ),
+      // Sync text theme with FS typography
+      textTheme: TextTheme(
+        displayLarge: fsTheme.typography.displayLarge,
+        displayMedium: fsTheme.typography.displayMedium,
+        displaySmall: fsTheme.typography.displaySmall,
+        headlineLarge: fsTheme.typography.headlineLarge,
+        headlineMedium: fsTheme.typography.headlineMedium,
+        headlineSmall: fsTheme.typography.headlineSmall,
+        titleLarge: fsTheme.typography.titleLarge,
+        titleMedium: fsTheme.typography.titleMedium,
+        titleSmall: fsTheme.typography.titleSmall,
+        bodyLarge: fsTheme.typography.bodyLarge,
+        bodyMedium: fsTheme.typography.bodyMedium,
+        bodySmall: fsTheme.typography.bodySmall,
+        labelLarge: fsTheme.typography.labelLarge,
+        labelMedium: fsTheme.typography.labelMedium,
+        labelSmall: fsTheme.typography.labelSmall,
+      ),
+    );
+  }
+
   /// Build current theme based on user selections
   FSThemeData _buildCurrentTheme() {
     if (_useSeedColor) {
-      return _currentThemeMode == ThemeMode.light
+      return _currentBrightness == Brightness.light
           ? FSThemeData.light(seedColor: _seedColor)
           : FSThemeData.dark(seedColor: _seedColor);
     } else {
-      return _currentThemeMode == ThemeMode.light
+      return _currentBrightness == Brightness.light
           ? FSThemeData.light()
           : FSThemeData.dark();
     }
@@ -125,9 +167,9 @@ class _ThemeScreenState extends State<ThemeScreen> {
   /// Toggle between light and dark theme modes
   void _toggleThemeMode() {
     setState(() {
-      _currentThemeMode = _currentThemeMode == ThemeMode.light
-          ? ThemeMode.dark
-          : ThemeMode.light;
+      _currentBrightness = _currentBrightness == Brightness.light
+          ? Brightness.dark
+          : Brightness.light;
     });
   }
 
@@ -150,7 +192,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
               padding: _cardPadding,
               child: Column(
                 children: [
-                  // ✅ THEME MODE SELECTOR
+                  // ✅ THEME MODE SELECTOR - FIXED: Use Brightness
                   _buildThemeModeSelector(context),
                   const SizedBox(height: _itemSpacing),
 
@@ -178,7 +220,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
     );
   }
 
-  /// Build theme mode selector
+  /// Build theme mode selector - FIXED: Use Brightness
   Widget _buildThemeModeSelector(BuildContext context) {
     return Row(
       children: [
@@ -189,20 +231,20 @@ class _ThemeScreenState extends State<ThemeScreen> {
         const Spacer(),
         ChoiceChip(
           label: const Text('Light'),
-          selected: _currentThemeMode == ThemeMode.light,
+          selected: _currentBrightness == Brightness.light,
           onSelected: (selected) {
             if (selected) {
-              setState(() => _currentThemeMode = ThemeMode.light);
+              setState(() => _currentBrightness = Brightness.light);
             }
           },
         ),
         const SizedBox(width: 8),
         ChoiceChip(
           label: const Text('Dark'),
-          selected: _currentThemeMode == ThemeMode.dark,
+          selected: _currentBrightness == Brightness.dark,
           onSelected: (selected) {
             if (selected) {
-              setState(() => _currentThemeMode = ThemeMode.dark);
+              setState(() => _currentBrightness = Brightness.dark);
             }
           },
         ),
@@ -252,7 +294,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
 
   /// Build color scheme preview section
   Widget _buildColorSchemeSection(BuildContext context) {
-    final colors = FSTheme.of(context).colors;
+    // ✅ FIXED: Use the current theme we're building, not from context
+    final colors = _buildCurrentTheme().colors;
 
     return Container(
       padding: _sectionPadding,
@@ -329,7 +372,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
 
   /// Build typography scale section
   Widget _buildTypographySection(BuildContext context) {
-    final typography = FSTheme.of(context).typography;
+    // ✅ FIXED: Use the current theme we're building
+    final typography = _buildCurrentTheme().typography;
 
     return Container(
       padding: _sectionPadding,
@@ -398,13 +442,13 @@ class _ThemeScreenState extends State<ThemeScreen> {
       contentPadding: EdgeInsets.zero,
       title: Text(name, style: style),
       subtitle: Text(
-        '${style.fontSize?.toStringAsFixed(0)}sp • ${style.fontWeight?.toString().split('.').last}',
+        '${style.fontSize?.toStringAsFixed(0)}sp • ${style.fontWeight?.toString().split('.').last ?? 'Regular'}',
         style: const TextStyle(fontSize: 12),
       ),
     );
   }
 
-  /// Build spacing system section - ✅ FIXED: Use static FSSpacing class
+  /// Build spacing system section
   Widget _buildSpacingSection(BuildContext context) {
     return Container(
       padding: _sectionPadding,
@@ -465,112 +509,156 @@ class _ThemeScreenState extends State<ThemeScreen> {
     );
   }
 
-  /// Build component preview section - ✅ FIXED: Using correct FlutstrapCard API
+  /// Build component preview section
   Widget _buildComponentPreviewSection(BuildContext context) {
-    return Container(
-      padding: _sectionPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Component Preview',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
+    // ✅ FIXED: Use FSTheme widget to provide theme to Flutstrap components
+    return FSTheme(
+      data: _buildCurrentTheme(),
+      child: Container(
+        padding: _sectionPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Component Preview',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: _itemSpacing),
+            Card(
+              child: Padding(
+                padding: _cardPadding,
+                child: Column(
+                  children: [
+                    // ✅ BUTTON VARIANTS
+                    const Text('Button Variants',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildFlutstrapButton(
+                            'Primary', FSButtonVariant.primary),
+                        _buildFlutstrapButton(
+                            'Secondary', FSButtonVariant.secondary),
+                        _buildFlutstrapButton(
+                            'Success', FSButtonVariant.success),
+                        _buildFlutstrapButton('Danger', FSButtonVariant.danger),
+                        _buildFlutstrapButton(
+                            'Warning', FSButtonVariant.warning),
+                        _buildFlutstrapButton('Info', FSButtonVariant.info),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ✅ BUTTON SIZES
+                    const Text('Button Sizes',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildFlutstrapButtonSize('Small', FSButtonSize.sm),
+                        _buildFlutstrapButtonSize('Medium', FSButtonSize.md),
+                        _buildFlutstrapButtonSize('Large', FSButtonSize.lg),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ✅ CARD PREVIEW
+                    const Text('Cards',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    FlutstrapCard(
+                      headerText: 'Card Component',
+                      bodyText:
+                          'This card demonstrates the current theme configuration including colors, typography, and spacing.',
+                      footerText: 'Theme Demo',
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ✅ CARD VARIANTS
+                    const Text('Card Variants',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        FlutstrapCard(
+                          headerText: 'Elevated Card',
+                          bodyText: 'Default elevated variant',
+                          variant: FSCardVariant.elevated,
+                        ),
+                        FlutstrapCard(
+                          headerText: 'Outlined Card',
+                          bodyText: 'Card with border outline',
+                          variant: FSCardVariant.outlined,
+                        ),
+                        FlutstrapCard(
+                          headerText: 'Filled Card',
+                          bodyText: 'Card with filled background',
+                          variant: FSCardVariant.filled,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ✅ ALERTS
+                    const Text('Alerts',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    Column(
+                      children: [
+                        _buildFlutstrapAlert(
+                            'Primary alert message', FSAlertVariant.primary),
+                        const SizedBox(height: 8),
+                        _buildFlutstrapAlert(
+                            'Success alert message', FSAlertVariant.success),
+                        const SizedBox(height: 8),
+                        _buildFlutstrapAlert(
+                            'Danger alert message', FSAlertVariant.danger),
+                        const SizedBox(height: 8),
+                        _buildFlutstrapAlert(
+                            'Warning alert message', FSAlertVariant.warning),
+                        const SizedBox(height: 8),
+                        _buildFlutstrapAlert(
+                            'Info alert message', FSAlertVariant.info),
+                      ],
+                    ),
+                  ],
                 ),
-          ),
-          const SizedBox(height: _itemSpacing),
-          Card(
-            child: Padding(
-              padding: _cardPadding,
-              child: Column(
-                children: [
-                  // ... (button sections remain the same)
-
-                  const SizedBox(height: 24),
-
-                  // ✅ CARD PREVIEW - FIXED: Using correct FlutstrapCard API
-                  const Text('Cards',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 12),
-                  FlutstrapCard(
-                    headerText: 'Card Component',
-                    bodyText:
-                        'This card demonstrates the current theme configuration including colors, typography, and spacing.',
-                    footerText: 'Theme Demo',
-                    // ✅ CORRECT: Using headerText, bodyText, footerText instead of child
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ✅ ADDITIONAL CARD VARIANTS
-                  const Text('Card Variants',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      FlutstrapCard(
-                        headerText: 'Elevated Card',
-                        bodyText: 'Default elevated variant',
-                        variant: FSCardVariant.elevated,
-                      ),
-                      FlutstrapCard(
-                        headerText: 'Outlined Card',
-                        bodyText: 'Card with border outline',
-                        variant: FSCardVariant.outlined,
-                      ),
-                      FlutstrapCard(
-                        headerText: 'Filled Card',
-                        bodyText: 'Card with filled background',
-                        variant: FSCardVariant.filled,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ✅ INTERACTIVE CARD
-                  const Text('Interactive Card',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 12),
-                  FlutstrapCard.interactive(
-                    title: 'Clickable Card',
-                    content: 'Tap this card to see interactive behavior',
-                    onTap: () {
-                      print('Interactive card tapped!');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Card tapped!')),
-                      );
-                    },
-                    trailing: Icon(Icons.chevron_right),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ... (alert sections remain the same)
-                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  /// ✅ FIXED: Helper method with correct FlutstrapButton API
+  /// Helper method for FlutstrapButton
   Widget _buildFlutstrapButton(String text, FSButtonVariant variant) {
     return FlutstrapButton(
       onPressed: () {
         print('$text button pressed');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$text button pressed!')),
+        );
       },
-      text: text, // ✅ CORRECT: Use 'text' parameter
+      text: text,
       variant: variant,
-      size: FSButtonSize.md, // ✅ CORRECT: Use 'md' not 'medium'
+      size: FSButtonSize.md,
     );
   }
 
-  /// ✅ FIXED: Helper method for size demonstration
+  /// Helper method for button size demonstration
   Widget _buildFlutstrapButtonSize(String text, FSButtonSize size) {
     return FlutstrapButton(
       onPressed: () {
@@ -578,15 +666,15 @@ class _ThemeScreenState extends State<ThemeScreen> {
       },
       text: text,
       variant: FSButtonVariant.primary,
-      size: size, // ✅ CORRECT: Use FSButtonSize enum
+      size: size,
     );
   }
 
-  /// ✅ FIXED: Helper method with correct FlutstrapAlert API
+  /// Helper method for FlutstrapAlert
   Widget _buildFlutstrapAlert(String message, FSAlertVariant variant) {
     return FlutstrapAlert(
       message: message,
-      variant: variant, // ✅ CORRECT: Use 'variant' parameter
+      variant: variant,
       dismissible: true,
     );
   }

@@ -57,15 +57,93 @@ FlutStrap supports both **light** and **dark** themes. You can easily switch bet
 
 ---
 
+## 📐 Layouts
+
+FlutStrap provides a set of **layout utilities** that help you structure your Flutter apps efficiently and responsively.  
+These tools make it easy to organize content, manage grids, and control visibility across devices.
+
+---
+
+### 🧩 Key Layout Utilities
+
+- **[Columns](docs/layouts/columns.md)**  
+  Divide your layout into columns to create flexible, responsive designs.  
+  Perfect for aligning content side-by-side or creating multi-column layouts.
+
+- **[Containers](docs/layouts/containers.md)**  
+  Wrap content in containers to control width, padding, alignment, and background styling.  
+  Useful for structuring sections and grouping elements visually.
+
+- **[Grids](docs/layouts/grids.md)**  
+  Build responsive grids for complex layouts.  
+  Supports automatic resizing and stacking of elements on different screen sizes.
+
+- **[Rows](docs/layouts/rows.md)**  
+  Organize content horizontally using rows.  
+  Combine with columns to create flexible grid systems.
+
+- **[Visibility](docs/layouts/visibility.md)**  
+  Control the visibility of widgets based on device size or custom conditions.  
+  Perfect for responsive designs where certain elements should appear or hide.
+
+---
+
 ## ⚙️ Core Features
 
-FlutStrap includes core utilities to make your app more responsive and easily customizable:
+FlutStrap provides a set of **core utilities** that make your Flutter apps responsive, scalable, and easy to customize.  
+These foundational features power layouts, themes, and spacing across the entire library.
 
-- **Responsive Layouts**: Adjust your layout based on the screen size or device.
-- **Spacing Utilities**: Manage the spacing between your UI components.
-- **Breakpoints**: Customize how your UI behaves on different screen sizes.
+---
 
-Explore the full documentation for core utilities [here](docs/core/).
+### 🧩 Key Core Utilities
+
+- **[Responsive Layouts](docs/core/responsives.md)**  
+  Build adaptive UIs that automatically adjust based on device size or orientation.  
+  Create fluid and flexible designs with minimal configuration.
+
+- **[Spacings](docs/core/spacings.md)**  
+  Use a predefined spacing scale for consistent padding and margins throughout your app.  
+  Ensures visual balance and simplifies layout adjustments.
+
+- **[Breakpoints](docs/core/breakpoints.md)**  
+  Define how your layout behaves across various screen sizes — mobile, tablet, and desktop.  
+  Customize breakpoint values to fine-tune responsiveness.
+
+- **[Themes](docs/core/themes.md)**  
+  Manage app-wide color schemes, typography, and component styling.  
+  Supports light, dark, and fully custom themes.
+
+- **[Utilities](docs/core/utilities.md)**  
+  A collection of helper functions and widgets for alignment, visibility, and positioning.  
+  Fine-tune your layouts and interactions with minimal code.
+
+---
+
+## 🧩 Available Core Utilities
+
+Below is a list of the key core features included in this package:
+
+- **[Responsive Layouts](responsives.md)**  
+  Build adaptive UIs that automatically adjust based on device size or orientation.  
+  Create fluid grids and flexible designs with minimal effort.
+
+- **[Spacings](spacings.md)**  
+  Apply consistent padding, margins, and gaps between elements using a scalable spacing system that ensures visual balance.
+
+- **[Breakpoints](breakpoints.md)**  
+  Define how your layout behaves across various screen sizes — from mobile to desktop — using customizable breakpoint values.
+
+- **[Themes](themes.md)**  
+  Manage app-wide color schemes, typography, and component styling with unified light, dark, or custom themes.
+
+- **[Utilities](utilities.md)**  
+  Access a variety of helper utilities for alignment, visibility, and positioning to fine-tune your layouts and interactions.
+
+---
+
+## 📘 Learn More
+
+For more detailed explanations and usage examples, explore the full documentation for **core utilities** in this directory.
 
 ---
 

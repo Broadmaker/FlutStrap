@@ -238,6 +238,11 @@ class _NavbarsScreenState extends State<NavbarsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Narbar Components'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        elevation: 0,
+      ),
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [

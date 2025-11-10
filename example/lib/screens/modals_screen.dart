@@ -369,6 +369,7 @@ class _ModalsScreenState extends State<ModalsScreen> {
   }
 
   /// Build interactive demo section
+  /// Build interactive demo section
   Widget _buildInteractiveDemoSection(BuildContext context) {
     return Container(
       padding: _sectionPadding,
@@ -428,15 +429,12 @@ class _ModalsScreenState extends State<ModalsScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Modal Trigger Example
+                  // Fixed Modal Trigger Example
                   const Text('Modal Trigger Component:',
                       style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  FlutstrapModalTrigger(
-                    modalTitle: const Text('Trigger Modal'),
-                    modalContent: const Text(
-                        'This modal was triggered by the FlutstrapModalTrigger component!'),
-                    modalVariant: FSModalVariant.info,
+                  GestureDetector(
+                    onTap: () => _showTriggerModal(context),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -461,7 +459,6 @@ class _ModalsScreenState extends State<ModalsScreen> {
       ),
     );
   }
-
   // ✅ HELPER METHODS
 
   /// Build modal button with variant styling
@@ -507,6 +504,25 @@ class _ModalsScreenState extends State<ModalsScreen> {
       variant: FSButtonVariant.outlinePrimary,
       size: FSButtonSize.sm,
     );
+  }
+
+  void _showTriggerModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => FlutstrapModal(
+        title: const Text('Trigger Modal'),
+        content: const Text(
+            'This modal was triggered by the custom trigger component!'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+        variant: FSModalVariant.info,
+      ),
+    );
+    _updateModalResult('Trigger modal shown');
   }
 
   // ✅ BASIC MODAL HANDLERS
@@ -742,32 +758,37 @@ class _ModalsScreenState extends State<ModalsScreen> {
     FlutstrapModalService.showCustomModal(
       context: context,
       title: const Text('Contact Form'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            decoration: const InputDecoration(
-              labelText: 'Name',
-              border: OutlineInputBorder(),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 400, // Add maximum width constraint
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              border: OutlineInputBorder(),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
             ),
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            decoration: const InputDecoration(
-              labelText: 'Message',
-              border: OutlineInputBorder(),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Message',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
             ),
-            maxLines: 3,
-          ),
-        ],
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -791,47 +812,52 @@ class _ModalsScreenState extends State<ModalsScreen> {
     FlutstrapModalService.showCustomModal(
       context: context,
       title: const Text('User Profile'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircleAvatar(
-            radius: 40,
-            backgroundImage: NetworkImage('https://via.placeholder.com/80'),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'John Doe',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          const Text('john.doe@example.com'),
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Column(
-                children: [
-                  Text('125', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('Posts', style: TextStyle(fontSize: 12)),
-                ],
-              ),
-              Column(
-                children: [
-                  Text('1.2K', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('Followers', style: TextStyle(fontSize: 12)),
-                ],
-              ),
-              Column(
-                children: [
-                  Text('456', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('Following', style: TextStyle(fontSize: 12)),
-                ],
-              ),
-            ],
-          ),
-        ],
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 300,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircleAvatar(
+              radius: 40,
+              backgroundImage: NetworkImage('https://via.placeholder.com/80'),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'John Doe',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text('john.doe@example.com'),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Column(
+                  children: [
+                    Text('125', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Posts', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text('1.2K', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Followers', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text('456', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Following', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -854,8 +880,11 @@ class _ModalsScreenState extends State<ModalsScreen> {
     FlutstrapModalService.showCustomModal(
       context: context,
       title: const Text('Settings'),
-      content: SizedBox(
-        height: 200,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxHeight: 200,
+          maxWidth: 400,
+        ),
         child: ListView(
           children: [
             _buildListTile('Account Settings', Icons.person),

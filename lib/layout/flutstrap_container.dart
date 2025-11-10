@@ -49,16 +49,26 @@ class FlutstrapContainer extends StatelessWidget {
 
         // Early return for fluid containers to avoid unnecessary calculations
         if (fluid && width == null) {
-          return _buildContainer(double.infinity);
+          return _buildContainer(double.infinity, constraints);
         }
 
         final maxWidth = _getMaxWidth(responsive, fluid);
-        return _buildContainer(maxWidth);
+        return _buildContainer(maxWidth, constraints);
       },
     );
   }
 
-  Widget _buildContainer(double maxWidth) {
+  Widget _buildContainer(double maxWidth, BoxConstraints constraints) {
+    // FIX: Ensure the container has proper constraints
+    final containerConstraints = BoxConstraints(
+      maxWidth: maxWidth,
+      minWidth: 0.0, // FIX: Add minimum width constraint
+      minHeight: 0.0, // FIX: Add minimum height constraint
+      maxHeight: constraints.maxHeight.isInfinite
+          ? double.infinity
+          : constraints.maxHeight,
+    );
+
     return Container(
       width: width,
       height: height,
@@ -68,12 +78,9 @@ class FlutstrapContainer extends StatelessWidget {
       decoration: decoration,
       alignment: alignment,
       clipBehavior: clipBehavior,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: maxWidth,
-        ),
-        child: child,
-      ),
+      constraints:
+          containerConstraints, // FIX: Apply constraints directly to Container
+      child: child,
     );
   }
 

@@ -1,4 +1,4 @@
-/// Flutstrap Grid System - CORRECTED VERSION
+/// Flutstrap Grid System - COMPLETELY FIXED VERSION
 ///
 /// A comprehensive grid system container that combines container, rows, and columns
 /// for easy responsive layout creation inspired by Bootstrap's grid system.
@@ -45,11 +45,10 @@ class FlutstrapGrid extends StatelessWidget {
     this.decoration,
     this.alignment,
     this.rowGap,
-  }); // ✅ REMOVED ASSERT FROM INITIALIZER LIST
+  });
 
   @override
   Widget build(BuildContext context) {
-    // ✅ MOVED ASSERT TO BUILD METHOD
     assert(children.isNotEmpty, 'Grid must have at least one child');
 
     return FlutstrapContainer(
@@ -79,41 +78,6 @@ class FlutstrapGrid extends StatelessWidget {
       }
     }
     return result;
-  }
-
-  /// Converts regular rows to grid rows with proper column wrapping
-  List<Widget> _convertToGridRows(List<Widget> rows, double containerWidth) {
-    return rows.map((row) {
-      if (row is FlutstrapRow) {
-        return _wrapRowChildrenWithColumns(row, containerWidth);
-      }
-      return row;
-    }).toList();
-  }
-
-  /// Wraps FlutstrapCol children with Expanded widgets for proper grid behavior
-  Widget _wrapRowChildrenWithColumns(FlutstrapRow row, double containerWidth) {
-    final wrappedChildren = row.children.map((child) {
-      if (child is FlutstrapCol) {
-        final flex = child.getFlex(containerWidth);
-        return Expanded(
-          flex: flex,
-          child: child,
-        );
-      }
-      return child;
-    }).toList();
-
-    return FlutstrapRow(
-      children: wrappedChildren,
-      mainAxisAlignment: row.mainAxisAlignment,
-      crossAxisAlignment: row.crossAxisAlignment,
-      mainAxisSize: row.mainAxisSize,
-      textDirection: row.textDirection,
-      verticalDirection: row.verticalDirection,
-      textBaseline: row.textBaseline,
-      gap: row.gap,
-    );
   }
 
   // ✅ CONSISTENT COPYWITH PATTERN
@@ -152,7 +116,7 @@ class FlutstrapGrid extends StatelessWidget {
   FlutstrapGrid withDecoration(Decoration newDecoration) =>
       copyWith(decoration: newDecoration);
 
-  // ✅ IMPROVED FACTORY METHODS WITH VALIDATION
+  // ✅ FIXED FACTORY METHODS
 
   /// Quick grid creation with a single row
   factory FlutstrapGrid.singleRow({
@@ -212,7 +176,7 @@ class FlutstrapGrid extends StatelessWidget {
     );
   }
 
-  /// Create a responsive grid that changes layout based on breakpoints
+  /// ✅ FIXED: Create a responsive grid that properly wraps columns
   factory FlutstrapGrid.responsive({
     required List<Widget> children,
     int xsColumns = 1,
@@ -230,26 +194,50 @@ class FlutstrapGrid extends StatelessWidget {
     assert(xsColumns >= 1 && xsColumns <= 12,
         'XS columns must be between 1 and 12');
 
-    // Convert children to FlutstrapCol with responsive sizing
-    final responsiveChildren = children.map((child) {
-      return FlutstrapCol(
-        size: FSColSize(
-          xs: 12 ~/ xsColumns,
-          sm: smColumns != null ? 12 ~/ smColumns : null,
-          md: mdColumns != null ? 12 ~/ mdColumns : null,
-          lg: lgColumns != null ? 12 ~/ lgColumns : null,
-          xl: xlColumns != null ? 12 ~/ xlColumns : null,
-          xxl: xxlColumns != null ? 12 ~/ xxlColumns : null,
-        ),
-        child: child,
-      );
-    }).toList();
-
     return FlutstrapGrid(
       children: [
-        FlutstrapRow(
-          children: responsiveChildren,
-          gap: gap ?? defaultColumnGap,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final containerWidth = constraints.maxWidth;
+
+            // Calculate how many columns we should show based on screen size
+            final responsiveColumns = _getResponsiveColumns(
+              containerWidth,
+              xsColumns,
+              smColumns,
+              mdColumns,
+              lgColumns,
+              xlColumns,
+              xxlColumns,
+            );
+
+            // Distribute children into rows with the calculated column count
+            final rows =
+                FSGridUtils.distributeItems(children, responsiveColumns);
+
+            return Column(
+              children: rows.asMap().entries.map((entry) {
+                final rowIndex = entry.key;
+                final rowChildren = entry.value;
+
+                return Padding(
+                  padding: rowIndex > 0
+                      ? EdgeInsets.only(top: gap ?? defaultColumnGap)
+                      : EdgeInsets.zero,
+                  child: FlutstrapRow(
+                    children: rowChildren.map((child) {
+                      return Expanded(
+                        flex: 12 ~/
+                            responsiveColumns, // Each item gets equal flex based on columns
+                        child: child,
+                      );
+                    }).toList(),
+                    gap: gap ?? defaultColumnGap,
+                  ),
+                );
+              }).toList(),
+            );
+          },
         ),
       ],
       fluid: fluid,
@@ -258,7 +246,26 @@ class FlutstrapGrid extends StatelessWidget {
     );
   }
 
-  /// Create a card grid layout (common pattern)
+  /// Helper method to determine responsive columns based on screen width
+  static int _getResponsiveColumns(
+    double containerWidth,
+    int xsColumns,
+    int? smColumns,
+    int? mdColumns,
+    int? lgColumns,
+    int? xlColumns,
+    int? xxlColumns,
+  ) {
+    // Bootstrap breakpoints
+    if (containerWidth >= 1400 && xxlColumns != null) return xxlColumns;
+    if (containerWidth >= 1200 && xlColumns != null) return xlColumns;
+    if (containerWidth >= 992 && lgColumns != null) return lgColumns;
+    if (containerWidth >= 768 && mdColumns != null) return mdColumns;
+    if (containerWidth >= 576 && smColumns != null) return smColumns;
+    return xsColumns;
+  }
+
+  /// ✅ FIXED: Create a card grid layout
   factory FlutstrapGrid.cards({
     required List<Widget> cards,
     int columns = 3,
@@ -271,39 +278,47 @@ class FlutstrapGrid extends StatelessWidget {
     assert(cards.isNotEmpty, 'Cards list cannot be empty');
     assert(columns >= 1, 'Columns must be at least 1');
 
-    // Distribute cards into rows
-    final rows = FSGridUtils.distributeItems(cards, columns).map((rowCards) {
-      final rowChildren = rowCards.map((card) {
-        final wrappedCard = equalHeight
-            ? Expanded(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: card,
-                ),
-              )
-            : card;
-
-        return FlutstrapCol(
-          size: FSColSize.all(12 ~/ columns),
-          child: wrappedCard,
-        );
-      }).toList();
-
-      return FlutstrapRow(
-        children: rowChildren,
-        gap: gap,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment:
-            equalHeight ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
-      );
-    }).toList();
-
     return FlutstrapGrid(
-      children: rows,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Distribute cards into rows
+            final rows = FSGridUtils.distributeItems(cards, columns);
+
+            return Column(
+              children: rows.asMap().entries.map((entry) {
+                final rowIndex = entry.key;
+                final rowCards = entry.value;
+
+                return Padding(
+                  padding: rowIndex > 0
+                      ? EdgeInsets.only(top: gap)
+                      : EdgeInsets.zero,
+                  child: FlutstrapRow(
+                    children: rowCards.map((card) {
+                      final wrappedCard = equalHeight
+                          ? SizedBox(
+                              width: double.infinity,
+                              child: card,
+                            )
+                          : card;
+
+                      return Expanded(
+                        flex: 12 ~/ columns,
+                        child: wrappedCard,
+                      );
+                    }).toList(),
+                    gap: gap,
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
       fluid: fluid,
       padding: padding,
       margin: margin,
-      rowGap: gap,
     );
   }
 

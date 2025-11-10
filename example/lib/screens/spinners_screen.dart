@@ -436,16 +436,13 @@ class _SpinnersScreenState extends State<SpinnersScreen> {
               padding: _demoPadding,
               child: Column(
                 children: [
+                  // Safe spinner button with null checks
                   _buildSpinnerWithCode(
                     context,
                     FlutstrapSpinnerButton(
                       isLoading: _isFormSubmitting,
                       onPressed: _simulateFormSubmission,
                       child: const Text('Submit Form'),
-                      spinner: const FlutstrapSpinner(
-                        variant: FSSpinnerVariant.light,
-                        size: FSSpinnerSize.sm,
-                      ),
                       loadingLabel: 'Submitting form...',
                     ),
                     'Form submission with spinner',
@@ -457,13 +454,8 @@ class _SpinnersScreenState extends State<SpinnersScreen> {
                       isLoading: _isDataLoading,
                       onPressed: _simulateDataLoading,
                       child: const Text('Load Data'),
-                      spinner: const FlutstrapSpinner(
-                        variant: FSSpinnerVariant.light,
-                        size: FSSpinnerSize.sm,
-                        type: FSSpinnerType.growing,
-                      ),
                     ),
-                    'Data loading with growing spinner',
+                    'Data loading with spinner',
                   ),
                   const SizedBox(height: 16),
                   Wrap(
@@ -474,28 +466,16 @@ class _SpinnersScreenState extends State<SpinnersScreen> {
                         isLoading: _isFormSubmitting,
                         onPressed: _simulateFormSubmission,
                         child: const Text('Primary'),
-                        spinner: const FlutstrapSpinner(
-                          variant: FSSpinnerVariant.light,
-                          size: FSSpinnerSize.sm,
-                        ),
                       ),
                       FlutstrapSpinnerButton(
                         isLoading: _isDataLoading,
                         onPressed: _simulateDataLoading,
                         child: const Text('Success'),
-                        spinner: const FlutstrapSpinner(
-                          variant: FSSpinnerVariant.light,
-                          size: FSSpinnerSize.sm,
-                        ),
                       ),
                       FlutstrapSpinnerButton(
                         isLoading: _isProcessing,
                         onPressed: _simulateProcessing,
                         child: const Text('Warning'),
-                        spinner: const FlutstrapSpinner(
-                          variant: FSSpinnerVariant.light,
-                          size: FSSpinnerSize.sm,
-                        ),
                       ),
                     ],
                   ),
@@ -580,58 +560,31 @@ class _SpinnersScreenState extends State<SpinnersScreen> {
 
                   const SizedBox(height: 16),
 
-                  _buildSpinnerWithCode(
-                    context,
-                    FlutstrapSpinner(
-                      variant: FSSpinnerVariant.primary,
-                      type: FSSpinnerType.border,
-                      strokeWidth: 4.0,
-                      label: 'Custom stroke width',
-                    ),
-                    'Custom stroke width (4.0)',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _buildSpinnerWithCode(
-                    context,
-                    FlutstrapSpinner(
-                      variant: FSSpinnerVariant.primary,
-                      color: Colors.purple,
-                      label: 'Custom color',
-                    ),
-                    'Custom color (purple)',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Error handling demo
+                  // Safe spinner with fallback
                   _buildSpinnerWithCode(
                     context,
                     _showErrorHandling
-                        ? FlutstrapSpinner(
-                            variant: FSSpinnerVariant.danger,
-                            label: 'Error State',
-                            fallbackWidget: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.red, width: 2),
-                              ),
-                              child: const Icon(Icons.error,
-                                  size: 12, color: Colors.red),
+                        ? Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red, width: 1),
                             ),
-                            onAnimationError: (error) {
-                              _showSnackbar('Spinner animation error occurred');
-                            },
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.error, size: 16, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Error State'),
+                              ],
+                            ),
                           )
-                        : const FlutstrapSpinner(
+                        : FlutstrapSpinner(
                             variant: FSSpinnerVariant.primary,
                             label: 'Normal State',
                           ),
-                    'Error handling with fallback',
+                    'Error handling demonstration',
                   ),
 
                   const SizedBox(height: 16),

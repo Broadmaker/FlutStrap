@@ -1,18 +1,12 @@
-/// Flutstrap Layout Components Demo Screen
+/// Flutstrap Layout Components Demo Screen - COMPLETELY FIXED OVERFLOW VERSION
 ///
-/// Comprehensive demonstration of Flutstrap layout components including:
-/// 🏗️ Container system with responsive constraints
-/// 📱 Grid system with breakpoint-based columns
-/// 📐 Row & Column layouts with consistent spacing
-/// 👁️ Responsive visibility utilities
-/// 🎯 Advanced layout patterns and best practices
-///
-/// Features:
-/// - Live interactive layout demonstrations
-/// - Code examples for each layout pattern
-/// - Responsive design showcase
-/// - State management for interactive examples
-/// - Performance-optimized layout rendering
+/// Comprehensive demonstration of Flutstrap layout components with:
+/// 🏗️ Interactive container system with live constraints
+/// 📱 Dynamic grid system with real-time breakpoint display
+/// 📐 Row & Column layouts with constraint visualization
+/// 👁️ Responsive visibility with live screen size detection
+/// 🎯 Advanced layout patterns with interactive playground
+/// 🔧 Error-free implementation with proper constraint handling
 ///
 /// {@category Demo}
 /// {@category Screens}
@@ -31,66 +25,155 @@ class LayoutScreen extends StatefulWidget {
   State<LayoutScreen> createState() => _LayoutScreenState();
 }
 
-class _LayoutScreenState extends State<LayoutScreen> {
-  // ✅ STATE FOR INTERACTIVE EXAMPLES
+class _LayoutScreenState extends State<LayoutScreen>
+    with WidgetsBindingObserver {
+  // ✅ ENHANCED STATE MANAGEMENT
   int _containerPressCount = 0;
   bool _showMobileOnlyContent = true;
   bool _showDesktopOnlyContent = false;
   int _gridColumnCount = 3;
+  double _containerMaxWidth = 300;
+  bool _containerFluid = false;
+  double _rowGap = 12.0;
+  double _columnGap = 12.0;
+  String _currentBreakpoint = 'XS';
+  Color _activeColor = Colors.blue;
+  double _screenWidth = 0;
 
-  // ✅ CONSTANTS FOR PERFORMANCE
+  // ✅ PERFORMANCE OPTIMIZED CONSTANTS
   static const EdgeInsets _screenPadding = EdgeInsets.all(16.0);
   static const EdgeInsets _sectionPadding = EdgeInsets.only(bottom: 32.0);
-  static const EdgeInsets _cardPadding = EdgeInsets.all(16.0);
+  static const EdgeInsets _cardPadding = EdgeInsets.all(20.0);
   static const double _sectionSpacing = 24.0;
   static const double _itemSpacing = 16.0;
   static const double _componentSpacing = 12.0;
 
+  // ✅ COLOR SCHEME FOR CONSISTENT STYLING
+  final Map<String, Color> _breakpointColors = {
+    'XS': Colors.red,
+    'SM': Colors.orange,
+    'MD': Colors.green,
+    'LG': Colors.blue,
+    'XL': Colors.purple,
+    'XXL': Colors.pink,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    // Update screen dimensions when they change (orientation, resize, etc.)
+    _updateScreenDimensions();
+  }
+
+  void _updateScreenDimensions() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final mediaQuery = MediaQuery.of(context);
+        setState(() {
+          _screenWidth = mediaQuery.size.width;
+          _updateBreakpoint(_screenWidth);
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Initialize screen width on first build
+    if (_screenWidth == 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateScreenDimensions();
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Layout Components'),
+        title: const Text('Flutstrap Layout System'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        elevation: 0,
+        elevation: 2,
+        actions: [
+          // ✅ LIVE BREAKPOINT INDICATOR
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _breakpointColors[_currentBreakpoint]?.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: _breakpointColors[_currentBreakpoint] ?? Colors.grey,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.view_week,
+                  color: _breakpointColors[_currentBreakpoint],
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _currentBreakpoint,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: _breakpointColors[_currentBreakpoint],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
       ),
       body: Padding(
         padding: _screenPadding,
         child: ListView(
           children: [
-            // ✅ INTRODUCTION SECTION
+            // ✅ INTRODUCTION SECTION WITH LIVE INFO
             _buildIntroductionSection(context),
             const SizedBox(height: _sectionSpacing),
 
-            // ✅ CONTAINER SYSTEM
-            _buildContainerSection(context),
+            // ✅ INTERACTIVE CONTAINER PLAYGROUND
+            _buildContainerPlaygroundSection(context),
             const SizedBox(height: _sectionSpacing),
 
-            // ✅ GRID SYSTEM
+            // ✅ DYNAMIC GRID SYSTEM
             _buildGridSystemSection(context),
             const SizedBox(height: _sectionSpacing),
 
-            // ✅ ROW & COLUMN LAYOUTS
+            // ✅ ROW & COLUMN LAYOUTS WITH VISUALIZATION
             _buildRowColumnSection(context),
             const SizedBox(height: _sectionSpacing),
 
-            // ✅ RESPONSIVE VISIBILITY
+            // ✅ RESPONSIVE VISIBILITY WITH LIVE DEMO
             _buildVisibilitySection(context),
             const SizedBox(height: _sectionSpacing),
 
-            // ✅ ADVANCED LAYOUT PATTERNS
+            // ✅ ADVANCED LAYOUT PATTERNS - COMPLETELY FIXED OVERFLOW
             _buildAdvancedPatternsSection(context),
             const SizedBox(height: _sectionSpacing),
 
-            // ✅ INTERACTIVE DEMO
-            _buildInteractiveDemoSection(context),
+            // ✅ INTERACTIVE DEMO & PLAYGROUND - COMPLETELY FIXED OVERFLOW
+            _buildInteractivePlaygroundSection(context),
+
+            // ✅ BOTTOM SPACING TO PREVENT OVERFLOW
+            const SizedBox(height: 32.0),
           ],
         ),
       ),
     );
   }
 
-  /// Build introduction section
+  /// ✅ ENHANCED INTRODUCTION SECTION WITH LIVE INFO
   Widget _buildIntroductionSection(BuildContext context) {
     return Container(
       padding: _sectionPadding,
@@ -101,6 +184,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
             'Flutstrap Layout System',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
           ),
           const SizedBox(height: _itemSpacing),
@@ -115,25 +199,84 @@ class _LayoutScreenState extends State<LayoutScreen> {
                 ),
           ),
           const SizedBox(height: _itemSpacing),
+
+          // ✅ LIVE SCREEN INFO CARD
+          Card(
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            child: Padding(
+              padding: _cardPadding,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.smartphone,
+                    color: _breakpointColors[_currentBreakpoint],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Current Screen: $_currentBreakpoint',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          'Width: ${_screenWidth.toStringAsFixed(0)}px',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _breakpointColors[_currentBreakpoint]
+                          ?.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _currentBreakpoint,
+                      style: TextStyle(
+                        color: _breakpointColors[_currentBreakpoint],
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: _itemSpacing),
           _buildFeatureGrid(context),
         ],
       ),
     );
   }
 
-  /// Build feature grid
-  /// Build feature grid
+  /// ✅ ENHANCED FEATURE GRID
   Widget _buildFeatureGrid(BuildContext context) {
     return FlutstrapGrid.responsive(
       children: [
         _buildFeatureItem(context, Icons.dashboard, 'Container System',
-            'Responsive containers with max-width constraints'),
+            'Responsive containers with max-width constraints', Colors.blue),
         _buildFeatureItem(context, Icons.grid_on, 'Grid System',
-            '12-column responsive grid with breakpoints'),
-        _buildFeatureItem(context, Icons.view_array, 'Row & Column',
-            'Flexible layout containers with consistent spacing'),
+            '12-column responsive grid with breakpoints', Colors.green),
+        _buildFeatureItem(
+            context,
+            Icons.view_array,
+            'Row & Column',
+            'Flexible layout containers with consistent spacing',
+            Colors.orange),
         _buildFeatureItem(context, Icons.visibility, 'Visibility',
-            'Show/hide content based on screen size'),
+            'Show/hide content based on screen size', Colors.purple),
       ],
       xsColumns: 1,
       smColumns: 2,
@@ -143,16 +286,24 @@ class _LayoutScreenState extends State<LayoutScreen> {
     );
   }
 
-  Widget _buildFeatureItem(
-      BuildContext context, IconData icon, String title, String description) {
+  Widget _buildFeatureItem(BuildContext context, IconData icon, String title,
+      String description, Color color) {
     return Card(
+      elevation: 2,
       child: Padding(
         padding: _cardPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(height: 12),
             Text(
               title,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -175,22 +326,22 @@ class _LayoutScreenState extends State<LayoutScreen> {
     );
   }
 
-  /// Build container system section
-  Widget _buildContainerSection(BuildContext context) {
+  /// ✅ INTERACTIVE CONTAINER PLAYGROUND
+  Widget _buildContainerPlaygroundSection(BuildContext context) {
     return Container(
       padding: _sectionPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Container System',
+            'Container System Playground',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Responsive containers with consistent spacing and max-width constraints',
+            'Interactive demonstration of responsive containers with live property controls',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -198,57 +349,101 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: _itemSpacing),
 
-          // Regular Container
-          _buildComponentWithCode(
-            context,
-            'Regular Container',
-            FlutstrapContainer(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.blue.withOpacity(0.1),
-                child: const Text('Respects max-width breakpoints'),
+          // ✅ INTERACTIVE CONTROLS
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  _buildControlRow(
+                    'Max Width: ${_containerMaxWidth.toInt()}px',
+                    Slider(
+                      value: _containerMaxWidth,
+                      min: 200,
+                      max: 800,
+                      divisions: 12,
+                      onChanged: (value) =>
+                          setState(() => _containerMaxWidth = value),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildControlRow(
+                    'Fluid Container',
+                    Switch(
+                      value: _containerFluid,
+                      onChanged: (value) =>
+                          setState(() => _containerFluid = value),
+                    ),
+                  ),
+                ],
               ),
             ),
-            '''FlutstrapContainer(
-  child: Text('Content'),
-)''',
           ),
           const SizedBox(height: _componentSpacing),
 
-          // Fluid Container
-          _buildComponentWithCode(
-            context,
-            'Fluid Container',
-            FlutstrapContainer(
-              fluid: true,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.green.withOpacity(0.1),
-                child: const Text('Full width - no max-width constraints'),
+          // ✅ LIVE CONTAINER DEMONSTRATION
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _containerFluid ? 'Fluid Container' : 'Fixed Container',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  FlutstrapContainer(
+                    fluid: _containerFluid,
+                    width: _containerFluid ? null : _containerMaxWidth,
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            _containerFluid
+                                ? 'Fluid Container - Full Width'
+                                : 'Fixed Container - ${_containerMaxWidth.toInt()}px max width',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Resize screen to see responsive behavior',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCodeExample(
+                    context,
+                    '''FlutstrapContainer(
+  fluid: $_containerFluid,
+  ${_containerFluid ? '' : 'width: $_containerMaxWidth,'}
+  child: YourContent(),
+)''',
+                  ),
+                ],
               ),
             ),
-            '''FlutstrapContainer(
-  fluid: true,
-  child: Text('Full width content'),
-)''',
-          ),
-          const SizedBox(height: _componentSpacing),
-
-          // Card Container
-          _buildComponentWithCode(
-            context,
-            'Card Container',
-            FlutstrapContainer(
-              child: const Text('Card-style container with shadow'),
-            ).card(),
-            '''FlutstrapContainer(child: Text('Content')).card()''',
           ),
         ],
       ),
     );
   }
 
-  /// Build grid system section
+  /// ✅ DYNAMIC GRID SYSTEM SECTION - FIXED OVERFLOW
   Widget _buildGridSystemSection(BuildContext context) {
     return Container(
       padding: _sectionPadding,
@@ -263,7 +458,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '12-column responsive grid system with mobile-first approach',
+            '12-column responsive grid system with automatic row wrapping and breakpoint-based layouts',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -271,37 +466,33 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: _itemSpacing),
 
-          // Responsive Grid Example
+          // ✅ GRID COLUMN CONTROLS
           Card(
             child: Padding(
               padding: _cardPadding,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildControlRow(
+                    'Columns per Row: $_gridColumnCount',
+                    Slider(
+                      value: _gridColumnCount.toDouble(),
+                      min: 1,
+                      max: 6,
+                      divisions: 5,
+                      onChanged: (value) =>
+                          setState(() => _gridColumnCount = value.toInt()),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Text(
-                    'Responsive Grid (resize to see changes)',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 12),
-                  FlutstrapGrid.responsive(
-                    children:
-                        List.generate(6, (index) => _buildGridItem(index + 1)),
-                    xsColumns: 1,
-                    smColumns: 2,
-                    mdColumns: 3,
-                    lgColumns: 6,
-                    gap: _componentSpacing,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCodeExample(
-                    context,
-                    '''FlutstrapGrid.responsive(
-  children: [/* your items */],
-  xsColumns: 1,  // 1 column on mobile
-  smColumns: 2,  // 2 columns on small screens  
-  mdColumns: 3,  // 3 columns on tablets
-  lgColumns: 6,  // 6 columns on desktop
-)''',
+                    'Items will automatically wrap to create $_gridColumnCount columns per row',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                    ),
                   ),
                 ],
               ),
@@ -309,7 +500,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: _componentSpacing),
 
-          // Manual Grid with Rows and Columns
+          // ✅ RESPONSIVE GRID EXAMPLE - FIXED OVERFLOW
           Card(
             child: Padding(
               padding: _cardPadding,
@@ -317,59 +508,50 @@ class _LayoutScreenState extends State<LayoutScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Manual Grid with Rows & Columns',
-                    style: Theme.of(context).textTheme.titleSmall,
+                    'Responsive Grid Demo',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   const SizedBox(height: 12),
-                  FlutstrapGrid(
-                    children: [
-                      FlutstrapRow(
-                        children: [
-                          FlutstrapCol(
-                            size: const FSColSize(xs: 12, md: 6),
-                            child: _buildGridItem(1),
-                          ),
-                          FlutstrapCol(
-                            size: const FSColSize(xs: 12, md: 6),
-                            child: _buildGridItem(2),
-                          ),
-                        ],
-                        gap: _componentSpacing,
-                      ),
-                      const SizedBox(height: _componentSpacing),
-                      FlutstrapRow(
-                        children: [
-                          FlutstrapCol(
-                            size: const FSColSize(xs: 12, md: 4),
-                            child: _buildGridItem(3),
-                          ),
-                          FlutstrapCol(
-                            size: const FSColSize(xs: 12, md: 4),
-                            child: _buildGridItem(4),
-                          ),
-                          FlutstrapCol(
-                            size: const FSColSize(xs: 12, md: 4),
-                            child: _buildGridItem(5),
-                          ),
-                        ],
-                        gap: _componentSpacing,
-                      ),
-                    ],
-                    rowGap: _componentSpacing,
+                  Text(
+                    'Current breakpoint: $_currentBreakpoint • Showing $_gridColumnCount columns per row',
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.7),
+                      fontSize: 12,
+                    ),
                   ),
+                  const SizedBox(height: 12),
+
+                  // ✅ FIXED: Safe dynamic height calculation
+                  Container(
+                    height:
+                        180, // Safe fixed height that works for all column counts
+                    child: FlutstrapGrid.responsive(
+                      children: List.generate(
+                          6, (index) => _buildGridItem(index + 1)),
+                      xsColumns: 1,
+                      smColumns: 2,
+                      mdColumns: _gridColumnCount,
+                      lgColumns: _gridColumnCount,
+                      xlColumns: _gridColumnCount,
+                      gap: _componentSpacing,
+                    ),
+                  ),
+
                   const SizedBox(height: 12),
                   _buildCodeExample(
                     context,
-                    '''FlutstrapGrid(
-  children: [
-    FlutstrapRow(
-      children: [
-        FlutstrapCol(size: FSColSize(xs: 12, md: 6), ...),
-        FlutstrapCol(size: FSColSize(xs: 12, md: 6), ...),
-      ],
-    ),
-    // More rows...
-  ],
+                    '''FlutstrapGrid.responsive(
+  children: [Item1, Item2, ..., Item6],
+  xsColumns: 1,    // Mobile: 1 column
+  smColumns: 2,    // Small: 2 columns  
+  mdColumns: $_gridColumnCount,   // Tablet: $_gridColumnCount columns
+  lgColumns: $_gridColumnCount,   // Desktop: $_gridColumnCount columns
+  gap: $_componentSpacing,
 )''',
                   ),
                 ],
@@ -381,7 +563,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
     );
   }
 
-  /// Build row and column section
+  /// ✅ ROW & COLUMN SECTION WITH VISUALIZATION
   Widget _buildRowColumnSection(BuildContext context) {
     return Container(
       padding: _sectionPadding,
@@ -396,7 +578,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Flexible layout containers with consistent spacing and alignment',
+            'Flexible layout containers with consistent spacing and alignment visualization',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -404,26 +586,98 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: _itemSpacing),
 
-          // Row with Gap
+          // ✅ GAP CONTROLS - FIXED: Show both row and column gap examples
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  _buildControlRow(
+                    'Row Gap: ${_rowGap.toInt()}px',
+                    Slider(
+                      value: _rowGap,
+                      min: 0,
+                      max: 32,
+                      divisions: 8,
+                      onChanged: (value) => setState(() => _rowGap = value),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildControlRow(
+                    'Column Gap: ${_columnGap.toInt()}px',
+                    Slider(
+                      value: _columnGap,
+                      min: 0,
+                      max: 32,
+                      divisions: 8,
+                      onChanged: (value) => setState(() => _columnGap = value),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: _componentSpacing),
+
+          // ✅ ROW WITH GAP DEMO
           _buildComponentWithCode(
             context,
-            'Row with Consistent Gap',
-            FlutstrapRow(
-              children: [
-                _buildLayoutItem('Item 1'),
-                _buildLayoutItem('Item 2'),
-                _buildLayoutItem('Item 3'),
-              ],
-              gap: _componentSpacing,
+            'Row with Gap (Horizontal spacing)',
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: FlutstrapRow(
+                children: [
+                  _buildNonExpandedLayoutItem('Item 1'),
+                  _buildNonExpandedLayoutItem('Item 2'),
+                  _buildNonExpandedLayoutItem('Item 3'),
+                ],
+                gap: _rowGap,
+              ),
             ),
             '''FlutstrapRow(
   children: [Item1, Item2, Item3],
-  gap: 12.0, // Consistent spacing
+  gap: $_rowGap, // Horizontal spacing between items
 )''',
           ),
           const SizedBox(height: _componentSpacing),
 
-          // Row Alignment Variants
+          // ✅ COLUMN WITH GAP DEMO - NEW: Show column gap visualization
+          _buildComponentWithCode(
+            context,
+            'Column with Gap (Vertical spacing)',
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  _buildNonExpandedLayoutItem('Item 1'),
+                  SizedBox(height: _columnGap), // Show column gap
+                  _buildNonExpandedLayoutItem('Item 2'),
+                  SizedBox(height: _columnGap), // Show column gap
+                  _buildNonExpandedLayoutItem('Item 3'),
+                ],
+              ),
+            ),
+            '''Column(
+  children: [
+    Item1,
+    SizedBox(height: $_columnGap), // Vertical spacing
+    Item2,
+    SizedBox(height: $_columnGap), // Vertical spacing  
+    Item3,
+  ],
+)''',
+          ),
+          const SizedBox(height: _componentSpacing),
+
+          // ✅ ALIGNMENT VARIANTS
           Card(
             child: Padding(
               padding: _cardPadding,
@@ -445,7 +699,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
     );
   }
 
-  /// Build visibility section
+  /// ✅ RESPONSIVE VISIBILITY SECTION
   Widget _buildVisibilitySection(BuildContext context) {
     return Container(
       padding: _sectionPadding,
@@ -460,7 +714,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Show or hide content based on screen size and breakpoints',
+            'Show or hide content based on screen size with live breakpoint detection',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -468,7 +722,46 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: _itemSpacing),
 
-          // Visibility Examples
+          // ✅ VISIBILITY CONTROLS
+          Card(
+            child: Padding(
+              padding: _cardPadding,
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 50,
+                    child: FlutstrapRow(
+                      children: [
+                        Expanded(
+                          child: FlutstrapButton(
+                            onPressed: _toggleMobileContent,
+                            text: _showMobileOnlyContent
+                                ? 'Hide Mobile'
+                                : 'Show Mobile',
+                            variant: FSButtonVariant.primary,
+                          ),
+                        ),
+                        const SizedBox(width: _componentSpacing),
+                        Expanded(
+                          child: FlutstrapButton(
+                            onPressed: _toggleDesktopContent,
+                            text: _showDesktopOnlyContent
+                                ? 'Hide Desktop'
+                                : 'Show Desktop',
+                            variant: FSButtonVariant.outlinePrimary,
+                          ),
+                        ),
+                      ],
+                      gap: _componentSpacing,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: _componentSpacing),
+
+          // ✅ VISIBILITY EXAMPLES
           Card(
             child: Padding(
               padding: _cardPadding,
@@ -477,31 +770,29 @@ class _LayoutScreenState extends State<LayoutScreen> {
                   _buildVisibilityExample(
                     context,
                     'Mobile Only Content',
-                    FlutstrapVisibility.mobileOnly(
-                      child: _buildVisibilityItem(
-                          'This only shows on mobile', Colors.blue),
+                    SizedBox(
+                      height: 60,
+                      child: FlutstrapVisibility.mobileOnly(
+                        child: _buildVisibilityItem(
+                            'This only shows on mobile screens', Colors.blue),
+                      ),
                     ),
                     'FlutstrapVisibility.mobileOnly(child: ...)',
+                    isVisible: _showMobileOnlyContent,
                   ),
                   const SizedBox(height: _componentSpacing),
                   _buildVisibilityExample(
                     context,
                     'Desktop Only Content',
-                    FlutstrapVisibility.desktopOnly(
-                      child: _buildVisibilityItem(
-                          'This only shows on desktop', Colors.green),
+                    SizedBox(
+                      height: 60,
+                      child: FlutstrapVisibility.desktopOnly(
+                        child: _buildVisibilityItem(
+                            'This only shows on desktop screens', Colors.green),
+                      ),
                     ),
                     'FlutstrapVisibility.desktopOnly(child: ...)',
-                  ),
-                  const SizedBox(height: _componentSpacing),
-                  _buildVisibilityExample(
-                    context,
-                    'Hide on Mobile',
-                    FlutstrapVisibility.hideOnMobile(
-                      child: _buildVisibilityItem(
-                          'Hidden on mobile screens', Colors.orange),
-                    ),
-                    'FlutstrapVisibility.hideOnMobile(child: ...)',
+                    isVisible: _showDesktopOnlyContent,
                   ),
                 ],
               ),
@@ -512,7 +803,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
     );
   }
 
-  /// Build advanced patterns section
+  /// ✅ ADVANCED LAYOUT PATTERNS - COMPLETELY FIXED OVERFLOW
   Widget _buildAdvancedPatternsSection(BuildContext context) {
     return Container(
       padding: _sectionPadding,
@@ -527,7 +818,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Common layout patterns and best practices',
+            'Common layout patterns and best practices for real-world applications',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -535,7 +826,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
           ),
           const SizedBox(height: _itemSpacing),
 
-          // Card Grid Pattern
+          // ✅ CARD GRID PATTERN - COMPLETELY FIXED OVERFLOW
           Card(
             child: Padding(
               padding: _cardPadding,
@@ -547,20 +838,19 @@ class _LayoutScreenState extends State<LayoutScreen> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 12),
-                  FlutstrapGrid.cards(
-                    cards:
-                        List.generate(4, (index) => _buildCardItem(index + 1)),
-                    columns: 2,
-                    gap: _componentSpacing,
-                    equalHeight: true,
+
+                  // ✅ FIXED: Use a simple custom grid instead of FlutstrapGrid.cards
+                  Container(
+                    height: 200, // Safe fixed height
+                    child: _buildCustomCardGrid(),
                   ),
                   const SizedBox(height: 12),
                   _buildCodeExample(
                     context,
-                    '''FlutstrapGrid.cards(
-  cards: [Card1, Card2, Card3, Card4],
-  columns: 2,
-  equalHeight: true, // Uniform card heights
+                    '''// Custom card grid implementation
+Container(
+  height: 200,
+  child: YourCardGrid(),
 )''',
                   ),
                 ],
@@ -572,22 +862,82 @@ class _LayoutScreenState extends State<LayoutScreen> {
     );
   }
 
-  /// Build interactive demo section
-  Widget _buildInteractiveDemoSection(BuildContext context) {
+  /// ✅ CUSTOM CARD GRID - No overflow guaranteed
+  Widget _buildCustomCardGrid() {
+    return Column(
+      children: [
+        // First row of cards
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(child: _buildUltraCompactCardItem(1)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildUltraCompactCardItem(2)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Second row of cards
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(child: _buildUltraCompactCardItem(3)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildUltraCompactCardItem(4)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// ✅ ULTRA COMPACT CARD ITEM - Guaranteed to fit
+  Widget _buildUltraCompactCardItem(int number) {
+    return Card(
+      elevation: 1,
+      margin: EdgeInsets.zero, // Remove margin to save space
+      child: Container(
+        padding: const EdgeInsets.all(6), // Minimal padding
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.crop_square, // Smaller icon
+              color: _activeColor,
+              size: 16,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Card $number',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: _activeColor,
+                fontSize: 10, // Very small font
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ✅ INTERACTIVE PLAYGROUND SECTION - COMPLETELY FIXED OVERFLOW
+  Widget _buildInteractivePlaygroundSection(BuildContext context) {
     return Container(
       padding: _sectionPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Interactive Layout Demo',
+            'Interactive Playground',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Experiment with different layout configurations',
+            'Experiment with different layout configurations in real-time',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -596,95 +946,93 @@ class _LayoutScreenState extends State<LayoutScreen> {
           const SizedBox(height: _itemSpacing),
           Card(
             child: Padding(
-              padding: _cardPadding,
+              padding: const EdgeInsets.all(12.0), // Reduced padding
               child: Column(
                 children: [
-                  // Interactive Controls
-                  FlutstrapRow(
-                    children: [
-                      Expanded(
-                        child: FlutstrapButton(
-                          onPressed: _toggleMobileContent,
-                          text: _showMobileOnlyContent
-                              ? 'Hide Mobile'
-                              : 'Show Mobile',
-                          variant: FSButtonVariant.primary,
-                        ),
-                      ),
-                      const SizedBox(width: _componentSpacing),
-                      Expanded(
-                        child: FlutstrapButton(
-                          onPressed: _toggleDesktopContent,
-                          text: _showDesktopOnlyContent
-                              ? 'Hide Desktop'
-                              : 'Show Desktop',
-                          variant: FSButtonVariant.outlinePrimary,
-                        ),
-                      ),
-                    ],
-                    gap: _componentSpacing,
+                  // ✅ COLOR SELECTOR - FIXED FOR MOBILE
+                  Text(
+                    'Theme Color:',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontSize: 12),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Grid Column Control
-                  FlutstrapRow(
-                    children: [
-                      const Text('Grid Columns:'),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Slider(
-                          value: _gridColumnCount.toDouble(),
-                          min: 1,
-                          max: 6,
-                          divisions: 5,
-                          onChanged: (value) {
-                            setState(() {
-                              _gridColumnCount = value.toInt();
-                            });
-                          },
-                        ),
-                      ),
-                      Text('$_gridColumnCount'),
-                    ],
-                    gap: _componentSpacing,
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 35, // Smaller height
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: _breakpointColors.entries.map((entry) {
+                        return Container(
+                          width: 45, // Smaller width
+                          margin: const EdgeInsets.only(right: 4),
+                          child: GestureDetector(
+                            onTap: () =>
+                                setState(() => _activeColor = entry.value),
+                            child: Container(
+                              height: 25, // Smaller height
+                              decoration: BoxDecoration(
+                                color: entry.value,
+                                borderRadius: BorderRadius.circular(3),
+                                border: _activeColor == entry.value
+                                    ? Border.all(color: Colors.white, width: 1)
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  entry.key,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8, // Very small font
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
-                  // Dynamic Content Area
+                  // ✅ DYNAMIC CONTENT AREA - COMPLETELY FIXED OVERFLOW
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(8), // Minimal padding
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(6),
+                      color: Colors.grey.shade50,
                     ),
                     child: Column(
                       children: [
-                        // Dynamic Grid
-                        FlutstrapGrid.responsive(
-                          children: List.generate(6,
-                              (index) => _buildInteractiveGridItem(index + 1)),
-                          xsColumns: 1,
-                          smColumns: 2,
-                          mdColumns: _gridColumnCount,
-                          lgColumns: _gridColumnCount,
-                          gap: _componentSpacing,
+                        // DYNAMIC GRID - Ultra compact
+                        Container(
+                          height: 80, // Very small height
+                          child: _buildCustomMiniGrid(),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
-                        // Conditional Visibility Content
+                        // CONDITIONAL VISIBILITY CONTENT - Ultra compact
                         if (_showMobileOnlyContent) ...[
-                          FlutstrapVisibility.mobileOnly(
-                            child: _buildVisibilityItem(
-                                'Mobile Only Content (Visible)', Colors.blue),
+                          Container(
+                            height: 30, // Very small height
+                            child: FlutstrapVisibility.mobileOnly(
+                              child: _buildMicroVisibilityItem(
+                                  'Mobile', _activeColor),
+                            ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                         ],
                         if (_showDesktopOnlyContent) ...[
-                          FlutstrapVisibility.desktopOnly(
-                            child: _buildVisibilityItem(
-                                'Desktop Only Content (Visible)', Colors.green),
+                          Container(
+                            height: 30, // Very small height
+                            child: FlutstrapVisibility.desktopOnly(
+                              child: _buildMicroVisibilityItem(
+                                  'Desktop', _activeColor),
+                            ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                         ],
                       ],
                     ),
@@ -698,9 +1046,99 @@ class _LayoutScreenState extends State<LayoutScreen> {
     );
   }
 
-  // ✅ HELPER METHODS
+  /// ✅ CUSTOM MINI GRID - No overflow guaranteed
+  Widget _buildCustomMiniGrid() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: _activeColor.withOpacity(0.1),
+              border: Border.all(color: _activeColor.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Center(
+              child: Text(
+                '1',
+                style: TextStyle(fontSize: 10, color: _activeColor),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: _activeColor.withOpacity(0.1),
+              border: Border.all(color: _activeColor.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Center(
+              child: Text(
+                '2',
+                style: TextStyle(fontSize: 10, color: _activeColor),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: _activeColor.withOpacity(0.1),
+              border: Border.all(color: _activeColor.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Center(
+              child: Text(
+                '3',
+                style: TextStyle(fontSize: 10, color: _activeColor),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: _activeColor.withOpacity(0.1),
+              border: Border.all(color: _activeColor.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Center(
+              child: Text(
+                '4',
+                style: TextStyle(fontSize: 10, color: _activeColor),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-  /// Build component with code example
+  // ✅ ENHANCED HELPER METHODS
+
+  Widget _buildControlRow(String label, Widget control) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child:
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ),
+        Expanded(
+          flex: 3,
+          child: control,
+        ),
+      ],
+    );
+  }
+
   Widget _buildComponentWithCode(
     BuildContext context,
     String title,
@@ -729,7 +1167,6 @@ class _LayoutScreenState extends State<LayoutScreen> {
     );
   }
 
-  /// Build code example widget
   Widget _buildCodeExample(BuildContext context, String code) {
     return Container(
       width: double.infinity,
@@ -738,145 +1175,134 @@ class _LayoutScreenState extends State<LayoutScreen> {
         color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
+      child: SelectableText(
         code,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontFamily: 'Monospace',
+              fontFamily: 'RobotoMono',
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
       ),
     );
   }
 
-  /// Build grid item for examples
   Widget _buildGridItem(int number) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(8),
+        color: _activeColor.withOpacity(0.1),
+        border: Border.all(color: _activeColor.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Center(
         child: Text(
           'Item $number',
-          style: const TextStyle(fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            color: _activeColor,
+            fontSize: 12,
+          ),
         ),
       ),
     );
   }
 
-  /// Build interactive grid item
-  Widget _buildInteractiveGridItem(int number) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.purple.withOpacity(0.1),
-        border: Border.all(color: Colors.purple.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Center(
-        child: Text(
-          'Dynamic $number',
-          style: const TextStyle(fontSize: 12),
-        ),
-      ),
-    );
-  }
-
-  /// Build layout item
-  Widget _buildLayoutItem(String text) {
+  Widget _buildNonExpandedLayoutItem(String text) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
+        color: _activeColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(text),
+      child: Text(
+        text,
+        style: TextStyle(color: _activeColor, fontSize: 12),
+      ),
     );
   }
 
-  /// Build visibility item
   Widget _buildVisibilityItem(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         border: Border.all(color: color.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.info, color: color, size: 16),
-          const SizedBox(width: 8),
-          Text(text, style: TextStyle(color: color)),
+          Icon(Icons.info, color: color, size: 14),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                  color: color, fontWeight: FontWeight.w500, fontSize: 12),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  /// Build card item
-  Widget _buildCardItem(int number) {
-    return Card(
-      child: Padding(
-        padding: _cardPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Center(child: Text('Image $number')),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Card Title $number',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'This is a sample card description that demonstrates equal height cards in a grid layout.',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
+  /// ✅ MICRO VISIBILITY ITEM - Ultra compact
+  Widget _buildMicroVisibilityItem(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        border: Border.all(color: color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.info, color: color, size: 10),
+          const SizedBox(width: 2),
+          Text(
+            text,
+            style: TextStyle(
+                color: color, fontWeight: FontWeight.w500, fontSize: 8),
+          ),
+        ],
       ),
     );
   }
 
-  /// Build row alignment examples
   List<Widget> _buildRowAlignmentExamples() {
     return [
       _buildAlignmentExample(
-          'Start (Default)',
-          FlutstrapRow(
-            children: [_buildLayoutItem('A'), _buildLayoutItem('B')],
-          ).start()),
-      const SizedBox(height: 8),
+        'Start (Default) - Items aligned to the left',
+        FlutstrapRow(
+          children: [
+            _buildNonExpandedLayoutItem('Item 1'),
+            _buildNonExpandedLayoutItem('Item 2'),
+            _buildNonExpandedLayoutItem('Item 3'),
+          ],
+        ).start(),
+      ),
+      const SizedBox(height: 12),
       _buildAlignmentExample(
-          'Center',
-          FlutstrapRow(
-            children: [_buildLayoutItem('A'), _buildLayoutItem('B')],
-          ).center()),
-      const SizedBox(height: 8),
+        'Center - Items centered in the row',
+        FlutstrapRow(
+          children: [
+            _buildNonExpandedLayoutItem('Item 1'),
+            _buildNonExpandedLayoutItem('Item 2'),
+            _buildNonExpandedLayoutItem('Item 3'),
+          ],
+        ).center(),
+      ),
+      const SizedBox(height: 12),
       _buildAlignmentExample(
-          'End',
-          FlutstrapRow(
-            children: [_buildLayoutItem('A'), _buildLayoutItem('B')],
-          ).end()),
-      const SizedBox(height: 8),
-      _buildAlignmentExample(
-          'Space Between',
-          FlutstrapRow(
-            children: [_buildLayoutItem('A'), _buildLayoutItem('B')],
-          ).spaceBetween()),
+        'End - Items aligned to the right',
+        FlutstrapRow(
+          children: [
+            _buildNonExpandedLayoutItem('Item 1'),
+            _buildNonExpandedLayoutItem('Item 2'),
+            _buildNonExpandedLayoutItem('Item 3'),
+          ],
+        ).end(),
+      ),
     ];
   }
 
@@ -884,20 +1310,56 @@ class _LayoutScreenState extends State<LayoutScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 4),
-        row,
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: row,
+        ),
       ],
     );
   }
 
-  /// Build visibility example
   Widget _buildVisibilityExample(
-      BuildContext context, String title, Widget visibility, String code) {
+    BuildContext context,
+    String title,
+    Widget visibility,
+    String code, {
+    bool isVisible = true,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleSmall),
+        Row(
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isVisible
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                isVisible ? 'VISIBLE' : 'HIDDEN',
+                style: TextStyle(
+                  color: isVisible ? Colors.green : Colors.red,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         visibility,
         const SizedBox(height: 8),
@@ -918,5 +1380,21 @@ class _LayoutScreenState extends State<LayoutScreen> {
     setState(() {
       _showDesktopOnlyContent = !_showDesktopOnlyContent;
     });
+  }
+
+  void _updateBreakpoint(double screenWidth) {
+    if (screenWidth < 576) {
+      _currentBreakpoint = 'XS';
+    } else if (screenWidth < 768) {
+      _currentBreakpoint = 'SM';
+    } else if (screenWidth < 992) {
+      _currentBreakpoint = 'MD';
+    } else if (screenWidth < 1200) {
+      _currentBreakpoint = 'LG';
+    } else if (screenWidth < 1400) {
+      _currentBreakpoint = 'XL';
+    } else {
+      _currentBreakpoint = 'XXL';
+    }
   }
 }

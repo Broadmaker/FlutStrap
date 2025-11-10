@@ -102,6 +102,7 @@ class FlutstrapCol extends StatelessWidget {
   final AlignmentGeometry? alignment;
   final Color? color;
   final Decoration? decoration;
+  final bool flexible; // FIX: Add flexible option for non-fixed columns
 
   const FlutstrapCol({
     super.key,
@@ -112,6 +113,7 @@ class FlutstrapCol extends StatelessWidget {
     this.alignment,
     this.color,
     this.decoration,
+    this.flexible = false, // FIX: Default to non-flexible (uses Expanded)
   }) : assert(color == null || decoration == null,
             'Cannot provide both color and decoration');
 
@@ -121,9 +123,11 @@ class FlutstrapCol extends StatelessWidget {
     return size.getFlex(responsive.breakpoint);
   }
 
+  /// FIX: Build the column with proper flex behavior
   @override
   Widget build(BuildContext context) {
-    return Container(
+    // The actual column content
+    final columnContent = Container(
       padding: padding,
       margin: margin,
       alignment: alignment,
@@ -131,6 +135,54 @@ class FlutstrapCol extends StatelessWidget {
       decoration: decoration,
       child: child,
     );
+
+    // FIX: Apply constraints to prevent unbounded layout issues
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: 0.0,
+        minWidth: 0.0,
+      ),
+      child: columnContent,
+    );
+  }
+
+  /// FIX: Build method for when used within a FlutstrapRow
+  /// This wraps the column in Expanded/Flexible with proper flex
+  Widget buildForRow(double containerWidth) {
+    final flex = getFlex(containerWidth);
+    final columnContent = Container(
+      padding: padding,
+      margin: margin,
+      alignment: alignment,
+      color: color,
+      decoration: decoration,
+      child: child,
+    );
+
+    // FIX: Use Flexible for flexible columns, Expanded for fixed ones
+    if (flexible) {
+      return Flexible(
+        flex: flex,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: 0.0,
+            minWidth: 0.0,
+          ),
+          child: columnContent,
+        ),
+      );
+    } else {
+      return Expanded(
+        flex: flex,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: 0.0,
+            minWidth: 0.0,
+          ),
+          child: columnContent,
+        ),
+      );
+    }
   }
 
   // ✅ CONSISTENT COPYWITH PATTERN
@@ -143,6 +195,7 @@ class FlutstrapCol extends StatelessWidget {
     AlignmentGeometry? alignment,
     Color? color,
     Decoration? decoration,
+    bool? flexible, // FIX: Include flexible parameter
   }) {
     return FlutstrapCol(
       key: key ?? this.key,
@@ -153,6 +206,7 @@ class FlutstrapCol extends StatelessWidget {
       alignment: alignment ?? this.alignment,
       color: color ?? this.color,
       decoration: decoration ?? this.decoration,
+      flexible: flexible ?? this.flexible, // FIX: Copy flexible parameter
     );
   }
 
@@ -176,6 +230,11 @@ class FlutstrapCol extends StatelessWidget {
       ),
     );
   }
+
+  FlutstrapCol asFlexible() =>
+      copyWith(flexible: true); // FIX: Flexible variant
+  FlutstrapCol asExpanded() =>
+      copyWith(flexible: false); // FIX: Expanded variant
 
   FlutstrapCol fullWidth() => copyWith(size: const FSColSize.all(12));
   FlutstrapCol halfWidth() => copyWith(size: const FSColSize.all(6));

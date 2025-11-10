@@ -421,6 +421,10 @@ class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
       return widget.customLabel!;
     }
 
+    if (widget.label == null) {
+      return const SizedBox.shrink();
+    }
+
     return Text(
       widget.label!,
       style: spinnerStyle.labelTextStyle,
@@ -429,13 +433,17 @@ class _FlutstrapSpinnerState extends State<FlutstrapSpinner>
   }
 
   String _getAccessibilityLabel() {
+    if (widget.label != null) {
+      return widget.label!;
+    }
+
     switch (widget.type) {
       case FSSpinnerType.border:
-        return widget.label ?? 'Rotating loading indicator';
+        return 'Rotating loading indicator';
       case FSSpinnerType.growing:
-        return widget.label ?? 'Pulsing loading indicator';
+        return 'Pulsing loading indicator';
       case FSSpinnerType.dots:
-        return widget.label ?? 'Bouncing dots loading indicator';
+        return 'Bouncing dots loading indicator';
     }
   }
 }
@@ -629,7 +637,7 @@ class FlutstrapSpinnerButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback? onPressed;
   final Widget child;
-  final FlutstrapSpinner spinner;
+  final FlutstrapSpinner? spinner;
   final EdgeInsetsGeometry padding;
   final Size? minimumSize;
   final String loadingLabel;
@@ -639,7 +647,7 @@ class FlutstrapSpinnerButton extends StatelessWidget {
     required this.isLoading,
     required this.onPressed,
     required this.child,
-    this.spinner = const FlutstrapSpinner(size: FSSpinnerSize.sm),
+    this.spinner,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     this.minimumSize = const Size(64, 36),
     this.loadingLabel = 'Loading...',
@@ -647,6 +655,12 @@ class FlutstrapSpinnerButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveSpinner = spinner ??
+        FlutstrapSpinner(
+          variant: FSSpinnerVariant.light,
+          size: FSSpinnerSize.sm,
+        );
+
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
       style: ElevatedButton.styleFrom(
@@ -656,7 +670,7 @@ class FlutstrapSpinnerButton extends StatelessWidget {
       child: isLoading
           ? Semantics(
               label: loadingLabel,
-              child: spinner,
+              child: effectiveSpinner,
             )
           : child,
     );

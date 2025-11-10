@@ -128,6 +128,7 @@ class FlutstrapModal extends StatelessWidget {
     return Semantics(
       scopesRoute: true, // ✅ Use this for modal dialogs
       namesRoute: true, // ✅ This helps screen readers
+      explicitChildNodes: true, // ✅ FIX: Required when scopesRoute is true
       label: _getSemanticLabel(),
       child: Dialog(
         backgroundColor: backgroundColor ?? modalStyle.backgroundColor,
@@ -608,9 +609,13 @@ class FlutstrapModalTrigger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _showModal(context),
-      child: child,
+    return Semantics(
+      button: true,
+      label: 'Open dialog',
+      child: InkWell(
+        onTap: () => _showModal(context),
+        child: child,
+      ),
     );
   }
 

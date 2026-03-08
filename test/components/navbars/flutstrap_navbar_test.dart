@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/components/navbars/flutstrap_navbar.dart';
+import 'package:flutstrap/components/navbars/flutstrap_navbar.dart';
 
 // Custom finder that works with generic types
 Finder findFlutstrapNavbar() {

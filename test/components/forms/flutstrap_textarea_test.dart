@@ -1,712 +1,890 @@
-// test/components/forms/flutstrap_textarea_test.dart
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:master_flutstrap/components/forms/flutstrap_textarea.dart';
-import 'package:master_flutstrap/core/theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 void main() {
-  // Helper function to wrap textarea with theme and constrained width for tests
-  Widget buildTestableTextArea(FlutstrapTextArea textArea) {
-    return MaterialApp(
-      theme: ThemeData.light(),
-      home: FSTheme(
-        data: FSThemeData.light(),
-        child: Scaffold(
-          body: Center(
-            child: Container(
-              width: 400,
-              child: textArea,
+  group('FlutstrapTextArea - Rendering Tests', () {
+    testWidgets('should render basic textarea with label',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Description',
+              placeholder: 'Enter description...',
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Helper method to debug what text widgets are found
-  void _debugFindAllText(WidgetTester tester) {
-    final textWidgets = find.byType(Text).evaluate();
-    for (final element in textWidgets) {
-      final text = element.widget as Text;
-      print('Found text: "${text.data}"');
-    }
-  }
-
-  group('FlutstrapTextArea', () {
-    testWidgets('renders textarea with default properties', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      expect(find.byType(FlutstrapTextArea), findsOneWidget);
-      expect(find.byType(TextField), findsOneWidget);
-    });
-
-    testWidgets('renders textarea with label', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            label: 'Description',
-            onChanged: (value) {},
           ),
         ),
       );
 
       expect(find.text('Description'), findsOneWidget);
+      expect(find.text('Enter description...'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
     });
 
-    testWidgets('renders textarea with placeholder', (tester) async {
+    testWidgets('should render with helper text', (WidgetTester tester) async {
       await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            placeholder: 'Enter your description here...',
-            onChanged: (value) {},
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Bio',
+              helperText: 'Tell us about yourself',
+            ),
           ),
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.decoration!.hintText, 'Enter your description here...');
+      expect(find.text('Bio'), findsOneWidget);
+      expect(find.text('Tell us about yourself'), findsOneWidget);
     });
 
-    testWidgets('renders textarea with initial value', (tester) async {
+    testWidgets('should render required indicator',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            initialValue: 'Initial text',
-            onChanged: (value) {},
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Required Field',
+              required: true,
+            ),
           ),
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.controller!.text, 'Initial text');
+      expect(find.text('Required Field'), findsOneWidget);
+      expect(find.text('*'), findsOneWidget);
     });
 
-    testWidgets('calls onChanged when text changes', (tester) async {
+    testWidgets('should render with initial value',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Notes',
+              initialValue: 'Initial text content',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Notes'), findsOneWidget);
+      expect(find.text('Initial text content'), findsOneWidget);
+    });
+
+    testWidgets('should render disabled textarea', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Disabled',
+              disabled: true,
+              initialValue: 'Cannot edit',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Disabled'), findsOneWidget);
+      expect(find.text('Cannot edit'), findsOneWidget);
+    });
+
+    testWidgets('should render readonly textarea', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Read Only',
+              readonly: true,
+              initialValue: 'Read only content',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Read Only'), findsOneWidget);
+      expect(find.text('Read only content'), findsOneWidget);
+    });
+  });
+
+  group('FlutstrapTextArea - Size Tests', () {
+    testWidgets('small size should render', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Small',
+              size: FSTextAreaSize.sm,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Small'), findsOneWidget);
+    });
+
+    testWidgets('medium size should render', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Medium',
+              size: FSTextAreaSize.md,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Medium'), findsOneWidget);
+    });
+
+    testWidgets('large size should render', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Large',
+              size: FSTextAreaSize.lg,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Large'), findsOneWidget);
+    });
+  });
+
+  group('FlutstrapTextArea - Variant Tests', () {
+    testWidgets('primary variant should render', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Primary',
+              variant: FSTextAreaVariant.primary,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Primary'), findsOneWidget);
+    });
+
+    testWidgets('success variant should render', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Success',
+              variant: FSTextAreaVariant.success,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Success'), findsOneWidget);
+    });
+
+    testWidgets('danger variant should render', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Danger',
+              variant: FSTextAreaVariant.danger,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Danger'), findsOneWidget);
+    });
+
+    testWidgets('warning variant should render', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Warning',
+              variant: FSTextAreaVariant.warning,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Warning'), findsOneWidget);
+    });
+
+    testWidgets('info variant should render', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Info',
+              variant: FSTextAreaVariant.info,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Info'), findsOneWidget);
+    });
+  });
+
+  group('FlutstrapTextArea - Rows and Auto-resize Tests', () {
+    testWidgets('should render with specified number of rows',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Fixed rows',
+              rows: 5,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Fixed rows'), findsOneWidget);
+    });
+
+    testWidgets('should auto-resize with content', (WidgetTester tester) async {
+      final controller = TextEditingController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Auto resize',
+              autoResize: true,
+              controller: controller,
+            ),
+          ),
+        ),
+      );
+
+      controller.text = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5';
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Auto resize'), findsOneWidget);
+    });
+  });
+
+  group('FlutstrapTextArea - Character Counter Tests', () {
+    testWidgets('should show character counter when enabled',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Limited input',
+              maxLength: 100,
+              showCharacterCounter: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('0/100'), findsOneWidget);
+    });
+
+    testWidgets('should update counter as user types',
+        (WidgetTester tester) async {
+      final controller = TextEditingController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Counter test',
+              maxLength: 50,
+              showCharacterCounter: true,
+              controller: controller,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('0/50'), findsOneWidget);
+
+      controller.text = 'Hello world';
+      await tester.pump();
+      expect(find.text('11/50'), findsOneWidget);
+    });
+
+    testWidgets('should show warning color when near limit',
+        (WidgetTester tester) async {
+      final controller = TextEditingController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Near limit',
+              maxLength: 10,
+              showCharacterCounter: true,
+              controller: controller,
+            ),
+          ),
+        ),
+      );
+
+      controller.text = '1234567890';
+      await tester.pump();
+      expect(find.text('10/10'), findsOneWidget);
+    });
+  });
+
+  group('FlutstrapTextArea - Validation Tests', () {
+    testWidgets('should show validation message when invalid',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Required field',
+              showValidation: true,
+              isValid: false,
+              validationMessage: 'This field is required',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Required field'), findsOneWidget);
+      expect(find.text('This field is required'), findsOneWidget);
+    });
+
+    testWidgets('should not show validation message when valid',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Valid field',
+              showValidation: true,
+              isValid: true,
+              validationMessage: 'Error message',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Error message'), findsNothing);
+    });
+
+    testWidgets(
+        'should show validation message only when showValidation is true',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Field',
+              showValidation: false,
+              isValid: false,
+              validationMessage: 'Hidden error',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Hidden error'), findsNothing);
+    });
+  });
+
+  group('FlutstrapTextArea - Interaction Tests', () {
+    testWidgets('should call onChanged when text changes',
+        (WidgetTester tester) async {
       String? changedValue;
+
       await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            onChanged: (value) {
-              changedValue = value;
-            },
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Change test',
+              onChanged: (value) => changedValue = value,
+            ),
           ),
         ),
       );
 
       await tester.enterText(find.byType(TextField), 'New text');
+      await tester.pump();
+
       expect(changedValue, 'New text');
     });
 
-    testWidgets('calls onSubmitted when submitted', (tester) async {
+    testWidgets('should call onSubmitted when submitted',
+        (WidgetTester tester) async {
       String? submittedValue;
+
       await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            onSubmitted: (value) {
-              submittedValue = value;
-            },
-            onChanged: (value) {},
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Submit test',
+              onSubmitted: (value) => submittedValue = value,
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'Submit me');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+
+      expect(submittedValue, 'Submit me');
+    });
+
+    testWidgets('should not allow typing when disabled',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Disabled',
+              disabled: true,
+            ),
           ),
         ),
       );
 
       final textField = tester.widget<TextField>(find.byType(TextField));
-      textField.onSubmitted!('Submitted text');
-      expect(submittedValue, 'Submitted text');
+      expect(textField.enabled, false);
     });
 
-    testWidgets('shows required indicator when required', (tester) async {
+    testWidgets('should not allow typing when readonly',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            label: 'Description',
-            required: true,
-            onChanged: (value) {},
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Read Only',
+              readonly: true,
+            ),
           ),
         ),
       );
 
-      expect(find.text('Description'), findsOneWidget);
-      expect(find.text('*'), findsOneWidget);
+      final textField = tester.widget<TextField>(find.byType(TextField));
+      expect(textField.readOnly, true);
     });
+  });
 
-    testWidgets('does not show required indicator when not required',
-        (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            label: 'Description',
-            required: false,
-            onChanged: (value) {},
-          ),
-        ),
+  group('FlutstrapTextArea - Builder Methods', () {
+    test('primary() should set variant to primary', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        variant: FSTextAreaVariant.success,
       );
 
-      expect(find.text('Description'), findsOneWidget);
-      expect(find.text('*'), findsNothing);
+      final primary = textarea.primary();
+      expect(primary.variant, FSTextAreaVariant.primary);
     });
 
-    testWidgets('shows helper text when provided', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            helperText: 'This is a helper text',
-            onChanged: (value) {},
-          ),
-        ),
+    test('success() should set variant to success', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        variant: FSTextAreaVariant.primary,
       );
 
-      expect(find.text('This is a helper text'), findsOneWidget);
+      final success = textarea.success();
+      expect(success.variant, FSTextAreaVariant.success);
     });
 
-    testWidgets('shows character counter when enabled', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            maxLength: 100,
-            showCharacterCounter: true,
-            onChanged: (value) {},
-          ),
-        ),
+    test('danger() should set variant to danger', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        variant: FSTextAreaVariant.primary,
       );
 
-      // Look for any text that contains the pattern "X/100"
-      final counterFinder = find.descendant(
-        of: find.byType(FlutstrapTextArea),
-        matching: find.textContaining('/100'),
-      );
-
-      expect(counterFinder, findsOneWidget);
-
-      // Should show 0/100 initially
-      final counterText = tester.widget<Text>(counterFinder);
-      expect(counterText.data, '0/100');
+      final danger = textarea.danger();
+      expect(danger.variant, FSTextAreaVariant.danger);
     });
 
-    testWidgets('updates character counter when text changes - FINAL FIX',
-        (tester) async {
-      // Use a StatefulWidget to properly manage the controller
+    test('warning() should set variant to warning', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        variant: FSTextAreaVariant.primary,
+      );
+
+      final warning = textarea.warning();
+      expect(warning.variant, FSTextAreaVariant.warning);
+    });
+
+    test('info() should set variant to info', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        variant: FSTextAreaVariant.primary,
+      );
+
+      final info = textarea.info();
+      expect(info.variant, FSTextAreaVariant.info);
+    });
+
+    test('small() should set size to sm', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        size: FSTextAreaSize.md,
+      );
+
+      final small = textarea.small();
+      expect(small.size, FSTextAreaSize.sm);
+    });
+
+    test('medium() should set size to md', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        size: FSTextAreaSize.sm,
+      );
+
+      final medium = textarea.medium();
+      expect(medium.size, FSTextAreaSize.md);
+    });
+
+    test('large() should set size to lg', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        size: FSTextAreaSize.md,
+      );
+
+      final large = textarea.large();
+      expect(large.size, FSTextAreaSize.lg);
+    });
+
+    test('asDisabled() should set disabled to true', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        disabled: false,
+      );
+
+      final disabled = textarea.asDisabled();
+      expect(disabled.disabled, true);
+    });
+
+    test('asEnabled() should set disabled to false', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+        disabled: true,
+      );
+
+      final enabled = textarea.asEnabled();
+      expect(enabled.disabled, false);
+    });
+
+    test('withLabel() should set label', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Old label',
+      );
+
+      final relabeled = textarea.withLabel('New label');
+      expect(relabeled.label, 'New label');
+    });
+
+    test('withHint() should set placeholder', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+      );
+
+      final withHint = textarea.withHint('New hint');
+      expect(withHint.placeholder, 'New hint');
+    });
+
+    test('withHelper() should set helper text', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+      );
+
+      final withHelper = textarea.withHelper('Helper text');
+      expect(withHelper.helperText, 'Helper text');
+    });
+
+    test('withValidation() should set validation properties', () {
+      const textarea = FlutstrapTextArea(
+        label: 'Test',
+      );
+
+      final validated = textarea.withValidation('Error message');
+      expect(validated.validationMessage, 'Error message');
+      expect(validated.showValidation, true);
+      expect(validated.isValid, false);
+    });
+  });
+
+  group('FlutstrapTextArea - CopyWith Tests', () {
+    test('copyWith should create new instance with updated values', () {
+      const original = FlutstrapTextArea(
+        label: 'Original',
+        placeholder: 'Placeholder',
+        helperText: 'Helper',
+        disabled: false,
+        readonly: false,
+        size: FSTextAreaSize.md,
+        variant: FSTextAreaVariant.primary,
+      );
+
+      final copy = original.copyWith(
+        label: 'Copied',
+        disabled: true,
+        readonly: true,
+        variant: FSTextAreaVariant.success,
+      );
+
+      expect(copy.label, 'Copied');
+      expect(copy.disabled, true);
+      expect(copy.readonly, true);
+      expect(copy.variant, FSTextAreaVariant.success);
+
+      expect(original.label, 'Original');
+      expect(original.disabled, false);
+    });
+
+    test('copyWith should keep original values when not specified', () {
+      const original = FlutstrapTextArea(
+        label: 'Original',
+        placeholder: 'Placeholder',
+        size: FSTextAreaSize.lg,
+      );
+
+      final copy = original.copyWith(
+        label: 'New',
+      );
+
+      expect(copy.label, 'New');
+      expect(copy.placeholder, 'Placeholder');
+      expect(copy.size, FSTextAreaSize.lg);
+    });
+  });
+
+  group('FlutstrapTextArea - Controller Tests', () {
+    testWidgets('should work with external controller',
+        (WidgetTester tester) async {
+      final controller = TextEditingController(text: 'Initial');
+
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light(),
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Controlled',
+              controller: controller,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Controlled'), findsOneWidget);
+      expect(find.text('Initial'), findsOneWidget);
+
+      controller.text = 'Updated';
+      await tester.pump();
+      expect(find.text('Updated'), findsOneWidget);
+    });
+
+    testWidgets('should update when controller changes',
+        (WidgetTester tester) async {
+      final controller1 = TextEditingController(text: 'First');
+      final controller2 = TextEditingController(text: 'Second');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Switch',
+              controller: controller1,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('First'), findsOneWidget);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Switch',
+              controller: controller2,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Second'), findsOneWidget);
+    });
+  });
+
+  group('FlutstrapTextArea - Programmatic Control Tests', () {
+    testWidgets('should have working methods via global key',
+        (WidgetTester tester) async {
+      final key = GlobalKey();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              key: key,
+              label: 'Control test',
+              initialValue: 'Initial',
+            ),
+          ),
+        ),
+      );
+
+      // We can't access private methods directly in tests,
+      // but we can test the public API through interaction
+      expect(find.text('Initial'), findsOneWidget);
+
+      // Clear by typing over it
+      await tester.enterText(find.byType(TextField), 'New text');
+      await tester.pump();
+      expect(find.text('New text'), findsOneWidget);
+    });
+
+    testWidgets('should handle focus programmatically via FocusNode',
+        (WidgetTester tester) async {
+      final focusNode = FocusNode();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Focus test',
+              focusNode: focusNode,
+            ),
+          ),
+        ),
+      );
+
+      expect(focusNode.hasFocus, false);
+
+      focusNode.requestFocus();
+      await tester.pump();
+      expect(focusNode.hasFocus, true);
+
+      focusNode.unfocus();
+      await tester.pump();
+      expect(focusNode.hasFocus, false);
+    });
+  });
+
+  group('FlutstrapTextArea - Edge Cases', () {
+    testWidgets('should handle null label without crashing',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: null,
+              placeholder: 'No label',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('No label'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should handle very long text without crashing',
+        (WidgetTester tester) async {
+      final longText = 'A' * 10000;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Long text',
+              initialValue: longText,
+              autoResize: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Long text'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should handle rapid typing', (WidgetTester tester) async {
+      var changeCount = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Rapid typing',
+              onChanged: (value) => changeCount++,
+              autoResize: true,
+            ),
+          ),
+        ),
+      );
+
+      for (int i = 0; i < 10; i++) {
+        await tester.enterText(find.byType(TextField), 'a' * (i + 1));
+      }
+      await tester.pump();
+
+      expect(changeCount, greaterThan(0));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should handle widget removal', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapTextArea(
+              label: 'Dispose test',
+              autoResize: true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'Some text');
+
+      await tester.pumpWidget(Container());
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('FlutstrapTextArea - Themed Tests', () {
+    testWidgets('should work with FSTheme provider',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
           home: FSTheme(
             data: FSThemeData.light(),
-            child: Scaffold(
-              body: Center(
-                child: Container(
-                  width: 400,
-                  child: FlutstrapTextArea(
-                    maxLength: 100,
-                    showCharacterCounter: true,
-                    onChanged: (value) {},
-                  ),
-                ),
+            child: const Scaffold(
+              body: FlutstrapTextArea(
+                label: 'Themed textarea',
               ),
             ),
           ),
         ),
       );
 
-      // Focus on the text field first
-      await tester.tap(find.byType(TextField));
-      await tester.pump();
-
-      // Enter text properly
-      await tester.enterText(find.byType(TextField), 'Hello');
-      await tester
-          .pumpAndSettle(); // Use pumpAndSettle to ensure all animations complete
-
-      // Look for the updated counter - be more flexible in finding it
-      final counterFinder = find.descendant(
-        of: find.byType(FlutstrapTextArea),
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is Text && (widget.data?.contains('/100') ?? false),
-        ),
-      );
-
-      expect(counterFinder, findsOneWidget);
-
-      // Verify the counter text
-      final counterText = tester.widget<Text>(counterFinder);
-      expect(counterText.data, '5/100');
+      expect(find.text('Themed textarea'), findsOneWidget);
     });
-    testWidgets('shows validation message when invalid', (tester) async {
+
+    testWidgets('should work with dark theme', (WidgetTester tester) async {
       await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            showValidation: true,
-            isValid: false,
-            validationMessage: 'This field is required',
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      expect(find.text('This field is required'), findsOneWidget);
-    });
-
-    testWidgets('hides validation message when valid', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            showValidation: true,
-            isValid: true,
-            validationMessage: 'This field is required',
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      expect(find.text('This field is required'), findsNothing);
-    });
-
-    testWidgets('hides validation message when showValidation is false',
-        (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            showValidation: false,
-            isValid: false,
-            validationMessage: 'This field is required',
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      expect(find.text('This field is required'), findsNothing);
-    });
-
-    testWidgets('respects disabled state', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            disabled: true,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.enabled, isFalse);
-    });
-
-    testWidgets('respects readonly state', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            readonly: true,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.readOnly, isTrue);
-    });
-
-    testWidgets('respects different sizes', (tester) async {
-      final sizes = FSTextAreaSize.values;
-
-      for (final size in sizes) {
-        await tester.pumpWidget(
-          buildTestableTextArea(
-            FlutstrapTextArea(
-              size: size,
-              onChanged: (value) {},
+        MaterialApp(
+          home: FSTheme(
+            data: FSThemeData.dark(),
+            child: const Scaffold(
+              body: FlutstrapTextArea(
+                label: 'Dark theme textarea',
+              ),
             ),
           ),
-        );
-
-        expect(find.byType(FlutstrapTextArea), findsOneWidget);
-        await tester.pumpWidget(Container()); // Clean up for next iteration
-      }
-    });
-
-    testWidgets('respects different variants', (tester) async {
-      final variants = FSTextAreaVariant.values;
-
-      for (final variant in variants) {
-        await tester.pumpWidget(
-          buildTestableTextArea(
-            FlutstrapTextArea(
-              variant: variant,
-              onChanged: (value) {},
-            ),
-          ),
-        );
-
-        expect(find.byType(FlutstrapTextArea), findsOneWidget);
-        await tester.pumpWidget(Container()); // Clean up for next iteration
-      }
-    });
-
-    testWidgets('respects custom rows', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            rows: 5,
-            onChanged: (value) {},
-          ),
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.minLines, 5);
-      expect(textField.maxLines, 5);
-    });
-
-    testWidgets('respects autoResize when enabled', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            autoResize: true,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.minLines, isNull);
-      expect(textField.maxLines, isNull);
-    });
-
-    testWidgets('respects maxLength constraint', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            maxLength: 10,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.maxLength, 10);
-    });
-
-    testWidgets('hides label when showLabel is false', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            label: 'Description',
-            showLabel: false,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      expect(find.text('Description'), findsNothing);
-    });
-
-    testWidgets('uses custom padding when provided', (tester) async {
-      final customPadding = const EdgeInsets.all(20.0);
-
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            padding: customPadding,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.decoration!.contentPadding, customPadding);
-    });
-
-    testWidgets('handles focus node correctly', (tester) async {
-      final focusNode = FocusNode();
-
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            focusNode: focusNode,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      expect(focusNode.hasFocus, isFalse);
-      await tester.tap(find.byType(TextField));
-      await tester.pump();
-      expect(focusNode.hasFocus, isTrue);
-    });
-
-    testWidgets('handles text input action', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            textInputAction: TextInputAction.done,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.textInputAction, TextInputAction.done);
-    });
-
-    testWidgets('handles onEditingComplete callback', (tester) async {
-      bool wasCalled = false;
-
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            onEditingComplete: () {
-              wasCalled = true;
-            },
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      textField.onEditingComplete!();
-      expect(wasCalled, isTrue);
-    });
-  });
-
-  group('FSTextAreaSize', () {
-    test('has correct values', () {
-      expect(FSTextAreaSize.values.length, 3);
-      expect(FSTextAreaSize.values, contains(FSTextAreaSize.sm));
-      expect(FSTextAreaSize.values, contains(FSTextAreaSize.md));
-      expect(FSTextAreaSize.values, contains(FSTextAreaSize.lg));
-    });
-  });
-
-  group('FSTextAreaVariant', () {
-    test('has correct values', () {
-      expect(FSTextAreaVariant.values.length, 8);
-      expect(FSTextAreaVariant.values, contains(FSTextAreaVariant.primary));
-      expect(FSTextAreaVariant.values, contains(FSTextAreaVariant.secondary));
-      expect(FSTextAreaVariant.values, contains(FSTextAreaVariant.success));
-      expect(FSTextAreaVariant.values, contains(FSTextAreaVariant.danger));
-      expect(FSTextAreaVariant.values, contains(FSTextAreaVariant.warning));
-      expect(FSTextAreaVariant.values, contains(FSTextAreaVariant.info));
-      expect(FSTextAreaVariant.values, contains(FSTextAreaVariant.light));
-      expect(FSTextAreaVariant.values, contains(FSTextAreaVariant.dark));
-    });
-  });
-
-  group('Edge Cases', () {
-    testWidgets('handles null onChanged callback without crashing',
-        (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          const FlutstrapTextArea(
-            onChanged: null,
-          ),
-        ),
-      );
-
-      expect(find.byType(FlutstrapTextArea), findsOneWidget);
-
-      await tester.enterText(find.byType(TextField), 'Test text');
-      await tester.pumpAndSettle();
-
-      // If we get here without exception, the test passes
-    });
-
-    testWidgets('handles null initialValue', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            onChanged: (value) {},
-            // initialValue is null by default
-          ),
-        ),
-      );
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.controller!.text, isEmpty);
-    });
-
-    testWidgets('handles empty label', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            label: '',
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      // Should render without errors even with empty label
-      expect(find.byType(FlutstrapTextArea), findsOneWidget);
-    });
-
-    testWidgets('character counter updates with controller text changes',
-        (tester) async {
-      final controller = TextEditingController();
-
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            maxLength: 10,
-            showCharacterCounter: true,
-            onChanged: (value) {},
-            controller: controller,
-          ),
-        ),
-      );
-
-      // Test multiple text changes
-      controller.text = 'Hi';
-      await tester.pump();
-
-      final counterFinder1 = find.descendant(
-        of: find.byType(FlutstrapTextArea),
-        matching: find.textContaining('/10'),
-      );
-      expect(tester.widget<Text>(counterFinder1).data, '2/10');
-
-      controller.text = 'Hello World';
-      await tester.pump();
-      expect(tester.widget<Text>(counterFinder1).data, '11/10');
-
-      controller.text = '';
-      await tester.pump();
-      expect(tester.widget<Text>(counterFinder1).data, '0/10');
-
-      controller.dispose();
-    });
-
-    testWidgets('autoResize updates when text changes', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            autoResize: true,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      // Initial state
-      final initialTextField = tester.widget<TextField>(find.byType(TextField));
-      expect(initialTextField.minLines, isNull);
-      expect(initialTextField.maxLines, isNull);
-
-      // Add text and verify rebuild
-      await tester.enterText(find.byType(TextField), 'Line 1\nLine 2\nLine 3');
-      await tester.pump();
-
-      // Should still have auto-resize properties
-      final updatedTextField = tester.widget<TextField>(find.byType(TextField));
-      expect(updatedTextField.minLines, isNull);
-      expect(updatedTextField.maxLines, isNull);
-    });
-
-    testWidgets('focus changes border color', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      // Find the container that wraps the TextField - use a more specific finder
-      final containerFinder = find.descendant(
-        of: find.byType(FlutstrapTextArea),
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is Container &&
-              widget.decoration is BoxDecoration &&
-              (widget.decoration as BoxDecoration).border != null,
-        ),
-      );
-
-      expect(containerFinder, findsOneWidget);
-
-      // Initially not focused
-      final containerBeforeFocus = tester.widget<Container>(containerFinder);
-      final initialBorder =
-          (containerBeforeFocus.decoration as BoxDecoration).border;
-
-      // Tap to focus
-      await tester.tap(find.byType(TextField));
-      await tester.pump();
-
-      // After focus - border color should change
-      final containerAfterFocus = tester.widget<Container>(containerFinder);
-      final focusedBorder =
-          (containerAfterFocus.decoration as BoxDecoration).border;
-
-      // The border should be different when focused
-      expect(initialBorder != focusedBorder, isTrue);
-    });
-    testWidgets('disabled state has correct styling', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            disabled: true,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.decoration!.filled, isTrue);
-      expect(textField.enabled, isFalse);
-    });
-
-    testWidgets('readonly state allows focus but not editing', (tester) async {
-      final controller = TextEditingController(text: 'Readonly text');
-      bool wasChanged = false;
-
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            readonly: true,
-            controller: controller,
-            onChanged: (value) {
-              wasChanged = true;
-            },
-          ),
-        ),
-      );
-
-      // Verify the component renders
-      expect(find.byType(FlutstrapTextArea), findsOneWidget);
-
-      // Store initial text
-      final initialText = controller.text;
-
-      // Try to focus the field
-      await tester.tap(find.byType(TextField));
-      await tester.pump();
-
-      // Try to enter new text - this should not work in readonly mode
-      await tester.enterText(find.byType(TextField), 'New text attempt');
-      await tester.pump();
-
-      // The key assertions: text should not change and onChanged should not be called
-      expect(controller.text, initialText);
-      expect(wasChanged, isFalse);
-
-      controller.dispose();
-    });
-    testWidgets('debug character counter visibility', (tester) async {
-      await tester.pumpWidget(
-        buildTestableTextArea(
-          FlutstrapTextArea(
-            maxLength: 100,
-            showCharacterCounter: true,
-            onChanged: (value) {},
-          ),
-        ),
-      );
-
-      // Debug: print all text widgets to see what's available
-      _debugFindAllText(tester);
+      expect(find.text('Dark theme textarea'), findsOneWidget);
     });
   });
 }

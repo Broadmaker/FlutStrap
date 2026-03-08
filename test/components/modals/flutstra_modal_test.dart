@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/components/modals/flutstrap_modal.dart';
+import 'package:flutstrap/components/modals/flutstrap_modal.dart';
 
 void main() {
   group('FlutstrapModal', () {

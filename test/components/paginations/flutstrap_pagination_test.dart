@@ -1,7 +1,7 @@
 // test/components/paginations/flutstrap_pagination_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:master_flutstrap/components/paginations/flutstrap_pagination.dart';
+import 'package:flutstrap/components/paginations/flutstrap_pagination.dart';
 
 void main() {
   // Helper function to wrap pagination with constrained width for tests

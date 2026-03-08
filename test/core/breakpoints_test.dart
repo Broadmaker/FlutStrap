@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:master_flutstrap/core/breakpoints.dart';
+import 'package:flutstrap/core/breakpoints.dart';
 
 void main() {
   group('FSBreakpoints', () {

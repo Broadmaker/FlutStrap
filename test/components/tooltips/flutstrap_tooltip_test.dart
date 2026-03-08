@@ -1,7 +1,7 @@
 // test/components/tooltips/flutstrap_tooltip_smoke_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:master_flutstrap/components/tooltips/flutstrap_tooltip.dart';
+import 'package:flutstrap/components/tooltips/flutstrap_tooltip.dart';
 
 void main() {
   testWidgets('FlutstrapTooltip smoke test', (tester) async {

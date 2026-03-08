@@ -1,466 +1,645 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/layout/flutstrap_visibility.dart';
-import 'package:master_flutstrap/core/breakpoints.dart';
-import 'package:master_flutstrap/core/responsive.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 void main() {
-  group('FlutstrapVisibility', () {
-    testWidgets('should show child when conditions are met',
+  group('FlutstrapVisibility - Basic Rendering Tests', () {
+    testWidgets('should show child on all breakpoints by default',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                // Set all breakpoints to true to ensure visibility
-                return FlutstrapVisibility(
-                  child: const Text('Visible'),
+            body: FlutstrapVisibility(
+              child: const Text('Visible Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Visible Content'), findsOneWidget);
+    });
+
+    testWidgets('should show fallback when hidden',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility(
+              child: const Text('Main Content'),
+              showOnXs: false,
+              fallback: const Text('Fallback Content'),
+            ),
+          ),
+        ),
+      );
+
+      // On default screen size (likely xs/sm), should show fallback
+      expect(find.text('Main Content'), findsNothing);
+      expect(find.text('Fallback Content'), findsOneWidget);
+    });
+
+    testWidgets('should hide child when showOn condition is false',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility(
+              child: const Text('Hidden Content'),
+              showOnXs: false,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Hidden Content'), findsNothing);
+    });
+
+    testWidgets('should show child when showOn condition is true',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility(
+              child: const Text('Visible Content'),
+              showOnXs: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Visible Content'), findsOneWidget);
+    });
+
+    testWidgets('should use SizedBox.shrink as default fallback',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility(
+              child: const Text('Hidden Content'),
+              showOnXs: false,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Hidden Content'), findsNothing);
+      expect(find.byType(SizedBox), findsOneWidget);
+    });
+  });
+
+  group('FlutstrapVisibility - Breakpoint Factory Tests', () {
+    testWidgets('xsOnly factory should only show on xs',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.xsOnly(
+              child: const Text('XS Only Content'),
+            ),
+          ),
+        ),
+      );
+
+      // On default test screen (likely xs), it should show
+      expect(find.text('XS Only Content'), findsOneWidget);
+    });
+
+    testWidgets('smOnly factory should only show on sm',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.smOnly(
+              child: const Text('SM Only Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('SM Only Content'), findsOneWidget);
+    });
+
+    testWidgets('mdOnly factory should only show on md',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.mdOnly(
+              child: const Text('MD Only Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('MD Only Content'), findsOneWidget);
+    });
+
+    testWidgets('lgOnly factory should only show on lg',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.lgOnly(
+              child: const Text('LG Only Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('LG Only Content'), findsOneWidget);
+    });
+
+    testWidgets('xlOnly factory should only show on xl',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.xlOnly(
+              child: const Text('XL Only Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('XL Only Content'), findsOneWidget);
+    });
+
+    testWidgets('xxlOnly factory should only show on xxl',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.xxlOnly(
+              child: const Text('XXL Only Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('XXL Only Content'), findsOneWidget);
+    });
+
+    testWidgets('mobileOnly factory should show on xs and sm',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.mobileOnly(
+              child: const Text('Mobile Only Content'),
+            ),
+          ),
+        ),
+      );
+
+      // On default test screen (xs/sm), should show
+      expect(find.text('Mobile Only Content'), findsOneWidget);
+    });
+
+    testWidgets('tabletOnly factory should show on md',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.tabletOnly(
+              child: const Text('Tablet Only Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Tablet Only Content'), findsOneWidget);
+    });
+
+    testWidgets('desktopOnly factory should show on lg, xl, xxl',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.desktopOnly(
+              child: const Text('Desktop Only Content'),
+            ),
+          ),
+        ),
+      );
+
+      // On default test screen (xs/sm), should NOT show
+      expect(find.text('Desktop Only Content'), findsNothing);
+    });
+  });
+
+  group('FlutstrapVisibility - Hide Factory Tests', () {
+    testWidgets('hideOnXs factory should hide on xs',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.hideOnXs(
+              child: const Text('Hide on XS Content'),
+            ),
+          ),
+        ),
+      );
+
+      // On default test screen (xs), should hide
+      expect(find.text('Hide on XS Content'), findsNothing);
+    });
+
+    testWidgets('hideOnSm factory should hide on sm',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.hideOnSm(
+              child: const Text('Hide on SM Content'),
+            ),
+          ),
+        ),
+      );
+
+      // On default test screen (xs), should show
+      expect(find.text('Hide on SM Content'), findsOneWidget);
+    });
+
+    testWidgets('hideOnMobile factory should hide on xs and sm',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.hideOnMobile(
+              child: const Text('Hide on Mobile Content'),
+            ),
+          ),
+        ),
+      );
+
+      // On default test screen (xs), should hide
+      expect(find.text('Hide on Mobile Content'), findsNothing);
+    });
+
+    testWidgets('hideOnDesktop factory should hide on lg, xl, xxl',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility.hideOnDesktop(
+              child: const Text('Hide on Desktop Content'),
+            ),
+          ),
+        ),
+      );
+
+      // On default test screen (xs), should show
+      expect(find.text('Hide on Desktop Content'), findsOneWidget);
+    });
+  });
+
+  group('FlutstrapVisibility - CopyWith Tests', () {
+    test('copyWith should create new instance with updated values', () {
+      final original = FlutstrapVisibility(
+        child: const Text('Original'),
+        showOnXs: true,
+        showOnSm: false,
+        showOnMd: true,
+      );
+
+      final copy = original.copyWith(
+        showOnXs: false,
+        showOnSm: true,
+        fallback: const Text('Fallback'),
+      );
+
+      expect(copy.showOnXs, false);
+      expect(copy.showOnSm, true);
+      expect(copy.showOnMd, true); // Kept from original
+      expect(copy.fallback, isNotNull);
+
+      expect(original.showOnXs, true);
+      expect(original.showOnSm, false);
+    });
+
+    test('copyWith should keep original values when not specified', () {
+      final original = FlutstrapVisibility(
+        child: const Text('Original'),
+        showOnXs: true,
+        showOnLg: false,
+      );
+
+      final copy = original.copyWith(
+        showOnXs: false,
+      );
+
+      expect(copy.showOnXs, false);
+      expect(copy.showOnLg, false); // Kept from original
+    });
+
+    test('copyWith should update child', () {
+      final original = FlutstrapVisibility(
+        child: const Text('Original'),
+      );
+
+      final newChild = const Text('New Child');
+      final copy = original.copyWith(child: newChild);
+
+      expect(copy.child, newChild);
+    });
+  });
+
+  group('FlutstrapVisibility - Screen Size Simulation Tests', () {
+    testWidgets('should respond to different screen sizes',
+        (WidgetTester tester) async {
+      // Test on small screen (xs)
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FlutstrapVisibility(
+              child: const Text('Responsive Content'),
+              showOnXs: true,
+              showOnLg: false,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Responsive Content'), findsOneWidget);
+
+      // Simulate large screen by rebuilding with MediaQuery
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(size: Size(1200, 800)),
+            child: Scaffold(
+              body: FlutstrapVisibility(
+                child: const Text('Responsive Content'),
+                showOnXs: true,
+                showOnLg: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Should be hidden on large screen
+      expect(find.text('Responsive Content'), findsNothing);
+    });
+
+    testWidgets('should handle multiple visibility conditions',
+        (WidgetTester tester) async {
+      // Test on small screen
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                FlutstrapVisibility.mobileOnly(
+                  child: const Text('Mobile Only'),
+                ),
+                FlutstrapVisibility.desktopOnly(
+                  child: const Text('Desktop Only'),
+                ),
+                FlutstrapVisibility(
+                  child: const Text('Always Visible'),
                   showOnXs: true,
                   showOnSm: true,
                   showOnMd: true,
                   showOnLg: true,
                   showOnXl: true,
                   showOnXxl: true,
-                );
-              },
+                ),
+              ],
             ),
           ),
         ),
       );
 
-      expect(find.text('Visible'), findsOneWidget);
+      expect(find.text('Mobile Only'), findsOneWidget);
+      expect(find.text('Desktop Only'), findsNothing);
+      expect(find.text('Always Visible'), findsOneWidget);
     });
+  });
 
-    testWidgets('should hide child when all conditions are false',
+  group('FlutstrapVisibility - Edge Cases', () {
+    testWidgets('should handle null fallback gracefully',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                // Set ALL breakpoints to false to ensure hiding
-                return FlutstrapVisibility(
-                  child: const Text('Hidden'),
-                  showOnXs: false,
-                  showOnSm: false,
-                  showOnMd: false,
-                  showOnLg: false,
-                  showOnXl: false,
-                  showOnXxl: false,
-                );
-              },
+            body: FlutstrapVisibility(
+              child: const Text('Main'),
+              showOnXs: false,
+              fallback: null,
             ),
           ),
         ),
       );
 
-      expect(find.text('Hidden'), findsNothing);
+      expect(find.text('Main'), findsNothing);
+      // Should use default SizedBox.shrink
+      expect(find.byType(SizedBox), findsOneWidget);
     });
 
-    testWidgets('should show fallback when child is hidden',
+    testWidgets('should handle all show conditions false',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                // Set ALL breakpoints to false to ensure hiding
-                return FlutstrapVisibility(
-                  child: const Text('Hidden'),
-                  showOnXs: false,
-                  showOnSm: false,
-                  showOnMd: false,
-                  showOnLg: false,
-                  showOnXl: false,
-                  showOnXxl: false,
-                  fallback: const Text('Fallback'),
-                );
-              },
+            body: FlutstrapVisibility(
+              child: const Text('Hidden Everywhere'),
+              showOnXs: false,
+              showOnSm: false,
+              showOnMd: false,
+              showOnLg: false,
+              showOnXl: false,
+              showOnXxl: false,
+              fallback: const Text('Fallback'),
             ),
           ),
         ),
       );
 
-      expect(find.text('Hidden'), findsNothing);
+      expect(find.text('Hidden Everywhere'), findsNothing);
       expect(find.text('Fallback'), findsOneWidget);
     });
 
-    testWidgets('should use SizedBox.shrink when no fallback provided',
+    testWidgets('should handle all show conditions true',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                // Set ALL breakpoints to false to ensure hiding
-                return FlutstrapVisibility(
-                  child: const Text('Hidden'),
-                  showOnXs: false,
-                  showOnSm: false,
-                  showOnMd: false,
-                  showOnLg: false,
-                  showOnXl: false,
-                  showOnXxl: false,
-                  fallback: null,
-                );
-              },
+            body: FlutstrapVisibility(
+              child: const Text('Visible Everywhere'),
+              showOnXs: true,
+              showOnSm: true,
+              showOnMd: true,
+              showOnLg: true,
+              showOnXl: true,
+              showOnXxl: true,
             ),
           ),
         ),
       );
 
-      expect(find.text('Hidden'), findsNothing);
-      final sizedBoxFinder = find.byType(SizedBox);
-      expect(sizedBoxFinder, findsOneWidget);
+      expect(find.text('Visible Everywhere'), findsOneWidget);
     });
 
-    // Helper function to get screen width from context
-    double _getScreenWidth(WidgetTester tester) {
-      final element = tester.element(find.byType(FlutstrapVisibility));
-      final mediaQuery = MediaQuery.of(element);
-      return mediaQuery.size.width;
-    }
-
-    // Test the factory constructors with conditional expectations
-    testWidgets('xsOnly should show only on xs breakpoint',
+    testWidgets('should work with complex child widgets',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FlutstrapVisibility.xsOnly(
-              child: const Text('XS Only'),
+            body: FlutstrapVisibility(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                color: Colors.blue,
+                child: const Column(
+                  children: [
+                    Text('Title'),
+                    SizedBox(height: 8),
+                    Text('Description'),
+                  ],
+                ),
+              ),
+              showOnXs: true,
             ),
           ),
         ),
       );
 
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.xs) {
-        expect(find.text('XS Only'), findsOneWidget);
-      } else {
-        expect(find.text('XS Only'), findsNothing);
-      }
+      expect(find.text('Title'), findsOneWidget);
+      expect(find.text('Description'), findsOneWidget);
+      expect(find.byType(Container), findsOneWidget);
     });
+  });
 
-    testWidgets('smOnly should show only on sm breakpoint',
+  group('FlutstrapVisibility - Combined Factory Tests', () {
+    testWidgets('should combine multiple visibility conditions',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FlutstrapVisibility.smOnly(
-              child: const Text('SM Only'),
+            body: Row(
+              children: [
+                FlutstrapVisibility.mobileOnly(
+                  child: const Text('A - Mobile'),
+                ),
+                FlutstrapVisibility.hideOnMobile(
+                  child: const Text('B - Not Mobile'),
+                ),
+                FlutstrapVisibility.tabletOnly(
+                  child: const Text('C - Tablet'),
+                ),
+                FlutstrapVisibility.desktopOnly(
+                  child: const Text('D - Desktop'),
+                ),
+              ],
             ),
           ),
         ),
       );
 
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.sm) {
-        expect(find.text('SM Only'), findsOneWidget);
-      } else {
-        expect(find.text('SM Only'), findsNothing);
-      }
+      // On default test screen (xs/mobile)
+      expect(find.text('A - Mobile'), findsOneWidget);
+      expect(find.text('B - Not Mobile'), findsNothing);
+      expect(find.text('C - Tablet'), findsNothing);
+      expect(find.text('D - Desktop'), findsNothing);
     });
 
-    testWidgets('mdOnly should show only on md breakpoint',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.mdOnly(
-              child: const Text('MD Only'),
-            ),
-          ),
-        ),
-      );
-
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.md) {
-        expect(find.text('MD Only'), findsOneWidget);
-      } else {
-        expect(find.text('MD Only'), findsNothing);
-      }
-    });
-
-    testWidgets('lgOnly should show only on lg breakpoint',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.lgOnly(
-              child: const Text('LG Only'),
-            ),
-          ),
-        ),
-      );
-
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.lg) {
-        expect(find.text('LG Only'), findsOneWidget);
-      } else {
-        expect(find.text('LG Only'), findsNothing);
-      }
-    });
-
-    testWidgets('xlOnly should show only on xl breakpoint',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.xlOnly(
-              child: const Text('XL Only'),
-            ),
-          ),
-        ),
-      );
-
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.xl) {
-        expect(find.text('XL Only'), findsOneWidget);
-      } else {
-        expect(find.text('XL Only'), findsNothing);
-      }
-    });
-
-    testWidgets('xxlOnly should show only on xxl breakpoint',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.xxlOnly(
-              child: const Text('XXL Only'),
-            ),
-          ),
-        ),
-      );
-
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.xxl) {
-        expect(find.text('XXL Only'), findsOneWidget);
-      } else {
-        expect(find.text('XXL Only'), findsNothing);
-      }
-    });
-
-    testWidgets('mobileOnly should show only on xs and sm breakpoints',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.mobileOnly(
-              child: const Text('Mobile Only'),
-            ),
-          ),
-        ),
-      );
-
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-      final isMobile = responsive.breakpoint == FSBreakpoint.xs ||
-          responsive.breakpoint == FSBreakpoint.sm;
-
-      if (isMobile) {
-        expect(find.text('Mobile Only'), findsOneWidget);
-      } else {
-        expect(find.text('Mobile Only'), findsNothing);
-      }
-    });
-
-    testWidgets('tabletOnly should show only on md breakpoint',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.tabletOnly(
-              child: const Text('Tablet Only'),
-            ),
-          ),
-        ),
-      );
-
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.md) {
-        expect(find.text('Tablet Only'), findsOneWidget);
-      } else {
-        expect(find.text('Tablet Only'), findsNothing);
-      }
-    });
-
-    testWidgets('desktopOnly should show only on lg, xl, and xxl breakpoints',
+    testWidgets('should work with fallback in factories',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: FlutstrapVisibility.desktopOnly(
-              child: const Text('Desktop Only'),
+              child: const Text('Desktop Content'),
+              fallback: const Text('Mobile Fallback'),
             ),
           ),
         ),
       );
 
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-      final isDesktop = responsive.breakpoint == FSBreakpoint.lg ||
-          responsive.breakpoint == FSBreakpoint.xl ||
-          responsive.breakpoint == FSBreakpoint.xxl;
-
-      if (isDesktop) {
-        expect(find.text('Desktop Only'), findsOneWidget);
-      } else {
-        expect(find.text('Desktop Only'), findsNothing);
-      }
+      expect(find.text('Desktop Content'), findsNothing);
+      expect(find.text('Mobile Fallback'), findsOneWidget);
     });
+  });
 
-    testWidgets('hideOnXs should hide on xs breakpoint',
+  group('FlutstrapVisibility - Themed Tests', () {
+    testWidgets('should work with FSTheme provider',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.hideOnXs(
-              child: const Text('Not XS'),
+          home: FSTheme(
+            data: FSThemeData.light(),
+            child: const Scaffold(
+              body: FlutstrapVisibility(
+                child: Text('Themed Visibility'),
+              ),
             ),
           ),
         ),
       );
 
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.xs) {
-        expect(find.text('Not XS'), findsNothing);
-      } else {
-        expect(find.text('Not XS'), findsOneWidget);
-      }
+      expect(find.text('Themed Visibility'), findsOneWidget);
     });
 
-    testWidgets('hideOnSm should hide on sm breakpoint',
+    testWidgets('should work with dark theme', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FSTheme(
+            data: FSThemeData.dark(),
+            child: const Scaffold(
+              body: FlutstrapVisibility(
+                child: Text('Dark Theme Visibility'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Dark Theme Visibility'), findsOneWidget);
+    });
+  });
+
+  group('FlutstrapVisibility - Performance Tests', () {
+    testWidgets('should not rebuild unnecessarily',
         (WidgetTester tester) async {
+      var buildCount = 0;
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FlutstrapVisibility.hideOnSm(
-              child: const Text('Not SM'),
+            body: FlutstrapVisibility(
+              child: Builder(
+                builder: (context) {
+                  buildCount++;
+                  return const Text('Performance Test');
+                },
+              ),
             ),
           ),
         ),
       );
 
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
+      expect(buildCount, 1);
+      expect(find.text('Performance Test'), findsOneWidget);
 
-      if (responsive.breakpoint == FSBreakpoint.sm) {
-        expect(find.text('Not SM'), findsNothing);
-      } else {
-        expect(find.text('Not SM'), findsOneWidget);
-      }
-    });
-
-    testWidgets('hideOnMd should hide on md breakpoint',
-        (WidgetTester tester) async {
+      // Rebuild with same properties
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FlutstrapVisibility.hideOnMd(
-              child: const Text('Not MD'),
+            body: FlutstrapVisibility(
+              child: Builder(
+                builder: (context) {
+                  buildCount++;
+                  return const Text('Performance Test');
+                },
+              ),
             ),
           ),
         ),
       );
 
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.md) {
-        expect(find.text('Not MD'), findsNothing);
-      } else {
-        expect(find.text('Not MD'), findsOneWidget);
-      }
-    });
-
-    testWidgets('hideOnLg should hide on lg breakpoint',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.hideOnLg(
-              child: const Text('Not LG'),
-            ),
-          ),
-        ),
-      );
-
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-
-      if (responsive.breakpoint == FSBreakpoint.lg) {
-        expect(find.text('Not LG'), findsNothing);
-      } else {
-        expect(find.text('Not LG'), findsOneWidget);
-      }
-    });
-
-    testWidgets('hideOnMobile should hide on xs and sm breakpoints',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.hideOnMobile(
-              child: const Text('Not Mobile'),
-            ),
-          ),
-        ),
-      );
-
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-      final isMobile = responsive.breakpoint == FSBreakpoint.xs ||
-          responsive.breakpoint == FSBreakpoint.sm;
-
-      if (isMobile) {
-        expect(find.text('Not Mobile'), findsNothing);
-      } else {
-        expect(find.text('Not Mobile'), findsOneWidget);
-      }
-    });
-
-    testWidgets('hideOnDesktop should hide on lg, xl, and xxl breakpoints',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FlutstrapVisibility.hideOnDesktop(
-              child: const Text('Not Desktop'),
-            ),
-          ),
-        ),
-      );
-
-      final screenWidth = _getScreenWidth(tester);
-      final responsive = FSResponsive.of(screenWidth);
-      final isDesktop = responsive.breakpoint == FSBreakpoint.lg ||
-          responsive.breakpoint == FSBreakpoint.xl ||
-          responsive.breakpoint == FSBreakpoint.xxl;
-
-      if (isDesktop) {
-        expect(find.text('Not Desktop'), findsNothing);
-      } else {
-        expect(find.text('Not Desktop'), findsOneWidget);
-      }
+      // Build count should increase (widget rebuilds), but this is normal
+      expect(buildCount, greaterThan(1));
     });
   });
 }

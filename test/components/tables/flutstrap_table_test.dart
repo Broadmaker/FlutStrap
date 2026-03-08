@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:master_flutstrap/components/tables/flutstrap_table.dart';
+import 'package:flutstrap/components/tables/flutstrap_table.dart';
 
 // Sample data class for testing
 class User {

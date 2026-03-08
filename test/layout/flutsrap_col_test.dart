@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/layout/flutstrap_col.dart';
-import 'package:master_flutstrap/core/breakpoints.dart';
+import 'package:flutstrap/layout/flutstrap_col.dart';
+import 'package:flutstrap/core/breakpoints.dart';
 
 void main() {
   group('FlutstrapCol', () {

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/components/progress/flutstrap_progress.dart';
+import 'package:flutstrap/components/progress/flutstrap_progress.dart';
 
 // Custom finder that works with generic types
 Finder findFlutstrapProgress() {

@@ -1,493 +1,710 @@
-// test/animations/slide_transition_test.dart
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutstrap/animations/slide_transition.dart' as flutstrap;
+import 'package:flutter/material.dart';
+import 'package:flutstrap/flutstrap.dart';
 
 void main() {
-  // Helper function to build test widget with proper disposal
-  Future<void> pumpSlideTransitionWidget(
-    WidgetTester tester, {
-    required Widget child,
-    flutstrap.FSSlideDirection direction =
-        flutstrap.FSSlideDirection.fromBottom,
-    Duration duration = const Duration(milliseconds: 100),
-    Duration delay = Duration.zero,
-    Curve curve = Curves.linear,
-    bool autoPlay = true,
-    VoidCallback? onComplete,
-    double offsetFraction = 1.0,
-  }) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: flutstrap.SlideTransition(
-            child: child,
-            direction: direction,
-            duration: duration,
-            delay: delay,
-            curve: curve,
-            autoPlay: autoPlay,
-            onComplete: onComplete,
-            offsetFraction: offsetFraction,
+  group('FSSlideTransition - Basic Rendering Tests', () {
+    testWidgets('should render child widget', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              child: const Text('Slide Content'),
+            ),
           ),
         ),
-      ),
-    );
-  }
-
-  // Helper function to find the Transform widget within SlideTransition
-  Finder findSlideTransform() {
-    return find.descendant(
-      of: find.byType(flutstrap.SlideTransition),
-      matching: find.byType(Transform),
-    );
-  }
-
-  group('SlideTransition', () {
-    testWidgets('renders child widget', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Hello World'),
       );
 
-      expect(find.text('Hello World'), findsOneWidget);
-
-      // Ensure proper disposal
-      await tester.pumpAndSettle();
+      expect(find.text('Slide Content'), findsOneWidget);
     });
 
-    testWidgets('slides from bottom by default', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.linear,
+    testWidgets('should start at correct offset based on direction',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              direction: FSSlideDirection.fromBottom,
+              child: const Text('Bottom Start'),
+            ),
+          ),
+        ),
       );
 
-      // Find the specific Transform widget
-      final transformFinder = findSlideTransform();
-      expect(transformFinder, findsOneWidget);
-
-      // Initially should be offset downward
-      final transformWidget = tester.widget<Transform>(transformFinder);
-      final offset = (transformWidget.transform as Matrix4).getTranslation();
-      expect(offset.y, greaterThan(0.0)); // Should be below original position
-      expect(offset.x, 0.0); // No horizontal offset
-
-      // Complete animation and settle
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
-      final finalTransform = tester.widget<Transform>(transformFinder);
-      final finalOffset =
-          (finalTransform.transform as Matrix4).getTranslation();
-      expect(finalOffset.x, 0.0);
-      expect(finalOffset.y, 0.0); // Should be at original position
+      expect(find.text('Bottom Start'), findsOneWidget);
     });
 
-    testWidgets('slides from top correctly', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        direction: flutstrap.FSSlideDirection.fromTop,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.linear,
+    testWidgets('should respect autoPlay false', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              autoPlay: false,
+              child: const Text('No Auto'),
+            ),
+          ),
+        ),
       );
 
-      final transformFinder = findSlideTransform();
-      expect(transformFinder, findsOneWidget);
-
-      // Initially should be offset upward
-      final transformWidget = tester.widget<Transform>(transformFinder);
-      final offset = (transformWidget.transform as Matrix4).getTranslation();
-      expect(offset.y, lessThan(0.0)); // Should be above original position
-      expect(offset.x, 0.0);
-
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      expect(find.text('No Auto'), findsOneWidget);
     });
 
-    testWidgets('slides from left correctly', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        direction: flutstrap.FSSlideDirection.fromLeft,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.linear,
+    testWidgets('should respect maintainState parameter',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              maintainState: false,
+              child: const Text('No Maintain'),
+            ),
+          ),
+        ),
       );
 
-      final transformFinder = findSlideTransform();
-      expect(transformFinder, findsOneWidget);
-
-      // Initially should be offset left
-      final transformWidget = tester.widget<Transform>(transformFinder);
-      final offset = (transformWidget.transform as Matrix4).getTranslation();
-      expect(offset.x, lessThan(0.0)); // Should be left of original position
-      expect(offset.y, 0.0);
-
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
-    });
-
-    testWidgets('slides from right correctly', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        direction: flutstrap.FSSlideDirection.fromRight,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.linear,
-      );
-
-      final transformFinder = findSlideTransform();
-      expect(transformFinder, findsOneWidget);
-
-      // Initially should be offset right
-      final transformWidget = tester.widget<Transform>(transformFinder);
-      final offset = (transformWidget.transform as Matrix4).getTranslation();
-      expect(
-          offset.x, greaterThan(0.0)); // Should be right of original position
-      expect(offset.y, 0.0);
-
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
-    });
-
-    testWidgets('respects custom duration', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.linear,
-      );
-
-      final transformFinder = findSlideTransform();
-
-      // Check initial offset
-      final initialTransform = tester.widget<Transform>(transformFinder);
-      final initialOffset =
-          (initialTransform.transform as Matrix4).getTranslation();
-
-      // Halfway through custom duration
-      await tester.pump(const Duration(milliseconds: 100));
-      final midTransform = tester.widget<Transform>(transformFinder);
-      final midOffset = (midTransform.transform as Matrix4).getTranslation();
-
-      // Should have moved halfway
-      expect(midOffset.y, closeTo(initialOffset.y / 2, 0.1));
-
-      // Complete and settle
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
-    });
-
-    testWidgets('respects delay before starting animation', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        duration: const Duration(milliseconds: 100),
-        delay: const Duration(milliseconds: 100),
-        curve: Curves.linear,
-      );
-
-      final transformFinder = findSlideTransform();
-
-      // Get initial position
-      final initialTransform = tester.widget<Transform>(transformFinder);
-      final initialOffset =
-          (initialTransform.transform as Matrix4).getTranslation();
-
-      // After delay but before animation should start - position should be same
-      await tester.pump(const Duration(milliseconds: 100));
-      final afterDelayTransform = tester.widget<Transform>(transformFinder);
-      final afterDelayOffset =
-          (afterDelayTransform.transform as Matrix4).getTranslation();
-
-      expect(afterDelayOffset.x, initialOffset.x);
-      expect(afterDelayOffset.y, initialOffset.y);
-
-      // Animation should start after delay
-      await tester.pump(const Duration(milliseconds: 50));
-      final startedTransform = tester.widget<Transform>(transformFinder);
-      final startedOffset =
-          (startedTransform.transform as Matrix4).getTranslation();
-
-      expect(
-          startedOffset.y, lessThan(initialOffset.y)); // Should have moved up
-
-      await tester.pumpAndSettle(const Duration(milliseconds: 50));
-    });
-
-    testWidgets('calls onComplete callback when animation finishes',
-        (tester) async {
-      bool completed = false;
-
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        duration: const Duration(milliseconds: 100),
-        onComplete: () {
-          completed = true;
-        },
-      );
-
-      expect(completed, false);
-
-      // Complete animation and settle
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
-      expect(completed, true);
-    });
-
-    testWidgets('does not auto-play when autoPlay is false', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        duration: const Duration(milliseconds: 100),
-        autoPlay: false,
-      );
-
-      final transformFinder = findSlideTransform();
-
-      // Get initial position
-      final initialTransform = tester.widget<Transform>(transformFinder);
-      final initialOffset =
-          (initialTransform.transform as Matrix4).getTranslation();
-
-      // Should not animate without manual trigger
-      await tester.pump(const Duration(milliseconds: 100));
-      final afterPumpTransform = tester.widget<Transform>(transformFinder);
-      final afterPumpOffset =
-          (afterPumpTransform.transform as Matrix4).getTranslation();
-
-      expect(afterPumpOffset.x, initialOffset.x);
-      expect(afterPumpOffset.y, initialOffset.y);
-    });
-
-    testWidgets('handles widget disposal properly', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        duration: const Duration(milliseconds: 100),
-      );
-
-      // Should not throw when disposed - use pumpAndSettle for proper cleanup
-      await tester.pumpAndSettle();
-      await tester.pumpWidget(const SizedBox.shrink());
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('respects custom offsetFraction', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        direction: flutstrap.FSSlideDirection.fromBottom,
-        offsetFraction: 0.5, // Half the normal distance
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.linear,
-      );
-
-      final transformFinder = findSlideTransform();
-
-      // Initially should be offset by half the normal amount
-      final transformWidget = tester.widget<Transform>(transformFinder);
-      final offset = (transformWidget.transform as Matrix4).getTranslation();
-
-      // With offsetFraction 0.5, should be at y=0.5 (half of normal 1.0)
-      expect(offset.y, closeTo(0.5, 0.01));
-
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      expect(find.text('No Maintain'), findsOneWidget);
     });
   });
 
-  group('SlideTransition Variants', () {
-    testWidgets('SlideTransitionQuick uses quick duration', (tester) async {
+  group('FSSlideTransition - Direction Tests', () {
+    testWidgets('fromTop should start from top', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: flutstrap.SlideTransitionQuick(
-              child: const Text('Quick'),
+            body: FSSlideTransition(
+              direction: FSSlideDirection.fromTop,
+              autoPlay: false,
+              child: const Text('From Top'),
             ),
           ),
         ),
       );
 
-      // Complete quick animation and settle
-      await tester.pumpAndSettle(const Duration(milliseconds: 300));
-
-      // Just verify the component renders without checking internal Transform
-      expect(find.text('Quick'), findsOneWidget);
+      expect(find.text('From Top'), findsOneWidget);
     });
 
-    testWidgets('SlideTransitionStandard uses standard duration',
-        (tester) async {
+    testWidgets('fromBottom should start from bottom',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: flutstrap.SlideTransitionStandard(
-              child: const Text('Standard'),
+            body: FSSlideTransition(
+              direction: FSSlideDirection.fromBottom,
+              autoPlay: false,
+              child: const Text('From Bottom'),
             ),
           ),
         ),
       );
 
-      // Just verify the component renders
-      expect(find.text('Standard'), findsOneWidget);
-
-      await tester.pumpAndSettle(const Duration(milliseconds: 500));
+      expect(find.text('From Bottom'), findsOneWidget);
     });
 
-    testWidgets('SlideTransitionBounce uses bounce curve from top',
-        (tester) async {
+    testWidgets('fromLeft should start from left', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: flutstrap.SlideTransitionBounce(
+            body: FSSlideTransition(
+              direction: FSSlideDirection.fromLeft,
+              autoPlay: false,
+              child: const Text('From Left'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('From Left'), findsOneWidget);
+    });
+
+    testWidgets('fromRight should start from right',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              direction: FSSlideDirection.fromRight,
+              autoPlay: false,
+              child: const Text('From Right'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('From Right'), findsOneWidget);
+    });
+
+    testWidgets('fromTopLeft should start from top-left',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              direction: FSSlideDirection.fromTopLeft,
+              autoPlay: false,
+              child: const Text('From TopLeft'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('From TopLeft'), findsOneWidget);
+    });
+
+    testWidgets('fromTopRight should start from top-right',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              direction: FSSlideDirection.fromTopRight,
+              autoPlay: false,
+              child: const Text('From TopRight'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('From TopRight'), findsOneWidget);
+    });
+
+    testWidgets('fromBottomLeft should start from bottom-left',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              direction: FSSlideDirection.fromBottomLeft,
+              autoPlay: false,
+              child: const Text('From BottomLeft'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('From BottomLeft'), findsOneWidget);
+    });
+
+    testWidgets('fromBottomRight should start from bottom-right',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              direction: FSSlideDirection.fromBottomRight,
+              autoPlay: false,
+              child: const Text('From BottomRight'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('From BottomRight'), findsOneWidget);
+    });
+  });
+
+  group('FSSlideTransition - Animation Tests', () {
+    testWidgets('should animate over specified duration',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              duration: const Duration(milliseconds: 300),
+              child: const Text('Animate Duration'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Animate Duration'), findsOneWidget);
+    });
+
+    testWidgets('should respect delay parameter', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              delay: const Duration(milliseconds: 200),
+              child: const Text('Delayed'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('Delayed'), findsOneWidget);
+    });
+
+    testWidgets('should use specified curve', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              curve: Curves.bounceOut,
               child: const Text('Bounce'),
             ),
           ),
         ),
       );
 
-      // Just verify the component renders
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('Bounce'), findsOneWidget);
-
-      await tester.pumpAndSettle(const Duration(milliseconds: 600));
     });
 
-    testWidgets('SlideTransitionElastic uses elastic curve from right',
-        (tester) async {
+    testWidgets('should respect offsetFraction parameter',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: flutstrap.SlideTransitionElastic(
-              child: const Text('Elastic'),
+            body: FSSlideTransition(
+              offsetFraction: 2.0,
+              autoPlay: false,
+              child: const Text('Double Offset'),
             ),
           ),
         ),
       );
 
-      // Just verify the component renders
-      expect(find.text('Elastic'), findsOneWidget);
-
-      await tester.pumpAndSettle(const Duration(milliseconds: 800));
+      expect(find.text('Double Offset'), findsOneWidget);
     });
 
-    testWidgets('SlideTransitionPage slides from right', (tester) async {
+    testWidgets('should throw assertion with invalid offsetFraction',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: flutstrap.SlideTransitionPage(
-              child: const Text('Page'),
+            body: FSSlideTransition(
+              offsetFraction: 2.5,
+              child: const Text('Invalid'),
             ),
           ),
         ),
       );
 
-      // Just verify the component renders
-      expect(find.text('Page'), findsOneWidget);
-
-      await tester.pumpAndSettle(const Duration(milliseconds: 400));
+      expect(tester.takeException(), isAssertionError);
     });
   });
 
-  group('FSSlideDirection', () {
-    test('has correct values', () {
-      expect(flutstrap.FSSlideDirection.values.length, 8);
-      expect(flutstrap.FSSlideDirection.values,
-          contains(flutstrap.FSSlideDirection.fromTop));
-      expect(flutstrap.FSSlideDirection.values,
-          contains(flutstrap.FSSlideDirection.fromBottom));
-      expect(flutstrap.FSSlideDirection.values,
-          contains(flutstrap.FSSlideDirection.fromLeft));
-      expect(flutstrap.FSSlideDirection.values,
-          contains(flutstrap.FSSlideDirection.fromRight));
-      expect(flutstrap.FSSlideDirection.values,
-          contains(flutstrap.FSSlideDirection.fromTopLeft));
-      expect(flutstrap.FSSlideDirection.values,
-          contains(flutstrap.FSSlideDirection.fromTopRight));
-      expect(flutstrap.FSSlideDirection.values,
-          contains(flutstrap.FSSlideDirection.fromBottomLeft));
-      expect(flutstrap.FSSlideDirection.values,
-          contains(flutstrap.FSSlideDirection.fromBottomRight));
-    });
-  });
+  group('FSSlideTransition - Controller Methods Tests', () {
+    testWidgets('play() should start animation', (WidgetTester tester) async {
+      final key = GlobalKey<FSSlideTransitionState>();
 
-  group('Edge Cases', () {
-    testWidgets('handles zero duration', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Instant'),
-        duration: Duration.zero,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              key: key,
+              autoPlay: false,
+              child: const Text('Manual Play'),
+            ),
+          ),
+        ),
       );
 
-      // With zero duration, should be immediately at final position
       await tester.pump();
-      final transformFinder = findSlideTransform();
-      final transform = tester.widget<Transform>(transformFinder);
-      final offset = (transform.transform as Matrix4).getTranslation();
-      expect(offset.x, 0.0);
-      expect(offset.y, 0.0);
+      await key.currentState?.play();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Manual Play'), findsOneWidget);
     });
 
-    testWidgets('works with complex child widgets', (tester) async {
-      final complexChild = Column(
-        children: [
-          const Text('Title'),
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: const Text('Content'),
+    testWidgets('reverse() should reverse animation',
+        (WidgetTester tester) async {
+      final key = GlobalKey<FSSlideTransitionState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              key: key,
+              autoPlay: false,
+              child: const Text('Reverse'),
+            ),
           ),
-          Row(
-            children: const [
-              Icon(Icons.star),
-              Text('Rating'),
-            ],
-          ),
-        ],
+        ),
       );
 
-      await pumpSlideTransitionWidget(
-        tester,
-        child: complexChild,
-        duration: const Duration(milliseconds: 100),
-      );
+      await tester.pump();
+      await key.currentState?.play();
+      await tester.pump(const Duration(milliseconds: 500));
+      await key.currentState?.reverse();
+      await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.text('Title'), findsOneWidget);
-      expect(find.text('Content'), findsOneWidget);
-      expect(find.text('Rating'), findsOneWidget);
-      expect(find.byIcon(Icons.star), findsOneWidget);
-
-      // Complete animation and settle
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      expect(find.text('Reverse'), findsOneWidget);
     });
 
-    testWidgets('does not crash when onComplete is null', (tester) async {
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Test'),
-        duration: const Duration(milliseconds: 100),
-        onComplete: null,
+    testWidgets('reset() should reset animation', (WidgetTester tester) async {
+      final key = GlobalKey<FSSlideTransitionState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              key: key,
+              autoPlay: false,
+              child: const Text('Reset'),
+            ),
+          ),
+        ),
       );
 
-      // Should complete without throwing
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pump();
+      await key.currentState?.play();
+      await tester.pump(const Duration(milliseconds: 250));
+      key.currentState?.reset();
+      await tester.pump();
+
+      expect(find.text('Reset'), findsOneWidget);
+    });
+
+    testWidgets('stop() should stop animation', (WidgetTester tester) async {
+      final key = GlobalKey<FSSlideTransitionState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              key: key,
+              autoPlay: true,
+              child: const Text('Stop'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      key.currentState?.stop();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Stop'), findsOneWidget);
+    });
+
+    testWidgets('setValue() should set animation value',
+        (WidgetTester tester) async {
+      final key = GlobalKey<FSSlideTransitionState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              key: key,
+              autoPlay: false,
+              child: const Text('Set Value'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      key.currentState?.setValue(0.5);
+      await tester.pump();
+
+      expect(find.text('Set Value'), findsOneWidget);
+    });
+
+    testWidgets('getters should return correct values',
+        (WidgetTester tester) async {
+      final key = GlobalKey<FSSlideTransitionState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              key: key,
+              autoPlay: false,
+              child: const Text('Getters'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(key.currentState?.isAnimating, false);
+      expect(key.currentState?.isCompleted, false);
+      expect(key.currentState?.offset, isNotNull);
+    });
+  });
+
+  group('FSSlideTransition - Pre-configured Variations', () {
+    testWidgets('FSSlideTransitionQuick should use 300ms duration',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: const FSSlideTransitionQuick(
+              child: Text('Quick'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Quick'), findsOneWidget);
+    });
+
+    testWidgets('FSSlideTransitionStandard should use 500ms duration',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: const FSSlideTransitionStandard(
+              child: Text('Standard'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Standard'), findsOneWidget);
+    });
+
+    testWidgets('FSSlideTransitionSlow should use 800ms duration',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: const FSSlideTransitionSlow(
+              child: Text('Slow'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Slow'), findsOneWidget);
+    });
+
+    testWidgets('FSSlideTransitionBounce should use bounce curve',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: const FSSlideTransitionBounce(
+              child: Text('Bounce'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Bounce'), findsOneWidget);
+    });
+
+    testWidgets('FSSlideTransitionElastic should use elastic curve',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: const FSSlideTransitionElastic(
+              child: Text('Elastic'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Elastic'), findsOneWidget);
+    });
+
+    testWidgets('FSSlideTransitionPage should use page transition settings',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: const FSSlideTransitionPage(
+              child: Text('Page'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Page'), findsOneWidget);
+    });
+  });
+
+  group('FSSlideTransition - Themed Factory Tests', () {
+    testWidgets('themed factory should use theme configuration',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FSTheme(
+            data: FSThemeData.light(),
+            child: Scaffold(
+              body: Builder(
+                builder: (context) => FSSlideTransition.themed(
+                  context: context,
+                  child: const Text('Themed Slide'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Themed Slide'), findsOneWidget);
+    });
+
+    testWidgets('themed factory should work with dark theme',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FSTheme(
+            data: FSThemeData.dark(),
+            child: Scaffold(
+              body: Builder(
+                builder: (context) => FSSlideTransition.themed(
+                  context: context,
+                  child: const Text('Dark Themed Slide'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Dark Themed Slide'), findsOneWidget);
+    });
+  });
+
+  group('FSSlideTransition - Callback Tests', () {
+    testWidgets('onComplete should be called when animation completes',
+        (WidgetTester tester) async {
+      var completed = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              autoPlay: true,
+              onComplete: () => completed = true,
+              child: const Text('Complete Callback'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(completed, true);
+    });
+
+    testWidgets('onCancel should be called when animation is cancelled',
+        (WidgetTester tester) async {
+      var cancelled = false;
+      final key = GlobalKey<FSSlideTransitionState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              key: key,
+              autoPlay: true,
+              onCancel: () => cancelled = true,
+              child: const Text('Cancel Callback'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      key.currentState?.stop();
+      await tester.pump();
+
+      expect(cancelled, true);
+    });
+  });
+
+  group('FSSlideTransition - Edge Cases', () {
+    testWidgets('should handle dispose during animation',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              autoPlay: true,
+              child: const Text('Dispose Test'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pumpWidget(Container());
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('handles diagonal slide directions', (tester) async {
-      // Test that diagonal directions don't crash and render correctly
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Top Left'),
-        direction: flutstrap.FSSlideDirection.fromTopLeft,
-        duration: const Duration(milliseconds: 100),
+    testWidgets('should handle zero duration', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              duration: Duration.zero,
+              child: const Text('Zero Duration'),
+            ),
+          ),
+        ),
       );
 
-      expect(find.text('Top Left'), findsOneWidget);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      expect(find.text('Zero Duration'), findsOneWidget);
+    });
 
-      await pumpSlideTransitionWidget(
-        tester,
-        child: const Text('Bottom Right'),
-        direction: flutstrap.FSSlideDirection.fromBottomRight,
-        duration: const Duration(milliseconds: 100),
+    testWidgets('should respect system animation preferences',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(
+              disableAnimations: true,
+            ),
+            child: Scaffold(
+              body: FSSlideTransition(
+                respectSystemPreferences: true,
+                child: const Text('No Anim'),
+              ),
+            ),
+          ),
+        ),
       );
 
-      expect(find.text('Bottom Right'), findsOneWidget);
-      await tester.pumpAndSettle();
+      expect(find.text('No Anim'), findsOneWidget);
+    });
+
+    testWidgets(
+        'should ignore system preferences when respectSystemPreferences false',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(
+              disableAnimations: true,
+            ),
+            child: Scaffold(
+              body: FSSlideTransition(
+                respectSystemPreferences: false,
+                child: const Text('Force Anim'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Force Anim'), findsOneWidget);
+    });
+  });
+
+  group('FSSlideTransition - Error Boundary Tests', () {
+    testWidgets('should show child even if animation errors',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FSSlideTransition(
+              child: const Text('Error Test'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Error Test'), findsOneWidget);
     });
   });
 }

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/components/badges/flutstrap_badge.dart';
+import 'package:flutstrap/components/badges/flutstrap_badge.dart';
 
 // Custom finder that works with generic types
 Finder findFlutstrapBadge() {

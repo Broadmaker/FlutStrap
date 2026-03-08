@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:master_flutstrap/components/buttons/flutstrap_button.dart';
+import 'package:flutstrap/components/buttons/flutstrap_button.dart';
 
 void main() {
   // Create a mock function that can be used in tests

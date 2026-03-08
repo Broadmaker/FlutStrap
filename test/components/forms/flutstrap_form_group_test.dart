@@ -1,8 +1,8 @@
 // test/components/forms/flutstrap_form_group_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:master_flutstrap/components/forms/flutstrap_form_group.dart';
-import 'package:master_flutstrap/core/theme.dart';
+import 'package:flutstrap/components/forms/flutstrap_form_group.dart';
+import 'package:flutstrap/core/theme.dart';
 
 // Mock form fields for testing
 // Mock form fields for testing - updated with constraints

@@ -1,0 +1,43 @@
+name: Deploy Flutter Web to Netlify
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'any'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        # This gets dependencies for both the package and the example app
+        run: |
+          flutter pub get
+          cd example && flutter pub get
+
+      - name: Build web
+        # We build the app inside the example folder
+        run: cd example && flutter build web --release
+
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          # This is the path where the example app's build ends up
+          publish-dir: ./example/build/web
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploying Example App"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

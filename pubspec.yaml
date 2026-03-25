@@ -1,6 +1,6 @@
 name: flutstrap
 description: A Flutter UI library inspired by Bootstrap with responsive layouts and prebuilt components.
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/Broadmaker/FlutStrap
 repository: https://github.com/Broadmaker/FlutStrap
 issue_tracker: https://github.com/Broadmaker/FlutStrap/issues

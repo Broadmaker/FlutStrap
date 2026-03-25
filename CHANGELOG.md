@@ -9,3 +9,9 @@ All notable changes to this package will be documented in this file.
 - Initial release of FlutStrap
 - Responsive layouts
 - Prebuilt UI components inspired by Bootstrap
+
+## 0.0.2
+
+- Fixed static analysis issues and lints.
+- Updated deprecated Material 3 color members.
+- Improved example app deployment workflow.

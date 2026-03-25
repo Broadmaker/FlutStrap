@@ -1,36 +1,32 @@
+---
+
 # 🌟 FlutStrap
 
-[![pub version](https://img.shields.io/pub/v/flutstrap.svg)](https://pub.dev/packages/flutstrap)
-[![likes](https://img.shields.io/pub/likes/flutstrap)](https://pub.dev/packages/flutstrap)
-[![popularity](https://img.shields.io/pub/popularity/flutstrap)](https://pub.dev/packages/flutstrap)
+[`https://pub.dev/packages/flutstrap`](https://pub.dev/packages/flutstrap)  
 
-FlutStrap is a **Flutter UI library inspired by Bootstrap**. It provides **ready-to-use UI components**, **responsive layouts**, and **light/dark theming** to help you build Flutter apps quickly and efficiently.
-
-Whether you're building a small project or a complex application, FlutStrap provides essential UI components and layout utilities to accelerate Flutter development.
+FlutStrap is a **Flutter UI library inspired by Bootstrap**. It provides ready‑to‑use components, responsive layouts, and theming utilities to help you build Flutter apps faster and more consistently.
 
 ---
 
-# ❓ Why FlutStrap?
+## ❓ Why FlutStrap?
 
-FlutStrap brings the familiar design philosophy of Bootstrap to Flutter.
+FlutStrap brings the familiar design philosophy of Bootstrap into Flutter:
 
-Key advantages include:
-
-- ⚡ Pre-built UI components
-- 📱 Responsive layout utilities
-- 🎨 Built-in theming support
+- ⚡ Pre‑built UI components
+- 📱 Responsive grid and layout utilities
+- 🎨 Built‑in light/dark theming
 - 📏 Consistent spacing system
-- 🧩 Developer-friendly APIs
+- 🧩 Developer‑friendly APIs
 
 ---
 
-# 📦 Installation
+## 📦 Installation
 
 Add FlutStrap to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutstrap: ^0.0.1
+  flutstrap: ^0.0.2
 ```
 
 Then run:
@@ -39,29 +35,35 @@ Then run:
 flutter pub get
 ```
 
-### Alternative Installation (GitHub)
+Finally, import FlutStrap into your Dart code:
 
-You can also install directly from GitHub:
-
-```yaml
-dependencies:
-  flutstrap:
-    git:
-      url: https://github.com/Broadmaker/FlutStrap.git
-      ref: main
-```
-
-Then run:
-
-```bash
-flutter pub get
+```dart
+import 'package:flutstrap/flutstrap.dart';
 ```
 
 ---
 
-# 🚀 Quick Example
+## 🚀 Quick Example
 
-Below is a simple example using FlutStrap components.
+Ensure your app is wrapped with the FlutStrap theme:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutstrap/flutstrap.dart';
+
+void main() {
+  runApp(
+    MaterialApp(
+      home: FSTheme(
+        data: FSThemeData.light(), // or FSThemeData.dark()
+        child: MyApp(),
+      ),
+    ),
+  );
+}
+```
+
+Using a FlutStrap button:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -89,106 +91,54 @@ class ExamplePage extends StatelessWidget {
 
 ---
 
-# 🧩 Components
+## 🧩 Components
 
-FlutStrap includes a variety of UI components that make it easy to build beautiful Flutter applications.
+FlutStrap includes a wide range of UI elements:
 
-- **[Alerts](docs/components/alerts.md)** – Show important messages or notifications to the user.
-- **[Badges](docs/components/badges.md)** – Display labels or counts for items.
-- **[Buttons](docs/components/buttons.md)** – Different button styles including primary, secondary, and disabled states.
-- **[Cards](docs/components/cards.md)** – Container widgets used to display grouped content.
-- **[Dropdowns](docs/components/dropdowns.md)** – Interactive dropdown menus.
-- **[Forms](docs/components/forms/)** – Form elements including checkboxes, radio buttons, and text inputs.
-- **[Modals](docs/components/modals.md)** – Popup dialogs to display additional content.
-- **[Navbars](docs/components/navbars.md)** – Responsive navigation bars.
-- **[Paginations](docs/components/paginations.md)** – Pagination controls for multi-page content.
-- **[Progress](docs/components/progress.md)** – Progress bars for loading states.
-- **[Spinners](docs/components/spinners.md)** – Animated loading indicators.
-- **[Tables](docs/components/tables.md)** – Structured and responsive tables.
-- **[Tooltips](docs/components/tooltips.md)** – Informational hints for UI elements.
+- Alerts, Badges, Buttons, Cards
+- Dropdowns, Forms, Modals, Navbars
+- Paginations, Progress bars, Spinners
+- Tables, Tooltips
 
 ---
 
-# 📐 Layouts
+## 📐 Layouts
 
-FlutStrap provides layout utilities to help structure Flutter apps efficiently and responsively.
+Responsive layout utilities:
 
-### 🧩 Key Layout Utilities
-
-- **[Columns](docs/layouts/columns.md)**  
-  Divide your layout into columns for flexible responsive designs.
-
-- **[Containers](docs/layouts/containers.md)**  
-  Wrap content to control width, padding, alignment, and styling.
-
-- **[Grids](docs/layouts/grids.md)**  
-  Build responsive grid systems that adapt across screen sizes.
-
-- **[Rows](docs/layouts/rows.md)**  
-  Organize content horizontally and combine with columns for grid layouts.
-
-- **[Visibility](docs/layouts/visibility.md)**  
-  Control when widgets appear depending on device size or conditions.
+- Rows & Columns
+- Containers & Grids
+- Visibility controls
 
 ---
 
-# ⚙️ Core Features
+## ⚙️ Core Features
 
-FlutStrap provides core utilities that power layouts, spacing, and responsiveness.
-
-### 🧩 Core Utilities
-
-- **[Responsive Layouts](docs/core/responsives.md)**  
-  Automatically adjust UI layouts based on screen size.
-
-- **[Spacings](docs/core/spacings.md)**  
-  Maintain consistent padding and margins across your application.
-
-- **[Breakpoints](docs/core/breakpoints.md)**  
-  Define responsive breakpoints for mobile, tablet, and desktop layouts.
-
-- **[Themes](docs/core/themes.md)**  
-  Manage global color schemes, typography, and component styles.
-
-- **[Utilities](docs/core/utilities.md)**  
-  Helper widgets and functions for alignment, positioning, and layout control.
+- Responsive breakpoints for mobile, tablet, desktop
+- Spacing utilities for consistent padding/margins
+- Theming support for colors, typography, and styles
+- Animation utilities (fade, scale, sequence, transitions)
 
 ---
 
-# 📸 Preview
+## 📖 Documentation
 
-Screenshots of FlutStrap components will be added soon.
-
-Example preview layout:
-
-| Buttons                             | Alerts                            |
-| ----------------------------------- | --------------------------------- |
-| ![Buttons](screenshots/buttons.png) | ![Alerts](screenshots/alerts.png) |
+- Hosted docs: [flutstrap.netlify.app](https://flutstrap.netlify.app)
+- Full source & docs: [GitHub Repository](https://github.com/Broadmaker/FlutStrap)
+- Example app included in `example/`
 
 ---
 
-# ⚡ Contribution
+## 🤝 Contributing
 
-We welcome contributions!
-
-If you have suggestions, improvements, or bug fixes:
-
-1. Fork the repository
-2. Create a new branch
-3. Make your changes
-4. Submit a pull request
-
-Your contributions help improve FlutStrap for everyone.
+Contributions are welcome!  
+Open issues or submit pull requests on [GitHub](https://github.com/Broadmaker/FlutStrap).
 
 ---
 
-# 💬 Support
+## 📄 License
 
-If you have questions or encounter issues, feel free to open an issue on the GitHub repository.
+Licensed under the **MIT License**.  
+You are free to use, modify, and distribute this library.
 
 ---
-
-# 📄 License
-
-FlutStrap is licensed under the **MIT License**.  
-You are free to use, modify, and distribute this library in your own projects.

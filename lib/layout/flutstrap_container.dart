@@ -94,7 +94,7 @@ class FlutstrapContainer extends StatelessWidget {
       md: FSBreakpoints.md,
       lg: FSBreakpoints.lg,
       xl: FSBreakpoints.xl,
-      xxl: FSBreakpoints.xxl ?? FSBreakpoints.xl,
+      xxl: FSBreakpoints.xxl,
       fallback: FSBreakpoints.xl,
     );
   }

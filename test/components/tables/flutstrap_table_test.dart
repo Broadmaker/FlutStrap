@@ -165,6 +165,7 @@ void main() {
     testWidgets('handles row tap callbacks - simplified test', (tester) async {
       // Track how many times callback is called
       int tapCount = 0;
+      // ignore: unused_local_variable
       User? lastTappedUser;
 
       await tester.pumpWidget(
@@ -193,6 +194,7 @@ void main() {
 
     // Alternative row tap test that focuses on the functionality
     testWidgets('row tap callback is properly configured', (tester) async {
+      // ignore: unused_local_variable
       bool callbackConfigured = false;
 
       await tester.pumpWidget(

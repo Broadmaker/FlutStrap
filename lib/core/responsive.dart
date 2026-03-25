@@ -86,8 +86,7 @@
 /// {@category Responsive}
 /// {@category Layout}
 
-import 'dart:collection'; // ✅ ADDED: For LinkedHashMap in LRU cache
-import 'package:flutter/foundation.dart';
+import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'breakpoints.dart';
 
@@ -168,6 +167,7 @@ class FSResponsive {
       _LRUCache<_BreakpointCacheKey, FSBreakpoint>();
   static int _cacheHits = 0;
   static int _cacheMisses = 0;
+  // ignore: unused_field
   static const _defaultCacheSize = 100;
 
   const FSResponsive({

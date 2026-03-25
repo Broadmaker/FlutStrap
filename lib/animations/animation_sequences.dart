@@ -421,6 +421,7 @@ class _FSSequentialAnimationState extends State<FSSequentialAnimation>
   Timer? _startTimer;
   bool _isDisposed = false;
   bool _isPlaying = false;
+  // ignore: unused_field
   bool _isComplete = false;
   bool _isInitialized = false;
 

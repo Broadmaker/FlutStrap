@@ -91,7 +91,6 @@
 
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../core/spacing.dart';
 
 /// Flutstrap Progress Bar Variants
 ///

@@ -20,6 +20,7 @@ void main() {
 
   group('FlutstrapPagination', () {
     testWidgets('renders basic pagination with page numbers', (tester) async {
+      // ignore: unused_local_variable
       int? currentPage;
 
       await tester.pumpWidget(

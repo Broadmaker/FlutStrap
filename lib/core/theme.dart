@@ -64,6 +64,7 @@ class FSColorScheme {
   static const Color _darkWarning = Color(0xFFFFD43B);
   static const Color _lightInfo = Color(0xFF0DCAF0);
   static const Color _darkInfo = Color(0xFF339AF0);
+  // ignore: unused_field
   static const Color _lightBackground = Color(0xFFF8F9FA);
   static const Color _darkBackground = Color(0xFF121212);
   static const Color _lightSurface = Color(0xFFF8F9FA);

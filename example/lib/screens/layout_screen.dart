@@ -28,6 +28,7 @@ class LayoutScreen extends StatefulWidget {
 class _LayoutScreenState extends State<LayoutScreen>
     with WidgetsBindingObserver {
   // ✅ ENHANCED STATE MANAGEMENT
+  // ignore: unused_field
   int _containerPressCount = 0;
   bool _showMobileOnlyContent = true;
   bool _showDesktopOnlyContent = false;

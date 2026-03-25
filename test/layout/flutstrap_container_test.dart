@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutstrap/layout/flutstrap_container.dart';
-import 'package:flutstrap/core/theme.dart';
-import 'package:flutstrap/core/breakpoints.dart';
 
 void main() {
   group('FlutstrapContainer', () {

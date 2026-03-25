@@ -13,6 +13,7 @@
 /// {@category Demo}
 /// {@category Screens}
 import 'package:flutter/material.dart';
+// ignore: unused_import
 import 'package:flutstrap/flutstrap.dart';
 
 // Import all screen files

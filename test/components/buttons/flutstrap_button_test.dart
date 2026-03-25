@@ -161,6 +161,7 @@ void main() {
       );
 
       // Find the TextButton and check if it's filling the width
+      // ignore: unused_local_variable
       final textButton = tester.widget<TextButton>(find.byType(TextButton));
 
       // The button should be wide (we can't easily test exact width in unit tests)

@@ -24,7 +24,6 @@ import 'screens/home_screen.dart';
 import 'screens/animation_screen.dart';
 import 'screens/buttons_screen.dart';
 import 'screens/cards_screen.dart';
-import 'screens/code_viewer_demo.dart';
 import 'screens/dropdowns_screen.dart';
 import 'screens/forms_screen.dart';
 import 'screens/layout_screen.dart';

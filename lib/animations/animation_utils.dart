@@ -14,6 +14,7 @@ import 'package:flutter/animation.dart';
 import 'animation_types.dart';
 import 'fade_in.dart';
 import 'slide_transition.dart';
+// ignore: undefined_hidden_name
 import '../../core/theme.dart' hide FSAnimation; // ✅ Hide conflicting class
 
 /// Animation utility functions and builders

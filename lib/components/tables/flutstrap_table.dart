@@ -116,10 +116,11 @@
 /// {@category Components}
 /// {@category Data Display}
 
+// ignore_for_file: unnecessary_type_check
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../core/spacing.dart';
 import '../../core/error_boundary.dart';
 
 /// Flutstrap Table Configuration
@@ -396,6 +397,7 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
     for (final field in fields) {
       if (value is Map<String, dynamic> && value.containsKey(field)) {
         value = value[field];
+        // ignore: unnecessary_null_comparison
         if (value == null) return null;
       } else {
         return null;
@@ -592,6 +594,7 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
   Widget _buildVirtualizedTable(
       List<FSTableColumn<T>> visibleColumns, _TableStyle style) {
     final totalHeight = _cachedSortedData.length * widget.rowHeight;
+    // ignore: unused_local_variable
     final headerHeight = widget.showHeader ? widget.rowHeight : 0;
 
     return Column(
@@ -782,6 +785,7 @@ class _FlutstrapTableState<T> extends State<FlutstrapTable<T>> {
           ),
         ),
       );
+      // ignore: unused_catch_stack
     } catch (e, stackTrace) {
       if (kReleaseMode) {
         // Report to crash analytics in production

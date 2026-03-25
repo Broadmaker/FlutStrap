@@ -1,8 +1,9 @@
 /// Flutstrap Form Group
 ///
-/// A high-performance, accessible form group component for grouping related 
+/// A high-performance, accessible form group component for grouping related
 /// form fields with consistent spacing, validation states, and layout options.
 ///
+// ignore: doc_directive_missing_closing_tag
 /// {@tool snippet}
 /// ### Basic Usage
 ///
@@ -83,7 +84,6 @@
 /// {@category Components}
 /// {@category Forms}
 
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
@@ -98,7 +98,8 @@ class _FormGroupPerformance {
     _buildTimes[formGroupType] = milliseconds;
 
     if (milliseconds > 16) {
-      debugPrint('⏱️ Slow form group build: $formGroupType took ${milliseconds}ms');
+      debugPrint(
+          '⏱️ Slow form group build: $formGroupType took ${milliseconds}ms');
     }
   }
 
@@ -263,7 +264,7 @@ class FlutstrapFormGroup extends StatelessWidget {
 
     final theme = FSTheme.of(context);
     final effectiveSpacing = _getEffectiveSpacing();
-    
+
     // ✅ USE STYLE CACHING
     final formGroupStyle = _FormGroupStyleCache.getOrCreate(
       theme: theme,
@@ -271,14 +272,16 @@ class FlutstrapFormGroup extends StatelessWidget {
       state: state,
     );
 
-    final widget = ErrorBoundary( // ✅ USING SHARED ERROR BOUNDARY
+    final widget = ErrorBoundary(
+      // ✅ USING SHARED ERROR BOUNDARY
       componentName: 'FlutstrapFormGroup',
       fallbackBuilder: (context) => _buildErrorFallback(),
       child: _buildFormGroupContent(theme, effectiveSpacing, formGroupStyle),
     );
 
     stopwatch.stop();
-    _FormGroupPerformance.logBuildTime('FlutstrapFormGroup', stopwatch.elapsedMilliseconds);
+    _FormGroupPerformance.logBuildTime(
+        'FlutstrapFormGroup', stopwatch.elapsedMilliseconds);
 
     return widget;
   }
@@ -313,7 +316,8 @@ class FlutstrapFormGroup extends StatelessWidget {
     );
   }
 
-  Widget _buildFormGroupContent(FSThemeData theme, double spacing, _FormGroupStyle style) {
+  Widget _buildFormGroupContent(
+      FSThemeData theme, double spacing, _FormGroupStyle style) {
     return FocusTraversalGroup(
       child: Semantics(
         container: true,
@@ -371,23 +375,26 @@ class FlutstrapFormGroup extends StatelessWidget {
     );
   }
 
-  Widget _buildFormFieldsSection(double effectiveSpacing, _FormGroupStyle style) {
+  Widget _buildFormFieldsSection(
+      double effectiveSpacing, _FormGroupStyle style) {
     if (state == FSFormGroupState.loading) {
       return _buildLoadingState(style);
     }
-    
+
     final layoutStopwatch = Stopwatch()..start();
-    
+
     try {
       final widget = switch (layout) {
         FSFormGroupLayout.vertical => _buildVerticalLayout(effectiveSpacing),
-        FSFormGroupLayout.horizontal => _buildHorizontalLayout(effectiveSpacing),
+        FSFormGroupLayout.horizontal =>
+          _buildHorizontalLayout(effectiveSpacing),
         FSFormGroupLayout.inline => _buildInlineLayout(effectiveSpacing),
       };
-      
+
       layoutStopwatch.stop();
-      _FormGroupPerformance.logLayoutTime(layout.name, layoutStopwatch.elapsedMilliseconds);
-      
+      _FormGroupPerformance.logLayoutTime(
+          layout.name, layoutStopwatch.elapsedMilliseconds);
+
       return widget;
     } catch (e, stackTrace) {
       layoutStopwatch.stop();
@@ -455,7 +462,8 @@ class FlutstrapFormGroup extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (hasHelperText) _buildHelperText(theme, style),
-          if (hasValidation) _buildValidationMessage(theme, style, hasHelperText),
+          if (hasValidation)
+            _buildValidationMessage(theme, style, hasHelperText),
         ],
       ),
     );
@@ -468,17 +476,20 @@ class FlutstrapFormGroup extends StatelessWidget {
     );
   }
 
-  Widget _buildValidationMessage(FSThemeData theme, _FormGroupStyle style, bool hasHelperText) {
+  Widget _buildValidationMessage(
+      FSThemeData theme, _FormGroupStyle style, bool hasHelperText) {
     return AnimatedSize(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
       child: Padding(
-        padding: hasHelperText ? const EdgeInsets.only(top: 4.0) : EdgeInsets.zero,
+        padding:
+            hasHelperText ? const EdgeInsets.only(top: 4.0) : EdgeInsets.zero,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.error_outline, size: style.validationIconSize, color: style.validationColor),
+            Icon(Icons.error_outline,
+                size: style.validationIconSize, color: style.validationColor),
             SizedBox(width: 4),
             Expanded(
               child: Text(
@@ -499,9 +510,8 @@ class FlutstrapFormGroup extends StatelessWidget {
 
     return List<Widget>.generate(
       children.length * 2 - 1,
-      (index) => index.isEven 
-          ? children[index ~/ 2] 
-          : _getSpacingWidget(spacing),
+      (index) =>
+          index.isEven ? children[index ~/ 2] : _getSpacingWidget(spacing),
       growable: false, // Fixed-size for better performance
     );
   }

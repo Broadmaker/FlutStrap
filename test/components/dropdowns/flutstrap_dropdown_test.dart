@@ -589,7 +589,7 @@ void main() {
 
     // Verify that the dropdown contains the expected internal structure
     final dropdownFinder = findFlutstrapDropdown();
-    final dropdownElement = tester.element(dropdownFinder);
+    tester.element(dropdownFinder);
 
     // Check that it has the expected child widgets by looking for specific patterns
     expect(find.descendant(of: dropdownFinder, matching: find.byType(Row)),

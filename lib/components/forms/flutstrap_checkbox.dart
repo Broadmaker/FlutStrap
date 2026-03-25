@@ -3,6 +3,7 @@
 /// A high-performance, accessible checkbox component with comprehensive
 /// theming, smooth animations, and Bootstrap-inspired variants.
 ///
+// ignore: doc_directive_missing_closing_tag
 /// {@tool snippet}
 /// ### Basic Usage
 ///
@@ -44,6 +45,8 @@
 ///   onChanged: (value) => setState(() => _isChecked = value!),
 /// ).success().withLabel('Success state')
 /// ```
+// ignore: doc_directive_unknown
+/// {@endtool}
 ///
 /// {@template flutstrap_checkbox.performance}
 /// ## Performance Features
@@ -79,8 +82,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme.dart';
-import '../../core/spacing.dart';
-import '../../core/error_boundary.dart'; 
+import '../../core/error_boundary.dart';
 
 /// Performance monitoring for checkbox operations
 class _CheckboxPerformance {
@@ -91,7 +93,8 @@ class _CheckboxPerformance {
     _buildTimes[checkboxType] = milliseconds;
 
     if (milliseconds > 16) {
-      debugPrint('⏱️ Slow checkbox build: $checkboxType took ${milliseconds}ms');
+      debugPrint(
+          '⏱️ Slow checkbox build: $checkboxType took ${milliseconds}ms');
     }
   }
 
@@ -273,7 +276,8 @@ class FlutstrapCheckbox extends StatefulWidget {
 
   // ✅ CONVENIENCE METHODS
   FlutstrapCheckbox primary() => copyWith(variant: FSCheckboxVariant.primary);
-  FlutstrapCheckbox secondary() => copyWith(variant: FSCheckboxVariant.secondary);
+  FlutstrapCheckbox secondary() =>
+      copyWith(variant: FSCheckboxVariant.secondary);
   FlutstrapCheckbox success() => copyWith(variant: FSCheckboxVariant.success);
   FlutstrapCheckbox danger() => copyWith(variant: FSCheckboxVariant.danger);
   FlutstrapCheckbox warning() => copyWith(variant: FSCheckboxVariant.warning);
@@ -344,7 +348,8 @@ class _FlutstrapCheckboxState extends State<FlutstrapCheckbox> {
   Widget build(BuildContext context) {
     final stopwatch = Stopwatch()..start();
 
-    final widget = ErrorBoundary( // ✅ USING SHARED ERROR BOUNDARY
+    final widget = ErrorBoundary(
+      // ✅ USING SHARED ERROR BOUNDARY
       componentName: 'FlutstrapCheckbox',
       fallbackBuilder: (context) => _buildErrorCheckbox(),
       child: _buildCheckboxContent(context),

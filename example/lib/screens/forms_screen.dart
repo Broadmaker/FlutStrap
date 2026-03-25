@@ -52,6 +52,7 @@ class _FormsScreenState extends State<FormsScreen> {
   // Radio state
   String _selectedGender = 'male';
   String _selectedPlan = 'basic';
+  // ignore: unused_field
   String _selectedPriority = 'medium';
 
   // Form validation state

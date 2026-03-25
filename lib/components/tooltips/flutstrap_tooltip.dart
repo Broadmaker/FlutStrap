@@ -155,6 +155,7 @@ class _TooltipManager {
 
     try {
       final overlay = Overlay.of(tooltip.context, rootOverlay: true);
+      // ignore: unnecessary_null_comparison
       if (overlay != null) {
         overlay.insert(entry);
       } else {

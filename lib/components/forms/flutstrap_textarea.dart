@@ -614,6 +614,7 @@ class _FlutstrapTextAreaState extends State<FlutstrapTextArea> {
     );
 
     // ✅ ENHANCED: Create semantic description that includes error state
+    // ignore: unused_local_variable
     String semanticDescription = _controller.text;
     if (_isInvalid && widget.validationMessage != null) {
       semanticDescription += '. Error: ${widget.validationMessage}';

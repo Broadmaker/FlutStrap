@@ -1,0 +1,44 @@
+# Flutter/Dart build artifacts
+
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# IDE/project files
+
+.idea/
+\*.iml
+.vscode/
+
+# Logs and temporary files
+
+_.log
+_.tmp
+_.swp
+_.class
+_.pyc
+_.history
+
+# Platform-specific folders (not needed in the package)
+
+android/
+ios/
+linux/
+macos/
+windows/
+
+# Documentation (optional; keep only example)
+
+doc/
+
+# Keep your example/ folder for pub.dev
+
+# example/ <-- do not ignore

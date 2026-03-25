@@ -55,6 +55,8 @@
 /// {@category Components}
 /// {@category Forms}
 
+// ignore_for_file: unused_field
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
@@ -464,6 +466,7 @@ class _DropdownOverlay<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FSTheme.of(context);
+    // ignore: unused_local_variable
     final dropdownStyle = _DropdownStyle(theme, variant, FSDropdownSize.md);
 
     return Positioned(

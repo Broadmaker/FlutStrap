@@ -1,11 +1,11 @@
 ---
-
 # 🌟 FlutStrap
 
-[`https://pub.dev/packages/flutstrap`](https://pub.dev/packages/flutstrap)  
+[![pub version](https://img.shields.io/pub/v/flutstrap.svg)](https://pub.dev/packages/flutstrap)
+[![likes](https://img.shields.io/pub/likes/flutstrap)](https://pub.dev/packages/flutstrap)
+[![popularity](https://img.shields.io/pub/popularity/flutstrap)](https://pub.dev/packages/flutstrap)
 
 FlutStrap is a **Flutter UI library inspired by Bootstrap**. It provides ready‑to‑use components, responsive layouts, and theming utilities to help you build Flutter apps faster and more consistently.
-
 ---
 
 ## ❓ Why FlutStrap?
